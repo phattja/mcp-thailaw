@@ -60,14 +60,14 @@ The local defaults match the prototype in `thai_law_mcp.py`:
 | --- | --- |
 | Qdrant | `http://localhost:6333` / collection `krisdika` |
 | Embeddings | `http://127.0.0.1:57863/v1/embeddings` / `gpustack-bge-m3` |
-| Top K | `5` |
+| Top K | `40` |
 | Score threshold | `0.30` |
 
 ## Tools
 
 * **search_thai_law** — semantic search over Thai statutes
   * `query` (string, required)
-  * `top_k` (integer, optional, 1–20, default 5)
+  * `top_k` (integer, optional, 1–100, default 40)
   * `score_threshold` (number, optional, 0.0–1.0, default 0.30)
   * `law_code` (string, optional)
   * `category` (string, optional)

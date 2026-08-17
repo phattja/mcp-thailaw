@@ -7,9 +7,9 @@ export const DEFAULT_QDRANT_URL = "http://localhost:6333";
 export const DEFAULT_COLLECTION_NAME = "krisdika";
 export const DEFAULT_EMBEDDING_URL = "http://127.0.0.1:57863/v1/embeddings";
 export const DEFAULT_EMBEDDING_MODEL = "gpustack-bge-m3";
-export const DEFAULT_TOP_K = 5;
+export const DEFAULT_TOP_K = 40;
 export const DEFAULT_SCORE_THRESHOLD = 0.3;
-export const DEFAULT_MAX_RESULTS = 20;
+export const DEFAULT_MAX_RESULTS = 100;
 export const DEFAULT_FETCH_TIMEOUT_MS = 30000;
 
 export interface ThaiLawConfig {

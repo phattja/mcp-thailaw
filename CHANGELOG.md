@@ -8,6 +8,10 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+### Changed
+
+- Default `top_k` is now 40. The operator ceiling `THAILAW_MAX_RESULTS` is 100.
+
 ## [0.1.0-dev.1] - 2026-08-17
 
 First development release of `mcp-thailaw`.

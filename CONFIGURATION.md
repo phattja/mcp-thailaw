@@ -28,9 +28,9 @@ mcp-thailaw \
 | `--embedding-url` | `EMBEDDING_URL` | `http://127.0.0.1:57863/v1/embeddings` | OpenAI-compatible embeddings endpoint |
 | `--embedding-model` | `EMBEDDING_MODEL` | `gpustack-bge-m3` | Model name in the embeddings request |
 | `--embedding-api-key` | `EMBEDDING_API_KEY` | _(unset)_ | Sent as `Authorization: Bearer ...` |
-| `--top-k` | `THAILAW_TOP_K` | `5` | Default number of hits when the tool omits `top_k` |
+| `--top-k` | `THAILAW_TOP_K` | `40` | Default number of hits when the tool omits `top_k` |
 | `--score-threshold` | `THAILAW_SCORE_THRESHOLD` | `0.30` | Default minimum cosine score |
-| `--max-results` | `THAILAW_MAX_RESULTS` | `20` | Operator ceiling for `top_k` |
+| `--max-results` | `THAILAW_MAX_RESULTS` | `100` | Operator ceiling for `top_k` |
 | `--fetch-timeout-ms` | `FETCH_TIMEOUT_MS` | `30000` | Timeout for embedding + Qdrant calls |
 
 ## Search cache

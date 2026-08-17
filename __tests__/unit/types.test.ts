@@ -29,7 +29,8 @@ async function runTests() {
     assert.equal(isSearchThaiLawArgs({ query: "" }), false);
     assert.equal(isSearchThaiLawArgs({ query: "   " }), false);
     assert.equal(isSearchThaiLawArgs({ query: "test", top_k: 0 }), false);
-    assert.equal(isSearchThaiLawArgs({ query: "test", top_k: 21 }), false);
+    assert.equal(isSearchThaiLawArgs({ query: "test", top_k: 101 }), false);
+    assert.equal(isSearchThaiLawArgs({ query: "test", top_k: 40 }), true);
     assert.equal(isSearchThaiLawArgs({ query: "test", score_threshold: -0.1 }), false);
     assert.equal(isSearchThaiLawArgs({ query: "test", score_threshold: 1.1 }), false);
     assert.equal(isSearchThaiLawArgs({ query: "test", is_latest: "yes" }), false);
