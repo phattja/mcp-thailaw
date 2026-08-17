@@ -2,7 +2,7 @@
 
 **Semantic Thai law search for AI assistants — query OCS Krisdika (สำนักงานคณะกรรมการกฤษฎีกา) through Qdrant.**
 
-An [MCP server](https://modelcontextprotocol.io/introduction) that embeds a query and searches the `krisdika` vector collection. It is a fork of [mcp-searxng](https://github.com/ihor-sokoliuk/mcp-searxng), keeping the STDIO / Streamable HTTP transport, Docker, and client wiring, and replacing web search with the Thai-law flow from `thai_law_mcp.py`.
+An [MCP server](https://modelcontextprotocol.io/introduction) that embeds a query and searches the `krisdika` vector collection. The search backend is the Thai-law flow from `thai_law_mcp.py`. The server shape — STDIO and Streamable HTTP, Docker, and client wiring — comes from [mcp-searxng](https://github.com/ihor-sokoliuk/mcp-searxng).
 
 ```
 AI Assistant / Open WebUI
@@ -126,6 +126,12 @@ See **[CONFIGURATION.md](CONFIGURATION.md)** for every environment variable.
 
 Indexed documents come from [Open Law Data Thailand: OCS Krisdika](https://huggingface.co/datasets/open-law-data-thailand/ocs-krisdika) (CC-BY 4.0). The collection is for research and software use — verify citations against the official source at [searchlaw.ocs.go.th](https://www.ocs.go.th/) before relying on them legally.
 
+## Acknowledgements
+
+This project is a fork of **[mcp-searxng](https://github.com/ihor-sokoliuk/mcp-searxng)** by [Ihor Sokoliuk](https://github.com/ihor-sokoliuk).
+
+Thank you for the MCP server design, transport and Docker layout, and the working pattern for connecting AI clients to a search backend. `mcp-thailaw` reuses that foundation and replaces web search with Thai law retrieval. Any remaining SearXNG-specific history in this repository is kept for provenance.
+
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). The original `mcp-searxng` work is also MIT-licensed.
