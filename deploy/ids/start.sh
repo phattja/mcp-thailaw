@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-APP_DIR="${THAILAW_APP_DIR:-/ai/opencode/mcp-thailaw}"
+APP_DIR="${THAILAW_APP_DIR:-/ai/thailaw/mcp-thailaw}"
 
 cd "$APP_DIR"
 

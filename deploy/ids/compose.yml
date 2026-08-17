@@ -40,4 +40,3 @@ services:
       - /etc/group:/etc/group:ro
       - /etc/shadow:/etc/shadow:ro
       - /ai/thailaw:/ai/thailaw
-      - /ai/opencode/mcp-thailaw:/ai/opencode/mcp-thailaw
