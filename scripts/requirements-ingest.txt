@@ -1,0 +1,5 @@
+huggingface_hub
+qdrant-client
+langchain-text-splitters
+tqdm
+requests

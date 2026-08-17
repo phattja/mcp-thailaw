@@ -32,8 +32,18 @@ async function runTests() {
     assert.equal(config.qdrantUrl, DEFAULT_QDRANT_URL);
     assert.equal(config.collectionName, DEFAULT_COLLECTION_NAME);
     assert.equal(config.embeddingModel, DEFAULT_EMBEDDING_MODEL);
+    assert.equal(config.embeddingUrl, "http://127.0.0.1:3003/v1/embeddings");
     assert.equal(config.defaultTopK, 40);
     assert.equal(config.defaultScoreThreshold, 0.3);
+    env.restore();
+  }, results);
+
+  await testFunction("appends /embeddings to an EMBEDDING_URL that ends at /v1", () => {
+    resetCliOverrides();
+    env.set("EMBEDDING_URL", "http://127.0.0.1:3003/v1");
+    assert.equal(getThaiLawConfig().embeddingUrl, "http://127.0.0.1:3003/v1/embeddings");
+    env.set("EMBEDDING_URL", "http://127.0.0.1:3003/v1/embeddings");
+    assert.equal(getThaiLawConfig().embeddingUrl, "http://127.0.0.1:3003/v1/embeddings");
     env.restore();
   }, results);
 

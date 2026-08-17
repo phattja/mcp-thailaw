@@ -26,7 +26,7 @@ async function connect() {
 function mockSearchStack() {
   fetchMocker.mock(async (url) => {
     const target = url.toString();
-    if (target.includes("/v1/embeddings") || target.includes("57863")) {
+    if (target.includes("/v1/embeddings") || target.includes("3003")) {
       return createMockFetch({
         json: { data: [{ index: 0, embedding: [0.1, 0.2, 0.3] }] },
       })(url);

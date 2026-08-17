@@ -12,7 +12,7 @@ services:
       - QDRANT_URL=${QDRANT_URL:-http://host.docker.internal:6333}
       - QDRANT_COLLECTION=${QDRANT_COLLECTION:-krisdika}
       - QDRANT_API_KEY=${QDRANT_API_KEY:-}
-      - EMBEDDING_URL=${EMBEDDING_URL:-http://host.docker.internal:57863/v1/embeddings}
+      - EMBEDDING_URL=${EMBEDDING_URL:-http://host.docker.internal:3003/v1}
       - EMBEDDING_MODEL=${EMBEDDING_MODEL:-gpustack-bge-m3}
       - EMBEDDING_API_KEY=${EMBEDDING_API_KEY:-}
     ports:

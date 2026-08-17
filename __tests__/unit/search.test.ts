@@ -72,7 +72,7 @@ async function runTests() {
       pointsCount: 10,
       vectorSize: 1024,
       distance: "Cosine",
-    }, "gpustack-bge-m3", "http://127.0.0.1:57863/v1/embeddings"));
+    }, "gpustack-bge-m3", "http://127.0.0.1:3003/v1"));
     assert.equal(parsed.collection, "krisdika");
     assert.equal(parsed.vector_size, 1024);
     assert.equal(parsed.embedding_model, "gpustack-bge-m3");

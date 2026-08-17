@@ -21,7 +21,7 @@ Add an MCP server:
       "args": ["/absolute/path/to/mcp-thailaw/dist/cli.js"],
       "env": {
         "QDRANT_URL": "http://localhost:6333",
-        "EMBEDDING_URL": "http://127.0.0.1:57863/v1/embeddings",
+        "EMBEDDING_URL": "http://127.0.0.1:3003/v1",
         "EMBEDDING_MODEL": "gpustack-bge-m3"
       }
     }

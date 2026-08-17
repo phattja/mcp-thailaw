@@ -30,7 +30,7 @@ AI Assistant / Open WebUI
       "env": {
         "QDRANT_URL": "http://localhost:6333",
         "QDRANT_COLLECTION": "krisdika",
-        "EMBEDDING_URL": "http://127.0.0.1:57863/v1/embeddings",
+        "EMBEDDING_URL": "http://127.0.0.1:3003/v1",
         "EMBEDDING_MODEL": "gpustack-bge-m3"
       }
     }
@@ -46,7 +46,7 @@ node dist/cli.js \
   --http-host 0.0.0.0 \
   --qdrant-url http://127.0.0.1:6333 \
   --qdrant-collection krisdika \
-  --embedding-url http://127.0.0.1:57863/v1/embeddings \
+  --embedding-url http://127.0.0.1:3003/v1 \
   --embedding-model gpustack-bge-m3
 ```
 
@@ -59,7 +59,7 @@ The local defaults match the prototype in `thai_law_mcp.py`:
 | Setting | Default |
 | --- | --- |
 | Qdrant | `http://localhost:6333` / collection `krisdika` |
-| Embeddings | `http://127.0.0.1:57863/v1/embeddings` / `gpustack-bge-m3` |
+| Embeddings | `http://127.0.0.1:3003/v1` / `gpustack-bge-m3` |
 | Top K | `40` |
 | Score threshold | `0.30` |
 
@@ -116,11 +116,28 @@ docker run --rm -p 8005:8005 \
   -e THAILAW_HTTP_PORT=8005 \
   -e THAILAW_HTTP_HOST=0.0.0.0 \
   -e QDRANT_URL=http://host.docker.internal:6333 \
-  -e EMBEDDING_URL=http://host.docker.internal:57863/v1/embeddings \
+  -e EMBEDDING_URL=http://host.docker.internal:3003/v1 \
   mcp-thailaw:latest
 ```
 
 See **[CONFIGURATION.md](CONFIGURATION.md)** for every environment variable.
+
+## Self-hosted Qdrant
+
+This MCP server searches an existing Qdrant collection. To build that collection yourself:
+
+1. Run [Qdrant](https://qdrant.tech/) (default `http://localhost:6333`).
+2. Run an OpenAI-compatible embedding server with **bge-m3** (1024-dim).
+3. Ingest [open-law-data-thailand/ocs-krisdika](https://huggingface.co/datasets/open-law-data-thailand/ocs-krisdika) from Hugging Face:
+
+```bash
+pip install -r scripts/requirements-ingest.txt
+python3 scripts/ingest_thai_law_qdrant.py
+```
+
+The script downloads raw JSONL, chunks each law, embeds it, and upserts into collection `krisdika`. Use the same `QDRANT_URL`, `QDRANT_COLLECTION`, `EMBEDDING_URL`, and `EMBEDDING_MODEL` values you pass to `mcp-thailaw`.
+
+Full steps, payload fields, and test-run limits: **[docs/self-hosted-qdrant.md](docs/self-hosted-qdrant.md)**.
 
 ## Dataset
 

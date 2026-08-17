@@ -23,7 +23,7 @@ services:
       - THAILAW_HTTP_HOST=0.0.0.0
       - QDRANT_URL=http://127.0.0.1:6333
       - QDRANT_COLLECTION=krisdika
-      - EMBEDDING_URL=http://127.0.0.1:57863/v1/embeddings
+      - EMBEDDING_URL=http://127.0.0.1:3003/v1
       - EMBEDDING_MODEL=gpustack-bge-m3
     ipc: host
     entrypoint: ["/ai/thailaw/start.sh"]
@@ -32,7 +32,7 @@ services:
       - --http-host=0.0.0.0
       - --qdrant-url=http://127.0.0.1:6333
       - --qdrant-collection=krisdika
-      - --embedding-url=http://127.0.0.1:57863/v1/embeddings
+      - --embedding-url=http://127.0.0.1:3003/v1
       - --embedding-model=gpustack-bge-m3
     volumes:
       - /etc/sudoers.d:/etc/sudoers.d:ro

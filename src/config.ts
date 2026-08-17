@@ -5,7 +5,7 @@ export const SERVER_NAME = "phattja/mcp-thailaw";
 
 export const DEFAULT_QDRANT_URL = "http://localhost:6333";
 export const DEFAULT_COLLECTION_NAME = "krisdika";
-export const DEFAULT_EMBEDDING_URL = "http://127.0.0.1:57863/v1/embeddings";
+export const DEFAULT_EMBEDDING_URL = "http://127.0.0.1:3003/v1";
 export const DEFAULT_EMBEDDING_MODEL = "gpustack-bge-m3";
 export const DEFAULT_TOP_K = 40;
 export const DEFAULT_SCORE_THRESHOLD = 0.3;
@@ -48,6 +48,14 @@ export function getCliOverrides(): CliOverrides {
 function trimOrUndefined(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
+}
+
+function resolveEmbeddingEndpoint(url: string): string {
+  const trimmed = url.replace(/\/+$/, "");
+  if (trimmed.endsWith("/embeddings")) {
+    return trimmed;
+  }
+  return `${trimmed}/embeddings`;
 }
 
 function firstString(...values: Array<string | undefined>): string | undefined {
@@ -104,7 +112,9 @@ export function getThaiLawConfig(env: NodeJS.ProcessEnv = process.env): ThaiLawC
     qdrantUrl: (firstString(cli.qdrantUrl, env.QDRANT_URL) ?? DEFAULT_QDRANT_URL).replace(/\/+$/, ""),
     collectionName: firstString(cli.collectionName, env.QDRANT_COLLECTION) ?? DEFAULT_COLLECTION_NAME,
     qdrantApiKey: firstString(cli.qdrantApiKey, env.QDRANT_API_KEY),
-    embeddingUrl: firstString(cli.embeddingUrl, env.EMBEDDING_URL) ?? DEFAULT_EMBEDDING_URL,
+    embeddingUrl: resolveEmbeddingEndpoint(
+      firstString(cli.embeddingUrl, env.EMBEDDING_URL) ?? DEFAULT_EMBEDDING_URL,
+    ),
     embeddingModel: firstString(cli.embeddingModel, env.EMBEDDING_MODEL) ?? DEFAULT_EMBEDDING_MODEL,
     embeddingApiKey: firstString(cli.embeddingApiKey, env.EMBEDDING_API_KEY),
     defaultTopK: firstNumber(

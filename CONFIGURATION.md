@@ -14,7 +14,7 @@ mcp-thailaw \
   --http-host 0.0.0.0 \
   --qdrant-url http://127.0.0.1:6333 \
   --qdrant-collection krisdika \
-  --embedding-url http://127.0.0.1:57863/v1/embeddings \
+  --embedding-url http://127.0.0.1:3003/v1 \
   --embedding-model gpustack-bge-m3
 ```
 
@@ -25,7 +25,7 @@ mcp-thailaw \
 | `--qdrant-url` | `QDRANT_URL` | `http://localhost:6333` | Qdrant base URL |
 | `--qdrant-collection`, `--collection` | `QDRANT_COLLECTION` | `krisdika` | Collection name |
 | `--qdrant-api-key` | `QDRANT_API_KEY` | _(unset)_ | Sent as the `api-key` header |
-| `--embedding-url` | `EMBEDDING_URL` | `http://127.0.0.1:57863/v1/embeddings` | OpenAI-compatible embeddings endpoint |
+| `--embedding-url` | `EMBEDDING_URL` | `http://127.0.0.1:3003/v1` | OpenAI-compatible embeddings endpoint |
 | `--embedding-model` | `EMBEDDING_MODEL` | `gpustack-bge-m3` | Model name in the embeddings request |
 | `--embedding-api-key` | `EMBEDDING_API_KEY` | _(unset)_ | Sent as `Authorization: Bearer ...` |
 | `--top-k` | `THAILAW_TOP_K` | `40` | Default number of hits when the tool omits `top_k` |
@@ -64,7 +64,7 @@ node dist/cli.js \
   --http-port 8005 \
   --http-host 0.0.0.0 \
   --qdrant-url http://localhost:6333 \
-  --embedding-url http://127.0.0.1:57863/v1/embeddings
+  --embedding-url http://127.0.0.1:3003/v1
 ```
 
 Then add an MCP server of type **streamable-http** at `http://localhost:8005/mcp`.
