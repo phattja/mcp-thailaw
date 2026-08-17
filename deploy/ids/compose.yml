@@ -1,0 +1,36 @@
+services:
+  thailaw:
+    build:
+      context: /ai/thailaw
+      dockerfile: Dockerfile
+    image: thailaw:latest
+    container_name: thailaw
+    hostname: thailaw
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    restart: always
+    network_mode: "host"
+    user: "1001:1001"
+    cap_add:
+      - SYS_NICE
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DEBIAN_FRONTEND=noninteractive
+      - MCP_HTTP_PORT=8005
+      - MCP_HTTP_HOST=0.0.0.0
+      - QDRANT_URL=http://127.0.0.1:6333
+      - QDRANT_COLLECTION=krisdika
+      - EMBEDDING_URL=http://127.0.0.1:57863/v1/embeddings
+      - EMBEDDING_MODEL=gpustack-bge-m3
+    ipc: host
+    entrypoint: ["/ai/thailaw/start.sh"]
+    volumes:
+      - /etc/sudoers.d:/etc/sudoers.d:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      - /etc/shadow:/etc/shadow:ro
+      - /ai/thailaw:/ai/thailaw
+      - /ai/opencode/mcp-thailaw:/ai/opencode/mcp-thailaw

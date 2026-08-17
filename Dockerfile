@@ -1,25 +1,20 @@
-FROM node:lts-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43 AS builder
+FROM node:latest
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    NODE_ENV=production \
+    MCP_HTTP_PORT=8005 \
+    MCP_HTTP_HOST=0.0.0.0
 
 WORKDIR /app
 
-COPY ./ /app
+COPY package.json package-lock.json ./
+RUN npm ci
 
-RUN --mount=type=cache,target=/root/.npm npm run bootstrap
+COPY . .
+RUN npm run build && npm prune --omit=dev
 
-FROM node:lts-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43 AS release
+EXPOSE 8005
 
-RUN apk update && apk upgrade
+USER node
 
-WORKDIR /app
-
-COPY --from=builder /app/dist /app/dist
-COPY --from=builder /app/package.json /app/package.json
-COPY --from=builder /app/package-lock.json /app/package-lock.json
-
-ENV NODE_ENV=production
-
-RUN npm ci --ignore-scripts --omit=dev && npm uninstall -g npm
-
-USER 1000
-
-ENTRYPOINT ["node", "dist/cli.js"]
+CMD ["node", "dist/cli.js"]

@@ -95,6 +95,14 @@ MCP_HTTP_PORT=8005 MCP_HTTP_HOST=0.0.0.0 node dist/cli.js
 
 ### Docker
 
+Base image is `node:latest`.
+
+```bash
+docker compose up -d --build
+```
+
+Or:
+
 ```bash
 docker build -t mcp-thailaw:latest -f Dockerfile .
 docker run --rm -p 8005:8005 \
