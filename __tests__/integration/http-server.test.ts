@@ -242,7 +242,7 @@ async function runTests() {
     assert.equal(res.body.status, 'healthy');
     assert.equal(res.body.transport, 'http');
     assert.ok(typeof res.body.version === 'string');
-    assert.equal(res.body.server, 'ihor-sokoliuk/mcp-searxng');
+    assert.equal(res.body.server, 'phattja/mcp-thailaw');
   }, results);
 
   await testFunction('GET /health includes CORS headers', async () => {
@@ -273,7 +273,7 @@ async function runTests() {
         ['server', 'status', 'transport', 'version'],
       );
       assert.equal(res.body.status, 'healthy');
-      assert.equal(res.body.server, 'ihor-sokoliuk/mcp-searxng');
+      assert.equal(res.body.server, 'phattja/mcp-thailaw');
       assert.equal(res.body.transport, 'http');
       assert.equal(typeof res.body.version, 'string');
     } finally {
@@ -1008,7 +1008,7 @@ async function runTests() {
 
   await testFunction('HTTP initialization failures redact response and stderr diagnostics', async () => {
     envManager.set(
-      'SEARXNG_URL',
+      'QDRANT_URL',
       'https://connect-user:connect-secret@search.example.com',
     );
     resetDiagnosticSanitizerForTests();

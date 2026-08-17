@@ -1,8 +1,12 @@
 services:
-  mcp-searxng:
-    # Optional measured MCP-only limits: docs/deployment-profiles.md
-    # Apply them with: -f docker-compose.yml -f docker-compose.resources.yml
-    image: isokoliuk/mcp-searxng:latest
+  mcp-thailaw:
+    image: mcp-thailaw:latest
+    build: .
     stdin_open: true
     environment:
-      - SEARXNG_URL=${SEARXNG_URL:?Set SEARXNG_URL in the environment}
+      - QDRANT_URL=${QDRANT_URL:-http://host.docker.internal:6333}
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION:-krisdika}
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
+      - EMBEDDING_URL=${EMBEDDING_URL:-http://host.docker.internal:57863/v1/embeddings}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-gpustack-bge-m3}
+      - EMBEDDING_API_KEY=${EMBEDDING_API_KEY:-}

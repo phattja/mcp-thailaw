@@ -73,9 +73,10 @@ function redactUrl(raw: string): string {
 function captureSnapshot(env: NodeJS.ProcessEnv): CredentialSnapshot {
   const replacements = new Set<string>();
   const configuredUrls = new Map<string, string>();
-  const rawUrls = env.SEARXNG_URL?.split(";")
+  const rawUrls = [env.QDRANT_URL, env.EMBEDDING_URL]
+    .flatMap((value) => value?.split(";") ?? [])
     .map((entry) => entry.trim())
-    .filter(Boolean) ?? [];
+    .filter(Boolean);
 
   for (const rawUrl of rawUrls) {
     configuredUrls.set(rawUrl, redactUrl(rawUrl));
@@ -90,9 +91,14 @@ function captureSnapshot(env: NodeJS.ProcessEnv): CredentialSnapshot {
     }
   }
 
+  for (const secret of [env.QDRANT_API_KEY, env.EMBEDDING_API_KEY, env.AUTH_PASSWORD]) {
+    if (secret) {
+      addUriForms(replacements, secret);
+    }
+  }
+
   const username = env.AUTH_USERNAME ?? "";
   const password = env.AUTH_PASSWORD ?? "";
-  addUriForms(replacements, password);
   if (username !== "" || password !== "") {
     addBasicForms(replacements, username, password);
   }
@@ -154,7 +160,7 @@ export function sanitizeDiagnosticText(value: string): string {
 
 function isSecretKey(key: PropertyKey): boolean {
   return typeof key === "string"
-    && /(?:authorization|password|passwd|credential|username|user_name|userinfo)/iu
+    && /(?:authorization|password|passwd|credential|username|user_name|userinfo|api[_-]?key)/iu
       .test(key);
 }
 

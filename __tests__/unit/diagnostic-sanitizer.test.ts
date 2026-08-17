@@ -41,7 +41,7 @@ async function runTests() {
     const base64url = Buffer.from(pair).toString("base64url");
     const configuredUrl = "https://marker-user:p%40ss%2FMarker@search.example.com/path";
 
-    withCredentials({ SEARXNG_URL: configuredUrl }, () => {
+    withCredentials({ QDRANT_URL: configuredUrl }, () => {
       const encoded = encodeURIComponent(password);
       const doubleEncoded = encodeURIComponent(encoded);
       const input = [

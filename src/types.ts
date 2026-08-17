@@ -1,426 +1,157 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
+import { DEFAULT_MAX_RESULTS, DEFAULT_SCORE_THRESHOLD, DEFAULT_TOP_K } from "./config.js";
 
-export interface SearXNGWebResult {
-  title: string;
-  content: string;
-  url: string;
-  score?: number;
-  engine?: string;
-  engines?: string[];
+export type ResponseFormat = "text" | "json";
+
+export interface SearchThaiLawArgs {
+  query: string;
+  top_k?: number;
+  score_threshold?: number;
+  law_code?: string;
   category?: string;
-  publishedDate?: string;
-  thumbnail?: string;
-  img_src?: string;
+  is_latest?: boolean;
+  response_format?: ResponseFormat;
 }
 
-export interface SearXNGWebInfobox {
-  infobox: string;
-  content?: string;
-  urls?: Array<{ title: string; url: string }>;
-}
-
-export interface SearXNGWeb {
-  query: string;
-  number_of_results: number;
-  results: SearXNGWebResult[];
-  sourceFormat?: "json" | "html";
-  suggestions?: string[];
-  corrections?: string[];
-  answers?: string[];
-  infoboxes?: SearXNGWebInfobox[];
-  unresponsive_engines?: Array<[string, string]>;
-}
-
-export type ResultDetail = "compact" | "full";
-
-const VALID_TIME_RANGES = ["day", "week", "month", "year"] as const;
-const VALID_SAFESEARCH_VALUES = [0, 1, 2, "0", "1", "2"] as const;
-const VALID_RESPONSE_FORMATS = ["text", "json"] as const;
-const VALID_RESULT_DETAILS = ["compact", "full"] as const;
-
-export function isSearXNGWebSearchArgs(args: unknown): args is {
-  query: string;
-  pageno?: number;
-  time_range?: string;
-  language?: string;
-  safesearch?: number | string;
-  min_score?: number;
-  num_results?: number;
-  categories?: string;
-  engines?: string;
-  response_format?: "text" | "json";
-  result_detail?: ResultDetail;
-} {
-  if (
-    typeof args !== "object" ||
-    args === null ||
-    !("query" in args) ||
-    typeof (args as { query: string }).query !== "string"
-  ) {
-    return false;
-  }
-
-  const searchArgs = args as {
-    pageno?: unknown;
-    time_range?: unknown;
-    language?: unknown;
-    safesearch?: unknown;
-    min_score?: unknown;
-    num_results?: unknown;
-    categories?: unknown;
-    engines?: unknown;
-    response_format?: unknown;
-    result_detail?: unknown;
-  };
-
-  if (
-    searchArgs.pageno !== undefined &&
-    (typeof searchArgs.pageno !== "number" || !Number.isInteger(searchArgs.pageno) || searchArgs.pageno < 1)
-  ) {
-    return false;
-  }
-  if (
-    searchArgs.result_detail !== undefined &&
-    (typeof searchArgs.result_detail !== "string" || !VALID_RESULT_DETAILS.includes(searchArgs.result_detail as any))
-  ) {
-    return false;
-  }
-  if (
-    searchArgs.time_range !== undefined &&
-    (typeof searchArgs.time_range !== "string" || !VALID_TIME_RANGES.includes(searchArgs.time_range as any))
-  ) {
-    return false;
-  }
-  if (searchArgs.language !== undefined && typeof searchArgs.language !== "string") {
-    return false;
-  }
-  if (
-    searchArgs.safesearch !== undefined &&
-    ((typeof searchArgs.safesearch !== "number" && typeof searchArgs.safesearch !== "string") ||
-      !VALID_SAFESEARCH_VALUES.includes(searchArgs.safesearch as any))
-  ) {
-    return false;
-  }
-  if (
-    searchArgs.min_score !== undefined &&
-    (typeof searchArgs.min_score !== "number" ||
-      Number.isNaN(searchArgs.min_score) ||
-      searchArgs.min_score < 0 ||
-      searchArgs.min_score > 1)
-  ) {
-    return false;
-  }
-  if (
-    searchArgs.num_results !== undefined &&
-    (typeof searchArgs.num_results !== "number" ||
-      Number.isNaN(searchArgs.num_results) ||
-      !Number.isInteger(searchArgs.num_results) ||
-      searchArgs.num_results < 1 ||
-      searchArgs.num_results > 20)
-  ) {
-    return false;
-  }
-  if (searchArgs.categories !== undefined && typeof searchArgs.categories !== "string") {
-    return false;
-  }
-  if (searchArgs.engines !== undefined && typeof searchArgs.engines !== "string") {
-    return false;
-  }
-  if (
-    searchArgs.response_format !== undefined &&
-    (typeof searchArgs.response_format !== "string" || !VALID_RESPONSE_FORMATS.includes(searchArgs.response_format as any))
-  ) {
-    return false;
-  }
-
-  return true;
-}
-
-export function isSearXNGSearchSuggestionsArgs(args: unknown): args is {
-  query: string;
-  language?: string;
-} {
-  if (
-    typeof args !== "object" ||
-    args === null ||
-    !("query" in args) ||
-    typeof (args as { query: string }).query !== "string"
-  ) {
-    return false;
-  }
-
-  const suggestionArgs = args as { language?: unknown };
-  if (suggestionArgs.language !== undefined && typeof suggestionArgs.language !== "string") {
-    return false;
-  }
-
-  return true;
-}
-
-export function isSearXNGInstanceInfoArgs(args: unknown): args is {
-  includeEngines?: boolean;
-  includeDisabled?: boolean;
-  category?: string;
+export interface CollectionInfoArgs {
   refresh?: boolean;
-} {
-  if (typeof args !== "object" || args === null) {
+}
+
+const VALID_RESPONSE_FORMATS: readonly ResponseFormat[] = ["text", "json"];
+
+export function isSearchThaiLawArgs(args: unknown): args is SearchThaiLawArgs {
+  if (
+    typeof args !== "object"
+    || args === null
+    || !("query" in args)
+    || typeof (args as { query: unknown }).query !== "string"
+    || (args as { query: string }).query.trim() === ""
+  ) {
     return false;
   }
 
-  const infoArgs = args as {
-    includeEngines?: unknown;
-    includeDisabled?: unknown;
-    category?: unknown;
-    refresh?: unknown;
-  };
-  if (infoArgs.includeEngines !== undefined && typeof infoArgs.includeEngines !== "boolean") {
+  const searchArgs = args as Record<string, unknown>;
+
+  if (
+    searchArgs.top_k !== undefined
+    && (
+      typeof searchArgs.top_k !== "number"
+      || !Number.isInteger(searchArgs.top_k)
+      || searchArgs.top_k < 1
+      || searchArgs.top_k > DEFAULT_MAX_RESULTS
+    )
+  ) {
     return false;
   }
-  if (infoArgs.includeDisabled !== undefined && typeof infoArgs.includeDisabled !== "boolean") {
+
+  if (
+    searchArgs.score_threshold !== undefined
+    && (
+      typeof searchArgs.score_threshold !== "number"
+      || Number.isNaN(searchArgs.score_threshold)
+      || searchArgs.score_threshold < 0
+      || searchArgs.score_threshold > 1
+    )
+  ) {
     return false;
   }
-  if (infoArgs.category !== undefined && typeof infoArgs.category !== "string") {
+
+  if (searchArgs.law_code !== undefined && typeof searchArgs.law_code !== "string") {
     return false;
   }
+
+  if (searchArgs.category !== undefined && typeof searchArgs.category !== "string") {
+    return false;
+  }
+
+  if (searchArgs.is_latest !== undefined && typeof searchArgs.is_latest !== "boolean") {
+    return false;
+  }
+
+  if (
+    searchArgs.response_format !== undefined
+    && (
+      typeof searchArgs.response_format !== "string"
+      || !VALID_RESPONSE_FORMATS.includes(searchArgs.response_format as ResponseFormat)
+    )
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+export function isCollectionInfoArgs(args: unknown): args is CollectionInfoArgs {
+  if (args === undefined || args === null) {
+    return true;
+  }
+  if (typeof args !== "object") {
+    return false;
+  }
+  const infoArgs = args as Record<string, unknown>;
   if (infoArgs.refresh !== undefined && typeof infoArgs.refresh !== "boolean") {
     return false;
   }
-
   return true;
 }
 
-export const WEB_SEARCH_TOOL: Tool = {
-  name: "searxng_web_search",
+export const SEARCH_THAI_LAW_TOOL: Tool = {
+  name: "search_thai_law",
   description:
-    "Searches the web using SearXNG and returns a list of results, each with a title, URL, and content snippet. " +
-    "CRITICAL: The required parameter name is exactly `query` (not `prompt`, `q`, or any other name). " +
-    "Calls an external SearXNG instance; availability depends on the `SEARXNG_URL` configuration. " +
-    "Use `pageno` to paginate results; combine `time_range` and `language` to narrow scope. " +
-    "To read the full text of a result URL, follow up with `web_url_read`.",
-  annotations: {
-    readOnlyHint: true,
-    openWorldHint: true,
-  },
+    "ค้นหากฎหมายไทยจากฐานข้อมูล OCS Krisdika (สำนักงานคณะกรรมการกฤษฎีกา) ด้วย semantic search. "
+    + "ใช้สำหรับค้นหาบทบัญญัติ มาตรา หรือเนื้อหาที่เกี่ยวข้องกับกฎหมายไทย.",
   inputSchema: {
     type: "object",
     properties: {
       query: {
         type: "string",
-        description:
-          "The search query string. This is the required parameter name — use exactly `query`, not `prompt` or `q`.",
+        description: "คำค้นหา เช่น ลักทรัพย์, สัญญาจ้าง, มาตรา 420",
       },
-      pageno: {
+      top_k: {
         type: "integer",
-        description: "Search page number (starts at 1)",
         minimum: 1,
-        default: 1,
+        maximum: DEFAULT_MAX_RESULTS,
+        description: `จำนวนผลลัพธ์สูงสุด (ค่าเริ่มต้น ${DEFAULT_TOP_K})`,
       },
-      time_range: {
-        type: "string",
-        description: "Time range of search (day, week, month, year)",
-        enum: ["day", "week", "month", "year"],
-      },
-      language: {
-        type: "string",
-        description:
-          "Language code for search results (e.g., 'en', 'fr', 'de'). Default is instance-dependent.",
-        default: "all",
-      },
-      safesearch: {
-        type: "string",
-        description:
-          "Safe search filter level (0: None, 1: Moderate, 2: Strict)",
-        enum: ["0", "1", "2"],
-      },
-      min_score: {
+      score_threshold: {
         type: "number",
-        description:
-          "Minimum relevance score threshold from 0.0 to 1.0. Results below this score are filtered out.",
         minimum: 0,
         maximum: 1,
+        description: `คะแนนความเกี่ยวข้องขั้นต่ำ 0.0-1.0 (ค่าเริ่มต้น ${DEFAULT_SCORE_THRESHOLD})`,
       },
-      num_results: {
-        type: "number",
-        description:
-          "Maximum number of results to return (1-20). Operator cap SEARXNG_MAX_RESULTS applies as a ceiling.",
-        minimum: 1,
-        maximum: 20,
-      },
-      categories: {
+      law_code: {
         type: "string",
-        description:
-          "Comma-separated SearXNG categories. Live /config capabilities are aggregated across reachable instances; prefer searxng_instance_info categories.common for consistent multi-instance results. Values in categories.available are best-effort and may only be honored by some instances. Known values are normalized case-insensitively; unknown values are forwarded trimmed so SearXNG can ignore or honor them. If /config is unavailable, values are forwarded as-is with a warning. If omitted, each instance uses its server-side default.",
-      },
-      engines: {
-        type: "string",
-        description:
-          "Comma-separated SearXNG engine names to query (e.g. 'google,bing,ddg'). Live /config capabilities are aggregated across reachable instances; prefer searxng_instance_info engines.common.enabled for consistent multi-instance results. Values in engines.available.enabled are best-effort and may only be honored by some instances. Known values are normalized case-insensitively; unknown values are forwarded trimmed so SearXNG can ignore or honor them. If /config is unavailable, values are forwarded as-is with a warning. If omitted, each instance uses its server-side default.",
-      },
-      response_format: {
-        type: "string",
-        description: "Response format: formatted text for agents or raw JSON for programmatic clients. If omitted, SEARXNG_DEFAULT_RESPONSE_FORMAT applies; if unset or invalid, text is used. An explicit response_format always takes precedence.",
-        enum: ["text", "json"],
-      },
-      result_detail: {
-        type: "string",
-        description: "Result detail: full preserves SearXNG metadata and search signals; compact returns only title, URL, and content-snippet fields for each result (JSON keys: title, url, content). If omitted, full is used.",
-        enum: ["compact", "full"],
-      },
-    },
-    required: ["query"],
-  },
-};
-
-export const SUGGESTIONS_TOOL: Tool = {
-  name: "searxng_search_suggestions",
-  description:
-    "Returns autocomplete suggestions from the configured SearXNG instance. " +
-    "Use this to refine vague or partial queries before searching.",
-  annotations: {
-    readOnlyHint: true,
-    openWorldHint: true,
-  },
-  inputSchema: {
-    type: "object",
-    properties: {
-      query: {
-        type: "string",
-        description: "Partial or complete query to autocomplete.",
-      },
-      language: {
-        type: "string",
-        description: "Language code for suggestions (e.g., 'en', 'fr', 'de') or 'all'. Default: all.",
-        default: "all",
-      },
-    },
-    required: ["query"],
-  },
-};
-
-export const INSTANCE_INFO_TOOL: Tool = {
-  name: "searxng_instance_info",
-  description:
-    "Discovers capabilities from all reachable configured SearXNG instances via /config, including categories.common/available, engines.common/available, defaults, locales, and plugins.",
-  annotations: {
-    readOnlyHint: true,
-    openWorldHint: true,
-  },
-  inputSchema: {
-    type: "object",
-    properties: {
-      includeEngines: {
-        type: "boolean",
-        description: "Include enabled engine names in the response.",
-        default: false,
-      },
-      includeDisabled: {
-        type: "boolean",
-        description: "Include disabled engine names when includeEngines is true.",
-        default: false,
+        description: "กรองด้วยรหัสกลุ่มกฎหมาย",
       },
       category: {
         type: "string",
-        description: "Filter categories and engines to a single category name.",
+        description: "กรองด้วยประเภทกฎหมาย เช่น 1B",
       },
-      refresh: {
+      is_latest: {
         type: "boolean",
-        description: "Bypass the process cache and fetch fresh /config data.",
-        default: false,
+        description: "กรองเฉพาะฉบับล่าสุดที่มีผลบังคับใช้",
+      },
+      response_format: {
+        type: "string",
+        enum: ["text", "json"],
+        description: "รูปแบบผลลัพธ์: text (อ่านง่าย) หรือ json",
       },
     },
-    required: [],
-  },
-};
-
-export const LITE_WEB_SEARCH_TOOL: Tool = {
-  name: "searxng_web_search",
-  description: "Web search. Returns titles, URLs, snippets.",
-  inputSchema: {
-    type: "object",
-    properties: { query: { type: "string", description: "Search query." } },
     required: ["query"],
   },
 };
 
-export const LITE_SUGGESTIONS_TOOL: Tool = {
-  name: "searxng_search_suggestions",
-  description: "Autocomplete search query suggestions.",
-  inputSchema: {
-    type: "object",
-    properties: { query: { type: "string", description: "Query prefix." } },
-    required: ["query"],
-  },
-};
-
-export const LITE_INSTANCE_INFO_TOOL: Tool = {
-  name: "searxng_instance_info",
-  description: "Discover SearXNG instance capabilities.",
-  inputSchema: {
-    type: "object",
-    properties: {},
-    required: [],
-  },
-};
-
-export const LITE_READ_URL_TOOL: Tool = {
-  name: "web_url_read",
+export const COLLECTION_INFO_TOOL: Tool = {
+  name: "thailaw_collection_info",
   description:
-    "Fetch URL. Converts HTML to markdown; returns explicit JSON, plain text, YAML, TOML, and XML as readable markdown; supports bounded PDF text extraction; other binary/media/archive downloads are rejected. When browser solvers are configured, mcp-searxng attempts FlareSolverr first and then Byparr only after a busy or transient-unavailable acquisition; after a final busy or unavailable provider it uses one uncached direct read.",
-  inputSchema: {
-    type: "object",
-    properties: { url: { type: "string", description: "URL to fetch." } },
-    required: ["url"],
-  },
-};
-
-export const READ_URL_TOOL: Tool = {
-  name: "web_url_read",
-  description:
-    "Fetches a URL and returns readable content as markdown. " +
-    "Content-type aware: HTML is converted to markdown; JSON is pretty-printed; plain text, YAML, TOML, and XML are returned as fenced readable text. " +
-    "PDF text extraction is supported with bounded input, output, page count, time, concurrency, and memory; OCR is not supported. " +
-    "Binary, media, archive, and octet-stream downloads other than PDFs are intentionally rejected instead of being returned as raw bytes. " +
-    "When the operator configures browser solvers, mcp-searxng attempts FlareSolverr first and then Byparr only after a busy or transient-unavailable acquisition; cache hits bypass acquisition and a final busy or unavailable provider uses one uncached direct-fetch fallback. " +
-    "Three modes: " +
-    "(1) Full content — omit filtering params; use `startChar`/`maxLength` to paginate large pages. " +
-    "(2) Section extraction — set `section` to return content under a specific heading. " +
-    "(3) Headings only — set `readHeadings: true` to list all headings (mutually exclusive with other filtering params). " +
-    "Returns an error string if the URL is unreachable or content cannot be extracted. " +
-    "Use after `searxng_web_search` to read the full content of individual result URLs.",
-  annotations: {
-    readOnlyHint: true,
-    openWorldHint: true,
-  },
+    "แสดงสถานะคอลเลกชัน Qdrant ของฐานกฎหมายไทย รวมจำนวนเอกสารและขนาดเวกเตอร์",
   inputSchema: {
     type: "object",
     properties: {
-      url: {
-        type: "string",
-        description: "URL",
-      },
-      startChar: {
-        type: "number",
-        description: "Starting character position for content extraction (default: 0)",
-        minimum: 0,
-      },
-      maxLength: {
-        type: "number",
-        description: "Maximum number of characters to return",
-        minimum: 1,
-      },
-      section: {
-        type: "string",
-        description: "Extract content under a specific heading (searches for heading text)",
-      },
-      paragraphRange: {
-        type: "string",
-        description: "Return specific paragraph ranges (e.g., '1-5', '3', '10-')",
-      },
-      readHeadings: {
+      refresh: {
         type: "boolean",
-        description: "Return only a list of headings instead of full content",
+        description: "ข้ามแคชและดึงข้อมูลล่าสุดจาก Qdrant",
       },
     },
-    required: ["url"],
   },
 };

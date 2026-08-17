@@ -1,9 +1,21 @@
 # Changelog
 
-All notable changes to mcp-searxng are documented here.
+All notable changes to mcp-thailaw are documented here.
 Versions follow [Semantic Versioning](https://semver.org/).
 
+This project is a fork of [mcp-searxng](https://github.com/ihor-sokoliuk/mcp-searxng).
+SearXNG history below 0.1.0 is retained for provenance.
+
 ## Unreleased
+
+## [0.1.0] - 2026-08-17
+
+### Changed
+
+- Replaced SearXNG web search with Thai law semantic search over Qdrant collection `krisdika`.
+- New tools: `search_thai_law`, `thailaw_collection_info`.
+- Defaults match `thai_law_mcp.py`: Qdrant `http://localhost:6333`, embeddings `gpustack-bge-m3` at `http://127.0.0.1:57863/v1/embeddings`, top_k 5, score threshold 0.30.
+- Kept Streamable HTTP / STDIO transports, Docker, and HTTP hardening from the template.
 
 ## [1.15.0] - 2026-08-11
 

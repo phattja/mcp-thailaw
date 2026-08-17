@@ -1,39 +1,60 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.ihor-sokoliuk/mcp-searxng",
-  "title": "SearXNG Search",
-  "description": "MCP server for SearXNG — privacy-respecting web search with pagination, URL reading",
+  "name": "io.github.phattja/mcp-thailaw",
+  "title": "Thai Law Search",
+  "description": "MCP server for Thai law search over OCS Krisdika in Qdrant",
   "repository": {
-    "url": "https://github.com/ihor-sokoliuk/mcp-searxng",
+    "url": "https://github.com/phattja/mcp-thailaw",
     "source": "github"
   },
-  "version": "1.15.0",
+  "version": "0.1.0",
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "mcp-searxng",
-      "version": "1.15.0",
+      "identifier": "mcp-thailaw",
+      "version": "0.1.0",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
         {
-          "name": "SEARXNG_URL",
-          "description": "URL of your SearXNG instance",
-          "isRequired": true,
-          "isSecret": true,
+          "name": "QDRANT_URL",
+          "description": "Qdrant base URL",
+          "isRequired": false,
+          "isSecret": false,
           "format": "string"
         },
         {
-          "name": "AUTH_USERNAME",
-          "description": "Legacy global SearXNG Basic Auth username",
+          "name": "QDRANT_COLLECTION",
+          "description": "Qdrant collection name",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "QDRANT_API_KEY",
+          "description": "Qdrant API key",
           "isRequired": false,
           "isSecret": true,
           "format": "string"
         },
         {
-          "name": "AUTH_PASSWORD",
-          "description": "Legacy global SearXNG Basic Auth password",
+          "name": "EMBEDDING_URL",
+          "description": "OpenAI-compatible embeddings endpoint",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "EMBEDDING_MODEL",
+          "description": "Embedding model name",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "EMBEDDING_API_KEY",
+          "description": "Bearer token for the embedding server",
           "isRequired": false,
           "isSecret": true,
           "format": "string"

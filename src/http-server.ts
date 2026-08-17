@@ -7,6 +7,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { logMessage } from "./logging.js";
 import { packageVersion } from "./version.js";
+import { SERVER_NAME } from "./config.js";
 import {
   sanitizeDiagnosticText,
   sanitizeDiagnosticValue,
@@ -622,7 +623,7 @@ export async function createHttpServer(
   app.get('/health', healthLimiter, (_req, res) => {
     res.json({ 
       status: 'healthy',
-      server: 'ihor-sokoliuk/mcp-searxng',
+      server: SERVER_NAME,
       version: packageVersion,
       transport: 'http'
     });

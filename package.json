@@ -1,31 +1,31 @@
 {
-    "name": "mcp-searxng",
-    "version": "1.15.0",
-    "mcpName": "io.github.ihor-sokoliuk/mcp-searxng",
-    "description": "MCP server for SearXNG integration",
+    "name": "mcp-thailaw",
+    "version": "0.1.0",
+    "mcpName": "io.github.phattja/mcp-thailaw",
+    "description": "MCP server for Thai law search over OCS Krisdika in Qdrant",
     "license": "MIT",
-    "author": "Ihor Sokoliuk (https://github.com/ihor-sokoliuk)",
-    "homepage": "https://github.com/ihor-sokoliuk/mcp-searxng",
-    "bugs": "https://github.com/ihor-sokoliuk/mcp-searxng/issues",
+    "author": "phattja (https://github.com/phattja)",
+    "homepage": "https://github.com/phattja/mcp-thailaw",
+    "bugs": "https://github.com/phattja/mcp-thailaw/issues",
     "repository": {
         "type": "git",
-        "url": "https://github.com/ihor-sokoliuk/mcp-searxng"
+        "url": "https://github.com/phattja/mcp-thailaw"
     },
     "keywords": [
         "mcp",
         "modelcontextprotocol",
-        "searxng",
+        "thai-law",
+        "krisdika",
+        "qdrant",
         "search",
-        "web-search",
+        "legal",
+        "thailand",
         "claude",
-        "ai",
-        "pagination",
-        "smithery",
-        "url-reader"
+        "ai"
     ],
     "type": "module",
     "bin": {
-        "mcp-searxng": "dist/cli.js"
+        "mcp-thailaw": "dist/cli.js"
     },
     "main": "dist/index.js",
     "files": [
@@ -36,10 +36,10 @@
     },
     "scripts": {
         "build": "tsc && shx chmod +x dist/*.js",
+        "start": "node dist/cli.js",
         "watch": "tsc --watch",
-        "test": "cross-env SEARXNG_URL=https://test-searx.example.com tsx __tests__/run-all.ts",
-        "test:coverage": "cross-env SEARXNG_URL=https://test-searx.example.com c8 --reporter=text --include 'src/**' --check-coverage --lines 90 --branches 85 tsx __tests__/run-all.ts",
-        "test:e2e": "node --env-file-if-exists=.env.e2e --import tsx __tests__/e2e/run-e2e.ts",
+        "test": "tsx __tests__/run-all.ts",
+        "test:coverage": "c8 --reporter=text --include 'src/**' tsx __tests__/run-all.ts",
         "verify:packed-consumer": "node scripts/verify-packed-consumer.mjs",
         "bootstrap": "npm install && npm run build",
         "inspector": "DANGEROUSLY_OMIT_AUTH=true npx @modelcontextprotocol/inspector node dist/cli.js",
@@ -55,10 +55,7 @@
         "cors": "^2.8.6",
         "express": "^5.2.1",
         "express-rate-limit": "^8.5.2",
-        "node-html-markdown": "^2.0.0",
-        "node-html-parser": "^6.1.13",
-        "undici": "7.29.0",
-        "unpdf": "1.7.0"
+        "undici": "7.29.0"
     },
     "devDependencies": {
         "@types/node": "22.20.1",

@@ -4,8 +4,7 @@
 
 | Version | Supported |
 |---------|-----------|
-| 1.x (latest) | ✅ |
-| < 1.0 | ❌ |
+| 0.1.x (latest) | ✅ |
 
 Security fixes are released as patch versions on the `main` branch. Only the latest published version receives security updates.
 
@@ -13,7 +12,7 @@ Security fixes are released as patch versions on the `main` branch. Only the lat
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
-Report vulnerabilities privately via [GitHub Security Advisories](https://github.com/ihor-sokoliuk/mcp-searxng/security/advisories/new).
+Report vulnerabilities privately via [GitHub Security Advisories](https://github.com/phattja/mcp-thailaw/security/advisories/new).
 
 Please include:
 

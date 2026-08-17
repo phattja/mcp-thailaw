@@ -5,7 +5,7 @@
  */
 
 import { searchCache } from '../../src/search-cache.js';
-import { setSearxngFetchForTesting } from '../../src/proxy.js';
+import { setFetchForTesting } from '../../src/http-client.js';
 
 export type FetchMockOptions = {
   status?: number;
@@ -118,11 +118,11 @@ export function createAbortableMockFetch(delayMs: number = 50) {
  */
 export class FetchMocker {
   mock(mockFetch: typeof global.fetch): void {
-    setSearxngFetchForTesting(mockFetch);
+    setFetchForTesting(mockFetch);
   }
 
   restore(): void {
-    setSearxngFetchForTesting();
+    setFetchForTesting();
     searchCache.clear();
   }
 }

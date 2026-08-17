@@ -1,13 +1,14 @@
 services:
-  mcp-searxng:
+  mcp-thailaw:
     stdin_open: false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      - "MCP_HTTP_PORT=${MCP_HTTP_PORT:-3000}"
+      - "MCP_HTTP_PORT=${MCP_HTTP_PORT:-8005}"
       - "MCP_HTTP_HOST=0.0.0.0"
-      - "MCP_HTTP_HARDEN=true"
-      - "MCP_HTTP_AUTH_TOKEN=${MCP_HTTP_AUTH_TOKEN:?Set MCP_HTTP_AUTH_TOKEN in the environment}"
-      - "MCP_HTTP_ALLOWED_ORIGINS=${MCP_HTTP_ALLOWED_ORIGINS:?Set MCP_HTTP_ALLOWED_ORIGINS in the environment}"
-      - MCP_HTTP_ALLOWED_HOSTS
-      - MCP_HTTP_TRUST_PROXY
+      - QDRANT_URL=${QDRANT_URL:-http://host.docker.internal:6333}
+      - QDRANT_COLLECTION=${QDRANT_COLLECTION:-krisdika}
+      - EMBEDDING_URL=${EMBEDDING_URL:-http://host.docker.internal:57863/v1/embeddings}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-gpustack-bge-m3}
     ports:
-      - "${MCP_SEARXNG_HTTP_BIND_ADDRESS:-127.0.0.1}:${MCP_SEARXNG_HTTP_PUBLISHED_PORT:-3000}:${MCP_HTTP_PORT:-3000}"
+      - "${MCP_THAILAW_HTTP_BIND_ADDRESS:-127.0.0.1}:${MCP_THAILAW_HTTP_PUBLISHED_PORT:-8005}:${MCP_HTTP_PORT:-8005}"
