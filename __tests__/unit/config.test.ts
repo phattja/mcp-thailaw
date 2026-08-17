@@ -60,8 +60,8 @@ async function runTests() {
     env.set("EMBEDDING_URL", "http://env-embed/v1/embeddings");
     env.set("EMBEDDING_MODEL", "env-model");
     env.set("THAILAW_TOP_K", "8");
-    env.set("MCP_HTTP_PORT", "9000");
-    env.set("MCP_HTTP_HOST", "127.0.0.1");
+    env.set("THAILAW_HTTP_PORT", "9000");
+    env.set("THAILAW_HTTP_HOST", "127.0.0.1");
     setCliOverrides({
       qdrantUrl: "http://cli-qdrant:6333/",
       collectionName: "cli-collection",

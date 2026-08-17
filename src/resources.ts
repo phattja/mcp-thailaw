@@ -35,7 +35,7 @@ Configuration:
 
 Transport:
   STDIO is the default transport.
-  --http-port or MCP_HTTP_PORT enables HTTP transport.
+  --http-port or THAILAW_HTTP_PORT enables HTTP transport.
 `.trimEnd();
 }
 
@@ -73,7 +73,7 @@ export function createConfigResource(mcpServer?: McpServer) {
       tools: ["search_thai_law", "thailaw_collection_info"],
       logging: true,
       resources: true,
-      transports: process.env.MCP_HTTP_PORT ? ["stdio", "http"] : ["stdio"],
+      transports: process.env.THAILAW_HTTP_PORT ? ["stdio", "http"] : ["stdio"],
     },
   };
 
@@ -121,7 +121,7 @@ Common settings:
 - \`--embedding-model\` / \`EMBEDDING_MODEL\`: Embedding model name (default gpustack-bge-m3)
 - \`--embedding-api-key\` / \`EMBEDDING_API_KEY\`: Optional bearer token
 - \`--top-k\`, \`--score-threshold\`, \`--max-results\`
-- \`--http-port\` / \`MCP_HTTP_PORT\`: Enable HTTP transport on the specified port
+- \`--http-port\` / \`THAILAW_HTTP_PORT\`: Enable HTTP transport on the specified port
 
 ## Transport Modes
 
@@ -129,9 +129,9 @@ Common settings:
 Standard input/output transport for desktop clients.
 
 ### HTTP (Optional)
-MCP Streamable HTTP transport for remote clients such as Open WebUI. Set \`MCP_HTTP_PORT\` to enable.
+MCP Streamable HTTP transport for remote clients such as Open WebUI. Set \`THAILAW_HTTP_PORT\` to enable.
 
 ### Hardened HTTP Mode (Optional)
-Set \`MCP_HTTP_HARDEN=true\` with \`MCP_HTTP_AUTH_TOKEN\` and \`MCP_HTTP_ALLOWED_ORIGINS\` before exposing the server on a network.
+Set \`THAILAW_HTTP_HARDEN=true\` with \`THAILAW_HTTP_AUTH_TOKEN\` and \`THAILAW_HTTP_ALLOWED_ORIGINS\` before exposing the server on a network.
 `;
 }

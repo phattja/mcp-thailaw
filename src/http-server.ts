@@ -56,9 +56,9 @@ function warnDiagnostic(message: string, data?: unknown): void {
 }
 
 /**
- * Resolves the bind host from the MCP_HTTP_HOST environment variable.
+ * Resolves the bind host from the THAILAW_HTTP_HOST environment variable.
  * Falls back to "127.0.0.1" (localhost only) when the variable is absent or whitespace-only.
- * Set MCP_HTTP_HOST=0.0.0.0 to expose on all interfaces (e.g. Docker, remote access).
+ * Set THAILAW_HTTP_HOST=0.0.0.0 to expose on all interfaces (e.g. Docker, remote access).
  */
 export function resolveBindHost(envValue: string | undefined): string {
   const trimmed = envValue?.trim();
@@ -111,25 +111,25 @@ function parseBoundedStatelessEnv(
 }
 
 function resolveStatelessEnabled(): boolean {
-  const raw = process.env.MCP_HTTP_STATELESS;
+  const raw = process.env.THAILAW_HTTP_STATELESS;
   const value = raw?.trim();
   if (!value || value === "false") return false;
   if (value === "true") return true;
   warnDiagnostic(
-    "⚠️  Ignoring invalid MCP_HTTP_STATELESS. Expected true or false. Using false.",
+    "⚠️  Ignoring invalid THAILAW_HTTP_STATELESS. Expected true or false. Using false.",
   );
   return false;
 }
 
 export function resolveStatelessHttpConfig(): StatelessHttpConfig {
   const maxInFlight = parseBoundedStatelessEnv(
-    "MCP_HTTP_STATELESS_MAX_IN_FLIGHT",
+    "THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT",
     DEFAULT_STATELESS_MAX_IN_FLIGHT,
     1,
     MAX_STATELESS_MAX_IN_FLIGHT,
   );
   const requestedPerIp = parseBoundedStatelessEnv(
-    "MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP",
+    "THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP",
     DEFAULT_STATELESS_MAX_IN_FLIGHT_PER_IP,
     1,
     MAX_STATELESS_MAX_IN_FLIGHT,
@@ -137,11 +137,11 @@ export function resolveStatelessHttpConfig(): StatelessHttpConfig {
   const maxInFlightPerIp = Math.min(requestedPerIp, maxInFlight);
   if (requestedPerIp > maxInFlight) {
     warnDiagnostic(
-      `⚠️  Ignoring invalid MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP. Expected a value no greater than MCP_HTTP_STATELESS_MAX_IN_FLIGHT. Using ${maxInFlight}.`,
+      `⚠️  Ignoring invalid THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP. Expected a value no greater than THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT. Using ${maxInFlight}.`,
     );
   }
   const requestTimeoutMs = parseBoundedStatelessEnv(
-    "MCP_HTTP_STATELESS_REQUEST_TIMEOUT_MS",
+    "THAILAW_HTTP_STATELESS_REQUEST_TIMEOUT_MS",
     DEFAULT_STATELESS_REQUEST_TIMEOUT_MS,
     MIN_STATELESS_REQUEST_TIMEOUT_MS,
     MAX_STATELESS_REQUEST_TIMEOUT_MS,
@@ -156,11 +156,11 @@ export function resolveStatelessHttpConfig(): StatelessHttpConfig {
 }
 
 function makeRateLimiters() {
-  const windowMs = parseRateLimitEnv("MCP_RATE_WINDOW_MS", 60000);
+  const windowMs = parseRateLimitEnv("THAILAW_RATE_WINDOW_MS", 60000);
 
   const initLimiter = rateLimit({
     windowMs,
-    max: parseRateLimitEnv("MCP_RATE_INIT_MAX", 20),
+    max: parseRateLimitEnv("THAILAW_RATE_INIT_MAX", 20),
     standardHeaders: true,
     legacyHeaders: false,
     message: {
@@ -172,7 +172,7 @@ function makeRateLimiters() {
 
   const sessionLimiter = rateLimit({
     windowMs,
-    max: parseRateLimitEnv("MCP_RATE_SESSION_MAX", 300),
+    max: parseRateLimitEnv("THAILAW_RATE_SESSION_MAX", 300),
     standardHeaders: true,
     legacyHeaders: false,
     message: {

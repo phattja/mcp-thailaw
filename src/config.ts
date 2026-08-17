@@ -131,8 +131,8 @@ export function getThaiLawConfig(env: NodeJS.ProcessEnv = process.env): ThaiLawC
 
 export function resolveHttpListen(env: NodeJS.ProcessEnv = process.env): HttpListenConfig {
   const cli = cliOverrides;
-  const rawPort = cli.httpPort !== undefined ? String(cli.httpPort) : env.MCP_HTTP_PORT;
-  const host = firstString(cli.httpHost, env.MCP_HTTP_HOST) ?? "127.0.0.1";
+  const rawPort = cli.httpPort !== undefined ? String(cli.httpPort) : env.THAILAW_HTTP_PORT;
+  const host = firstString(cli.httpHost, env.THAILAW_HTTP_HOST) ?? "127.0.0.1";
   if (rawPort === undefined || rawPort.trim() === "") {
     return { host };
   }
@@ -157,8 +157,8 @@ export function envWithCliOverrides(env: NodeJS.ProcessEnv = process.env): NodeJ
   if (cli.embeddingUrl) merged.EMBEDDING_URL = cli.embeddingUrl;
   if (cli.embeddingModel) merged.EMBEDDING_MODEL = cli.embeddingModel;
   if (cli.embeddingApiKey) merged.EMBEDDING_API_KEY = cli.embeddingApiKey;
-  if (cli.httpPort !== undefined) merged.MCP_HTTP_PORT = String(cli.httpPort);
-  if (cli.httpHost) merged.MCP_HTTP_HOST = cli.httpHost;
+  if (cli.httpPort !== undefined) merged.THAILAW_HTTP_PORT = String(cli.httpPort);
+  if (cli.httpHost) merged.THAILAW_HTTP_HOST = cli.httpHost;
   return merged;
 }
 

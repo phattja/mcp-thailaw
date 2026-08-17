@@ -18,10 +18,10 @@ async function runTests() {
   console.log('🧪 Testing: http-security.ts\n');
 
   await testFunction('default config preserves compatibility mode', () => {
-    envManager.delete('MCP_HTTP_HARDEN');
-    envManager.delete('MCP_HTTP_AUTH_TOKEN');
-    envManager.delete('MCP_HTTP_ALLOWED_ORIGINS');
-    envManager.delete('MCP_HTTP_TRUST_PROXY');
+    envManager.delete('THAILAW_HTTP_HARDEN');
+    envManager.delete('THAILAW_HTTP_AUTH_TOKEN');
+    envManager.delete('THAILAW_HTTP_ALLOWED_ORIGINS');
+    envManager.delete('THAILAW_HTTP_TRUST_PROXY');
 
     const config = getHttpSecurityConfig();
     assert.equal(config.harden, false);
@@ -32,8 +32,8 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_TRUST_PROXY=false keeps trust proxy disabled', () => {
-    envManager.set('MCP_HTTP_TRUST_PROXY', 'false');
+  await testFunction('THAILAW_HTTP_TRUST_PROXY=false keeps trust proxy disabled', () => {
+    envManager.set('THAILAW_HTTP_TRUST_PROXY', 'false');
 
     const config = getHttpSecurityConfig();
     assert.equal(config.trustProxy, false);
@@ -41,8 +41,8 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_TRUST_PROXY=0 disables trust proxy (not a bogus subnet)', () => {
-    envManager.set('MCP_HTTP_TRUST_PROXY', '0');
+  await testFunction('THAILAW_HTTP_TRUST_PROXY=0 disables trust proxy (not a bogus subnet)', () => {
+    envManager.set('THAILAW_HTTP_TRUST_PROXY', '0');
 
     const config = getHttpSecurityConfig();
     assert.equal(config.trustProxy, false);
@@ -50,8 +50,8 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_TRUST_PROXY=true enables boolean trust proxy', () => {
-    envManager.set('MCP_HTTP_TRUST_PROXY', 'true');
+  await testFunction('THAILAW_HTTP_TRUST_PROXY=true enables boolean trust proxy', () => {
+    envManager.set('THAILAW_HTTP_TRUST_PROXY', 'true');
 
     const config = getHttpSecurityConfig();
     assert.equal(config.trustProxy, true);
@@ -59,8 +59,8 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_TRUST_PROXY=1 enables single-hop trust proxy', () => {
-    envManager.set('MCP_HTTP_TRUST_PROXY', '1');
+  await testFunction('THAILAW_HTTP_TRUST_PROXY=1 enables single-hop trust proxy', () => {
+    envManager.set('THAILAW_HTTP_TRUST_PROXY', '1');
 
     const config = getHttpSecurityConfig();
     assert.equal(config.trustProxy, 1);
@@ -68,8 +68,8 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_TRUST_PROXY subnet value passes through unchanged', () => {
-    envManager.set('MCP_HTTP_TRUST_PROXY', '10.0.0.0/8');
+  await testFunction('THAILAW_HTTP_TRUST_PROXY subnet value passes through unchanged', () => {
+    envManager.set('THAILAW_HTTP_TRUST_PROXY', '10.0.0.0/8');
 
     const config = getHttpSecurityConfig();
     assert.equal(config.trustProxy, '10.0.0.0/8');
@@ -77,8 +77,8 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_TRUST_PROXY trims surrounding whitespace', () => {
-    envManager.set('MCP_HTTP_TRUST_PROXY', '  loopback  ');
+  await testFunction('THAILAW_HTTP_TRUST_PROXY trims surrounding whitespace', () => {
+    envManager.set('THAILAW_HTTP_TRUST_PROXY', '  loopback  ');
 
     const config = getHttpSecurityConfig();
     assert.equal(config.trustProxy, 'loopback');
@@ -87,9 +87,9 @@ async function runTests() {
   }, results);
 
   await testFunction('hardened mode requires token and restricted origins', () => {
-    envManager.set('MCP_HTTP_HARDEN', 'true');
-    envManager.set('MCP_HTTP_AUTH_TOKEN', 'secret-token');
-    envManager.set('MCP_HTTP_ALLOWED_ORIGINS', 'https://app.example.com,https://admin.example.com');
+    envManager.set('THAILAW_HTTP_HARDEN', 'true');
+    envManager.set('THAILAW_HTTP_AUTH_TOKEN', 'secret-token');
+    envManager.set('THAILAW_HTTP_ALLOWED_ORIGINS', 'https://app.example.com,https://admin.example.com');
 
     const config = getHttpSecurityConfig();
     assert.equal(config.harden, true);
@@ -103,7 +103,7 @@ async function runTests() {
   }, results);
 
   await testFunction('default allowed-hosts includes loopback hosts and their port variants', () => {
-    envManager.delete('MCP_HTTP_ALLOWED_HOSTS');
+    envManager.delete('THAILAW_HTTP_ALLOWED_HOSTS');
 
     const config = getHttpSecurityConfig(3000);
     assert.deepEqual(config.allowedHosts, [
@@ -119,7 +119,7 @@ async function runTests() {
   }, results);
 
   await testFunction('default allowed-hosts without a port omits the port variants', () => {
-    envManager.delete('MCP_HTTP_ALLOWED_HOSTS');
+    envManager.delete('THAILAW_HTTP_ALLOWED_HOSTS');
 
     const config = getHttpSecurityConfig();
     assert.deepEqual(config.allowedHosts, ['127.0.0.1', 'localhost', '[::1]']);
@@ -128,8 +128,8 @@ async function runTests() {
   }, results);
 
   await testFunction('blank optional host and trust-proxy values preserve safe defaults', () => {
-    envManager.set('MCP_HTTP_ALLOWED_HOSTS', '');
-    envManager.set('MCP_HTTP_TRUST_PROXY', '');
+    envManager.set('THAILAW_HTTP_ALLOWED_HOSTS', '');
+    envManager.set('THAILAW_HTTP_TRUST_PROXY', '');
 
     const config = getHttpSecurityConfig(3000);
     assert.deepEqual(config.allowedHosts, [
@@ -145,8 +145,8 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('explicit MCP_HTTP_ALLOWED_HOSTS overrides the port-aware default exactly', () => {
-    envManager.set('MCP_HTTP_ALLOWED_HOSTS', 'app.example.com:8443, other.example.com');
+  await testFunction('explicit THAILAW_HTTP_ALLOWED_HOSTS overrides the port-aware default exactly', () => {
+    envManager.set('THAILAW_HTTP_ALLOWED_HOSTS', 'app.example.com:8443, other.example.com');
 
     const config = getHttpSecurityConfig(3000);
     assert.deepEqual(config.allowedHosts, ['app.example.com:8443', 'other.example.com']);
@@ -215,7 +215,7 @@ async function runTests() {
     };
     assert.throws(
       () => validateHttpSecurityConfig(config),
-      /MCP_HTTP_AUTH_TOKEN/
+      /THAILAW_HTTP_AUTH_TOKEN/
     );
   }, results);
 
@@ -233,7 +233,7 @@ async function runTests() {
     };
     assert.throws(
       () => validateHttpSecurityConfig(config),
-      /MCP_HTTP_ALLOWED_ORIGINS/
+      /THAILAW_HTTP_ALLOWED_ORIGINS/
     );
   }, results);
 

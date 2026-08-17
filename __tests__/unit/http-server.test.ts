@@ -37,45 +37,45 @@ export async function runTests(): Promise<TestResult> {
 
   // --- resolveBindHost() ---
 
-  await testFunction('No MCP_HTTP_HOST env var → defaults to 127.0.0.1', () => {
-    envManager.delete('MCP_HTTP_HOST');
+  await testFunction('No THAILAW_HTTP_HOST env var → defaults to 127.0.0.1', () => {
+    envManager.delete('THAILAW_HTTP_HOST');
     assert.equal(resolveBindHost(undefined), '127.0.0.1');
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_HOST=127.0.0.1 → localhost IPv4', () => {
-    envManager.set('MCP_HTTP_HOST', '127.0.0.1');
-    assert.equal(resolveBindHost(process.env.MCP_HTTP_HOST), '127.0.0.1');
+  await testFunction('THAILAW_HTTP_HOST=127.0.0.1 → localhost IPv4', () => {
+    envManager.set('THAILAW_HTTP_HOST', '127.0.0.1');
+    assert.equal(resolveBindHost(process.env.THAILAW_HTTP_HOST), '127.0.0.1');
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_HOST=::1 → localhost IPv6', () => {
-    envManager.set('MCP_HTTP_HOST', '::1');
-    assert.equal(resolveBindHost(process.env.MCP_HTTP_HOST), '::1');
+  await testFunction('THAILAW_HTTP_HOST=::1 → localhost IPv6', () => {
+    envManager.set('THAILAW_HTTP_HOST', '::1');
+    assert.equal(resolveBindHost(process.env.THAILAW_HTTP_HOST), '::1');
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_HOST=0.0.0.0 → explicit all-interfaces', () => {
-    envManager.set('MCP_HTTP_HOST', '0.0.0.0');
-    assert.equal(resolveBindHost(process.env.MCP_HTTP_HOST), '0.0.0.0');
+  await testFunction('THAILAW_HTTP_HOST=0.0.0.0 → explicit all-interfaces', () => {
+    envManager.set('THAILAW_HTTP_HOST', '0.0.0.0');
+    assert.equal(resolveBindHost(process.env.THAILAW_HTTP_HOST), '0.0.0.0');
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_HOST=192.168.1.10 → custom IP address', () => {
-    envManager.set('MCP_HTTP_HOST', '192.168.1.10');
-    assert.equal(resolveBindHost(process.env.MCP_HTTP_HOST), '192.168.1.10');
+  await testFunction('THAILAW_HTTP_HOST=192.168.1.10 → custom IP address', () => {
+    envManager.set('THAILAW_HTTP_HOST', '192.168.1.10');
+    assert.equal(resolveBindHost(process.env.THAILAW_HTTP_HOST), '192.168.1.10');
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_HOST="" (empty string) → defaults to 127.0.0.1', () => {
-    envManager.set('MCP_HTTP_HOST', '');
-    assert.equal(resolveBindHost(process.env.MCP_HTTP_HOST), '127.0.0.1');
+  await testFunction('THAILAW_HTTP_HOST="" (empty string) → defaults to 127.0.0.1', () => {
+    envManager.set('THAILAW_HTTP_HOST', '');
+    assert.equal(resolveBindHost(process.env.THAILAW_HTTP_HOST), '127.0.0.1');
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_HOST="   " (whitespace only) → defaults to 127.0.0.1', () => {
-    envManager.set('MCP_HTTP_HOST', '   ');
-    assert.equal(resolveBindHost(process.env.MCP_HTTP_HOST), '127.0.0.1');
+  await testFunction('THAILAW_HTTP_HOST="   " (whitespace only) → defaults to 127.0.0.1', () => {
+    envManager.set('THAILAW_HTTP_HOST', '   ');
+    assert.equal(resolveBindHost(process.env.THAILAW_HTTP_HOST), '127.0.0.1');
     envManager.restore();
   }, results);
 
@@ -86,18 +86,18 @@ export async function runTests(): Promise<TestResult> {
   // --- parseRateLimitEnv() ---
 
   await testFunction('parseRateLimitEnv: unset env var → fallback, no warning', () => {
-    envManager.delete('MCP_RATE_TEST');
+    envManager.delete('THAILAW_RATE_TEST');
     let result = 0;
-    const warnings = captureWarnings(() => { result = parseRateLimitEnv('MCP_RATE_TEST', 20); });
+    const warnings = captureWarnings(() => { result = parseRateLimitEnv('THAILAW_RATE_TEST', 20); });
     envManager.restore();
     assert.equal(result, 20);
     assert.equal(warnings.length, 0, 'absent value must not warn');
   }, results);
 
   await testFunction('parseRateLimitEnv: whitespace-only → fallback, no warning', () => {
-    envManager.set('MCP_RATE_TEST', '   ');
+    envManager.set('THAILAW_RATE_TEST', '   ');
     let result = 0;
-    const warnings = captureWarnings(() => { result = parseRateLimitEnv('MCP_RATE_TEST', 20); });
+    const warnings = captureWarnings(() => { result = parseRateLimitEnv('THAILAW_RATE_TEST', 20); });
     envManager.restore();
     assert.equal(result, 20);
     assert.equal(warnings.length, 0, 'blank value must not warn');
@@ -105,7 +105,7 @@ export async function runTests(): Promise<TestResult> {
 
   await testFunction('parseRateLimitEnv: malformed or unsafe values → fallback AND one raw-value-free warning', () => {
     const expectedWarning =
-      '⚠️  Ignoring invalid MCP_RATE_TEST. Expected a positive integer. Using default 300.';
+      '⚠️  Ignoring invalid THAILAW_RATE_TEST. Expected a positive integer. Using default 300.';
     for (const bad of [
       '12.5',
       '50ms',
@@ -116,9 +116,9 @@ export async function runTests(): Promise<TestResult> {
       '0',
       '-5',
     ]) {
-      envManager.set('MCP_RATE_TEST', bad);
+      envManager.set('THAILAW_RATE_TEST', bad);
       let result = 0;
-      const warnings = captureWarnings(() => { result = parseRateLimitEnv('MCP_RATE_TEST', 300); });
+      const warnings = captureWarnings(() => { result = parseRateLimitEnv('THAILAW_RATE_TEST', 300); });
       envManager.restore();
       assert.equal(result, 300, `${bad} → fallback`);
       assert.equal(warnings.length, 1, `${bad} must warn`);
@@ -127,7 +127,7 @@ export async function runTests(): Promise<TestResult> {
   }, results);
 
   await testFunction('parseRateLimitEnv warnings never emit configured invalid values', () => {
-    envManager.set('MCP_RATE_TEST', 'rate-secret');
+    envManager.set('THAILAW_RATE_TEST', 'rate-secret');
     envManager.set('AUTH_USERNAME', 'rate-user');
     envManager.set('AUTH_PASSWORD', 'rate-secret');
     resetDiagnosticSanitizerForTests();
@@ -135,7 +135,7 @@ export async function runTests(): Promise<TestResult> {
 
     let result = 0;
     const warnings = captureWarnings(() => {
-      result = parseRateLimitEnv('MCP_RATE_TEST', 20);
+      result = parseRateLimitEnv('THAILAW_RATE_TEST', 20);
     });
 
     assert.equal(result, 20);
@@ -143,7 +143,7 @@ export async function runTests(): Promise<TestResult> {
     assert.ok(!warnings[0].includes('rate-secret'), warnings[0]);
     assert.equal(
       warnings[0],
-      '⚠️  Ignoring invalid MCP_RATE_TEST. Expected a positive integer. Using default 20.',
+      '⚠️  Ignoring invalid THAILAW_RATE_TEST. Expected a positive integer. Using default 20.',
     );
     resetDiagnosticSanitizerForTests();
     envManager.restore();
@@ -156,9 +156,9 @@ export async function runTests(): Promise<TestResult> {
       ['005', 5],
       ['\u00a05\u00a0', 5],
     ] as const) {
-      envManager.set('MCP_RATE_TEST', raw);
+      envManager.set('THAILAW_RATE_TEST', raw);
       let result = 0;
-      const warnings = captureWarnings(() => { result = parseRateLimitEnv('MCP_RATE_TEST', 20); });
+      const warnings = captureWarnings(() => { result = parseRateLimitEnv('THAILAW_RATE_TEST', 20); });
       envManager.restore();
       assert.equal(result, expected, `${JSON.stringify(raw)} parses strictly`);
       assert.equal(warnings.length, 0, `${JSON.stringify(raw)} must not warn`);

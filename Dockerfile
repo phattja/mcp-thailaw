@@ -2,8 +2,8 @@ FROM node:latest
 
 ENV DEBIAN_FRONTEND=noninteractive \
     NODE_ENV=production \
-    MCP_HTTP_PORT=8005 \
-    MCP_HTTP_HOST=0.0.0.0
+    THAILAW_HTTP_PORT=8005 \
+    THAILAW_HTTP_HOST=0.0.0.0
 
 WORKDIR /app
 

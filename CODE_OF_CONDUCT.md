@@ -2,7 +2,7 @@
 
 ## Our Pledge
 
-We want `mcp-searxng` to be a welcoming, respectful project for everyone who uses, contributes to, or discusses it.
+We want `mcp-thailaw` to be a welcoming, respectful project for everyone who uses, contributes to, or discusses it.
 
 Contributors, maintainers, and community members are expected to treat each other with dignity and care, regardless of age, body size, disability, ethnicity, gender identity or expression, level of experience, nationality, personal appearance, race, religion, sexual identity or orientation, socioeconomic status, or technology choices.
 
@@ -31,13 +31,18 @@ Examples of unacceptable behavior include:
 
 ## Scope
 
-This code of conduct applies in all `mcp-searxng` project spaces, including GitHub issues, pull requests, discussions, documentation, release channels, and community support conversations connected to the project.
+This code of conduct applies in all `mcp-thailaw` project spaces, including GitHub issues, pull requests, discussions, documentation, release channels, and community support conversations connected to the project.
 
 It also applies when someone represents the project in public, for example by speaking on behalf of the project, using official project channels, or presenting project work in a way that affects the community.
 
 ## Reporting
 
 If you experience or witness behavior that violates this code of conduct, please contact the project maintainer privately when possible.
+
+Preferred private contact:
+
+- GitHub: [@phattja](https://github.com/phattja)
+- Security or sensitive reports: [GitHub Security Advisories](https://github.com/phattja/mcp-thailaw/security/advisories/new)
 
 If a private contact method is not available, open a minimal GitHub issue asking the maintainer to arrange a private reporting channel. Do not include sensitive incident details, personal information, or screenshots in a public issue.
 
@@ -68,4 +73,4 @@ Enforcement decisions should be proportional to the severity and impact of the b
 
 ## Attribution
 
-This code of conduct is aligned with the Contributor Covenant model and adapted for the `mcp-searxng` project.
+This code of conduct is aligned with the Contributor Covenant model and adapted for the `mcp-thailaw` project.

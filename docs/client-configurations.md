@@ -3,7 +3,7 @@
 ## Open WebUI (Streamable HTTP)
 
 ```bash
-MCP_HTTP_PORT=8005 MCP_HTTP_HOST=0.0.0.0 node dist/cli.js
+THAILAW_HTTP_PORT=8005 THAILAW_HTTP_HOST=0.0.0.0 node dist/cli.js
 ```
 
 Add an MCP server:

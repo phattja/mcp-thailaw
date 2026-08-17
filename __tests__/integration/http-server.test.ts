@@ -92,10 +92,10 @@ async function runTests() {
   console.log('🧪 Integration Testing: http-server.ts\n');
 
   await testFunction('stateless HTTP configuration defaults are disabled and bounded', async () => {
-    envManager.delete('MCP_HTTP_STATELESS');
-    envManager.delete('MCP_HTTP_STATELESS_MAX_IN_FLIGHT');
-    envManager.delete('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP');
-    envManager.delete('MCP_HTTP_STATELESS_REQUEST_TIMEOUT_MS');
+    envManager.delete('THAILAW_HTTP_STATELESS');
+    envManager.delete('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT');
+    envManager.delete('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP');
+    envManager.delete('THAILAW_HTTP_STATELESS_REQUEST_TIMEOUT_MS');
 
     try {
       assert.deepEqual(resolveStatelessHttpConfig(), {
@@ -114,10 +114,10 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless HTTP configuration normalizes explicit boundaries in dependency order', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT', '4');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '8');
-    envManager.set('MCP_HTTP_STATELESS_REQUEST_TIMEOUT_MS', '1000');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT', '4');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '8');
+    envManager.set('THAILAW_HTTP_STATELESS_REQUEST_TIMEOUT_MS', '1000');
 
     try {
       const output = await captureConsoleOutput(async () => {
@@ -128,7 +128,7 @@ async function runTests() {
           requestTimeoutMs: 1000,
         });
       });
-      assert.equal(output.filter(line => line.includes('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP')).length, 1);
+      assert.equal(output.filter(line => line.includes('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP')).length, 1);
     } finally {
       envManager.restore();
     }
@@ -137,10 +137,10 @@ async function runTests() {
   await testFunction('stateless HTTP configuration rejects unsafe values without echoing them', async () => {
     const unsafeGlobal = '999999999999999999999';
     const unsafeTimeout = 'timeout-secret-value';
-    envManager.set('MCP_HTTP_STATELESS', 'TRUE');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT', unsafeGlobal);
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '0');
-    envManager.set('MCP_HTTP_STATELESS_REQUEST_TIMEOUT_MS', unsafeTimeout);
+    envManager.set('THAILAW_HTTP_STATELESS', 'TRUE');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT', unsafeGlobal);
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '0');
+    envManager.set('THAILAW_HTTP_STATELESS_REQUEST_TIMEOUT_MS', unsafeTimeout);
 
     try {
       const output = await captureConsoleOutput(async () => {
@@ -152,7 +152,7 @@ async function runTests() {
         });
       });
       const combined = output.join('\n');
-      assert.equal(output.filter(line => line.includes('Ignoring invalid MCP_HTTP_STATELESS')).length, 4);
+      assert.equal(output.filter(line => line.includes('Ignoring invalid THAILAW_HTTP_STATELESS')).length, 4);
       assert.ok(!combined.includes(unsafeGlobal));
       assert.ok(!combined.includes(unsafeTimeout));
     } finally {
@@ -161,10 +161,10 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless HTTP configuration rejects exact out-of-range boundaries', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT', '257');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '257');
-    envManager.set('MCP_HTTP_STATELESS_REQUEST_TIMEOUT_MS', '999');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT', '257');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '257');
+    envManager.set('THAILAW_HTTP_STATELESS_REQUEST_TIMEOUT_MS', '999');
 
     try {
       const output = await captureConsoleOutput(async () => {
@@ -175,14 +175,14 @@ async function runTests() {
           requestTimeoutMs: DEFAULT_STATELESS_REQUEST_TIMEOUT_MS,
         });
       });
-      assert.equal(output.filter(line => line.includes('Ignoring invalid MCP_HTTP_STATELESS_')).length, 3);
+      assert.equal(output.filter(line => line.includes('Ignoring invalid THAILAW_HTTP_STATELESS_')).length, 3);
     } finally {
       envManager.restore();
     }
   }, results);
 
   await testFunction('default trust proxy setting remains disabled', async () => {
-    envManager.delete('MCP_HTTP_TRUST_PROXY');
+    envManager.delete('THAILAW_HTTP_TRUST_PROXY');
 
     const app = await createHttpServer(() => createTestMcpServer());
     assert.equal(app.get('trust proxy'), false);
@@ -191,7 +191,7 @@ async function runTests() {
   }, results);
 
   await testFunction('GET /health accepts X-Forwarded-For when trust proxy is unset', async () => {
-    envManager.delete('MCP_HTTP_TRUST_PROXY');
+    envManager.delete('THAILAW_HTTP_TRUST_PROXY');
 
     const app = await createHttpServer(() => createTestMcpServer());
     let status: number | undefined;
@@ -207,8 +207,8 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_TRUST_PROXY=true sets Express trust proxy to true', async () => {
-    envManager.set('MCP_HTTP_TRUST_PROXY', 'true');
+  await testFunction('THAILAW_HTTP_TRUST_PROXY=true sets Express trust proxy to true', async () => {
+    envManager.set('THAILAW_HTTP_TRUST_PROXY', 'true');
 
     const app = await createHttpServer(() => createTestMcpServer());
     assert.equal(app.get('trust proxy'), true);
@@ -216,8 +216,8 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_TRUST_PROXY=1 sets Express trust proxy to one hop', async () => {
-    envManager.set('MCP_HTTP_TRUST_PROXY', '1');
+  await testFunction('THAILAW_HTTP_TRUST_PROXY=1 sets Express trust proxy to one hop', async () => {
+    envManager.set('THAILAW_HTTP_TRUST_PROXY', '1');
 
     const app = await createHttpServer(() => createTestMcpServer());
     assert.equal(app.get('trust proxy'), 1);
@@ -225,8 +225,8 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('MCP_HTTP_TRUST_PROXY subnet value passes through to Express', async () => {
-    envManager.set('MCP_HTTP_TRUST_PROXY', '10.0.0.0/8');
+  await testFunction('THAILAW_HTTP_TRUST_PROXY subnet value passes through to Express', async () => {
+    envManager.set('THAILAW_HTTP_TRUST_PROXY', '10.0.0.0/8');
 
     const app = await createHttpServer(() => createTestMcpServer());
     assert.equal(app.get('trust proxy'), '10.0.0.0/8');
@@ -256,9 +256,9 @@ async function runTests() {
   }, results);
 
   await testFunction('hardened mode keeps GET /health unauthenticated with fixed metadata', async () => {
-    envManager.set('MCP_HTTP_HARDEN', 'true');
-    envManager.set('MCP_HTTP_AUTH_TOKEN', 'secret-token');
-    envManager.set('MCP_HTTP_ALLOWED_ORIGINS', 'https://app.example.com');
+    envManager.set('THAILAW_HTTP_HARDEN', 'true');
+    envManager.set('THAILAW_HTTP_AUTH_TOKEN', 'secret-token');
+    envManager.set('THAILAW_HTTP_ALLOWED_ORIGINS', 'https://app.example.com');
 
     try {
       const app = await createHttpServer(() => createTestMcpServer(), 3000);
@@ -301,10 +301,10 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless POST limiter selection uses the request body and ignores session headers', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_RATE_INIT_MAX', '7');
-    envManager.set('MCP_RATE_SESSION_MAX', '11');
-    envManager.set('MCP_RATE_WINDOW_MS', '60000');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_RATE_INIT_MAX', '7');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '11');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '60000');
 
     try {
       const app = await createHttpServer(() => createTestMcpServer());
@@ -343,11 +343,11 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless hardened Host and Origin checks reject before server construction', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_HARDEN', 'true');
-    envManager.set('MCP_HTTP_AUTH_TOKEN', 'secret-token');
-    envManager.set('MCP_HTTP_ALLOWED_ORIGINS', 'https://allowed.example.com');
-    envManager.set('MCP_HTTP_ALLOWED_HOSTS', 'allowed.example.com');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_HARDEN', 'true');
+    envManager.set('THAILAW_HTTP_AUTH_TOKEN', 'secret-token');
+    envManager.set('THAILAW_HTTP_ALLOWED_ORIGINS', 'https://allowed.example.com');
+    envManager.set('THAILAW_HTTP_ALLOWED_HOSTS', 'allowed.example.com');
     let constructions = 0;
 
     try {
@@ -388,7 +388,7 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless malformed and oversized JSON stop before server construction', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
     let constructions = 0;
 
     try {
@@ -415,11 +415,11 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless capacity enforces per-IP and global bounds without constructing rejected requests', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT', '2');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
-    envManager.set('MCP_HTTP_TRUST_PROXY', '1');
-    envManager.set('MCP_RATE_SESSION_MAX', '20');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT', '2');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
+    envManager.set('THAILAW_HTTP_TRUST_PROXY', '1');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '20');
     const release = createDeferred();
     const startedResolvers: Array<() => void> = [];
     let constructions = 0;
@@ -487,10 +487,10 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless capacity rejections consume the selected rate-limit bucket', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
-    envManager.set('MCP_RATE_SESSION_MAX', '2');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '2');
     const release = createDeferred();
     const started = createDeferred();
 
@@ -534,10 +534,10 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless capacity warnings aggregate to one per minute per process', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
-    envManager.set('MCP_RATE_SESSION_MAX', '10');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '10');
     const release = createDeferred();
     const started = createDeferred();
 
@@ -579,10 +579,10 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless request timeout returns the exact 504 contract and restores capacity', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
-    envManager.set('MCP_HTTP_STATELESS_REQUEST_TIMEOUT_MS', '1000');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
+    envManager.set('THAILAW_HTTP_STATELESS_REQUEST_TIMEOUT_MS', '1000');
     const never = new Promise<void>(() => undefined);
     let constructions = 0;
 
@@ -622,10 +622,10 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless lifetime includes synchronous server construction time', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
-    envManager.set('MCP_HTTP_STATELESS_REQUEST_TIMEOUT_MS', '1000');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
+    envManager.set('THAILAW_HTTP_STATELESS_REQUEST_TIMEOUT_MS', '1000');
     let constructions = 0;
 
     try {
@@ -655,10 +655,10 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless timeout closes an already-started POST stream and restores capacity', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
-    envManager.set('MCP_HTTP_STATELESS_REQUEST_TIMEOUT_MS', '1000');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
+    envManager.set('THAILAW_HTTP_STATELESS_REQUEST_TIMEOUT_MS', '1000');
     let constructions = 0;
     let abortObserved = false;
     let closes = 0;
@@ -717,9 +717,9 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless construction failures restore capacity', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
     let constructions = 0;
 
     try {
@@ -746,10 +746,10 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless cleanup wait is bounded and reclaims capacity exactly once', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
-    envManager.set('MCP_RATE_SESSION_MAX', '20');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '20');
     const closeStarted = createDeferred();
     const never = new Promise<void>(() => undefined);
     let constructions = 0;
@@ -795,9 +795,9 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless client disconnect aborts handler work and restores capacity', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
-    envManager.set('MCP_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT', '1');
+    envManager.set('THAILAW_HTTP_STATELESS_MAX_IN_FLIGHT_PER_IP', '1');
     const handlerStarted = createDeferred();
     const handlerAborted = createDeferred();
     let constructions = 0;
@@ -853,9 +853,9 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless GET and DELETE keep the session limiter and return the exact 405 contract', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_RATE_SESSION_MAX', '2');
-    envManager.set('MCP_RATE_WINDOW_MS', '60000');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '2');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '60000');
 
     try {
       const app = await createHttpServer(() => createTestMcpServer());
@@ -880,11 +880,11 @@ async function runTests() {
   }, results);
 
   await testFunction('stateless GET rejects unauthorized and invalid hardened headers before 405', async () => {
-    envManager.set('MCP_HTTP_STATELESS', 'true');
-    envManager.set('MCP_HTTP_HARDEN', 'true');
-    envManager.set('MCP_HTTP_AUTH_TOKEN', 'secret-token');
-    envManager.set('MCP_HTTP_ALLOWED_ORIGINS', 'https://allowed.example.com');
-    envManager.set('MCP_HTTP_ALLOWED_HOSTS', 'allowed.example.com');
+    envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_HARDEN', 'true');
+    envManager.set('THAILAW_HTTP_AUTH_TOKEN', 'secret-token');
+    envManager.set('THAILAW_HTTP_ALLOWED_ORIGINS', 'https://allowed.example.com');
+    envManager.set('THAILAW_HTTP_ALLOWED_HOSTS', 'allowed.example.com');
 
     try {
       const app = await createHttpServer(() => createTestMcpServer());
@@ -1071,9 +1071,9 @@ async function runTests() {
   }, results);
 
   await testFunction('compatibility mode still allows health and init flow', async () => {
-    envManager.delete('MCP_HTTP_HARDEN');
-    envManager.delete('MCP_HTTP_AUTH_TOKEN');
-    envManager.delete('MCP_HTTP_ALLOWED_ORIGINS');
+    envManager.delete('THAILAW_HTTP_HARDEN');
+    envManager.delete('THAILAW_HTTP_AUTH_TOKEN');
+    envManager.delete('THAILAW_HTTP_ALLOWED_ORIGINS');
 
     const app = await createHttpServer(() => createTestMcpServer());
     const res = await request(app)
@@ -1096,9 +1096,9 @@ async function runTests() {
   }, results);
 
   await testFunction('hardened mode rejects initialize without auth token', async () => {
-    envManager.set('MCP_HTTP_HARDEN', 'true');
-    envManager.set('MCP_HTTP_AUTH_TOKEN', 'secret-token');
-    envManager.set('MCP_HTTP_ALLOWED_ORIGINS', 'https://app.example.com');
+    envManager.set('THAILAW_HTTP_HARDEN', 'true');
+    envManager.set('THAILAW_HTTP_AUTH_TOKEN', 'secret-token');
+    envManager.set('THAILAW_HTTP_ALLOWED_ORIGINS', 'https://app.example.com');
 
     const app = await createHttpServer(() => createTestMcpServer());
     const res = await request(app)
@@ -1123,9 +1123,9 @@ async function runTests() {
   }, results);
 
   await testFunction('hardened mode rejects the undocumented raw authorization token', async () => {
-    envManager.set('MCP_HTTP_HARDEN', 'true');
-    envManager.set('MCP_HTTP_AUTH_TOKEN', 'secret-token');
-    envManager.set('MCP_HTTP_ALLOWED_ORIGINS', 'https://app.example.com');
+    envManager.set('THAILAW_HTTP_HARDEN', 'true');
+    envManager.set('THAILAW_HTTP_AUTH_TOKEN', 'secret-token');
+    envManager.set('THAILAW_HTTP_ALLOWED_ORIGINS', 'https://app.example.com');
 
     const app = await createHttpServer(() => createTestMcpServer());
     const res = await request(app)
@@ -1151,10 +1151,10 @@ async function runTests() {
   }, results);
 
   await testFunction('hardened mode + valid bearer + default hosts + matching Host:port initializes (BUG-012 regression)', async () => {
-    envManager.set('MCP_HTTP_HARDEN', 'true');
-    envManager.set('MCP_HTTP_AUTH_TOKEN', 'secret-token');
-    envManager.set('MCP_HTTP_ALLOWED_ORIGINS', 'https://app.example.com');
-    envManager.delete('MCP_HTTP_ALLOWED_HOSTS'); // use the port-aware default
+    envManager.set('THAILAW_HTTP_HARDEN', 'true');
+    envManager.set('THAILAW_HTTP_AUTH_TOKEN', 'secret-token');
+    envManager.set('THAILAW_HTTP_ALLOWED_ORIGINS', 'https://app.example.com');
+    envManager.delete('THAILAW_HTTP_ALLOWED_HOSTS'); // use the port-aware default
 
     const app = await createHttpServer(() => createTestMcpServer(), 3000);
     const res = await request(app)
@@ -1175,17 +1175,17 @@ async function runTests() {
         }
       });
 
-    // Restore before asserting so a failure cannot leak MCP_HTTP_* into later tests.
+    // Restore before asserting so a failure cannot leak THAILAW_HTTP_* into later tests.
     envManager.restore();
     assert.equal(res.status, 200);
     assert.ok(res.headers['mcp-session-id'], 'Expected mcp-session-id header on a successful hardened init');
   }, results);
 
-  await testFunction('hardened mode rejects a Host not in MCP_HTTP_ALLOWED_HOSTS with 403', async () => {
-    envManager.set('MCP_HTTP_HARDEN', 'true');
-    envManager.set('MCP_HTTP_AUTH_TOKEN', 'secret-token');
-    envManager.set('MCP_HTTP_ALLOWED_ORIGINS', 'https://app.example.com');
-    envManager.set('MCP_HTTP_ALLOWED_HOSTS', 'allowed.example.com');
+  await testFunction('hardened mode rejects a Host not in THAILAW_HTTP_ALLOWED_HOSTS with 403', async () => {
+    envManager.set('THAILAW_HTTP_HARDEN', 'true');
+    envManager.set('THAILAW_HTTP_AUTH_TOKEN', 'secret-token');
+    envManager.set('THAILAW_HTTP_ALLOWED_ORIGINS', 'https://app.example.com');
+    envManager.set('THAILAW_HTTP_ALLOWED_HOSTS', 'allowed.example.com');
 
     const app = await createHttpServer(() => createTestMcpServer(), 3000);
     const res = await request(app)
@@ -1293,20 +1293,20 @@ async function runTests() {
   // --- Rate Limiting ---
 
   await testFunction('Rate limiting: production construction parses each configured variable once', async () => {
-    envManager.set('MCP_RATE_WINDOW_MS', '50ms');
-    envManager.set('MCP_RATE_INIT_MAX', '1e3');
-    envManager.set('MCP_RATE_SESSION_MAX', '0x10');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '50ms');
+    envManager.set('THAILAW_RATE_INIT_MAX', '1e3');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '0x10');
 
     try {
       const output = await captureConsoleOutput(async () => {
         await createHttpServer(() => createTestMcpServer());
       });
-      const warnings = output.filter(line => line.includes('Ignoring invalid MCP_RATE_'));
+      const warnings = output.filter(line => line.includes('Ignoring invalid THAILAW_RATE_'));
 
       assert.deepEqual(warnings, [
-        '⚠️  Ignoring invalid MCP_RATE_WINDOW_MS. Expected a positive integer. Using default 60000.',
-        '⚠️  Ignoring invalid MCP_RATE_INIT_MAX. Expected a positive integer. Using default 20.',
-        '⚠️  Ignoring invalid MCP_RATE_SESSION_MAX. Expected a positive integer. Using default 300.',
+        '⚠️  Ignoring invalid THAILAW_RATE_WINDOW_MS. Expected a positive integer. Using default 60000.',
+        '⚠️  Ignoring invalid THAILAW_RATE_INIT_MAX. Expected a positive integer. Using default 20.',
+        '⚠️  Ignoring invalid THAILAW_RATE_SESSION_MAX. Expected a positive integer. Using default 300.',
       ]);
     } finally {
       envManager.restore();
@@ -1314,9 +1314,9 @@ async function runTests() {
   }, results);
 
   await testFunction('Rate limiting: established-session POSTs use only the session limiter', async () => {
-    envManager.set('MCP_RATE_INIT_MAX', '2');
-    envManager.set('MCP_RATE_SESSION_MAX', '3');
-    envManager.set('MCP_RATE_WINDOW_MS', '60000');
+    envManager.set('THAILAW_RATE_INIT_MAX', '2');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '3');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '60000');
     const app = await createHttpServer(() => createTestMcpServer());
 
     const initRes = await request(app)
@@ -1358,9 +1358,9 @@ async function runTests() {
   }, results);
 
   await testFunction('Rate limiting: non-live session identifiers use the init limiter', async () => {
-    envManager.set('MCP_RATE_INIT_MAX', '7');
-    envManager.set('MCP_RATE_SESSION_MAX', '11');
-    envManager.set('MCP_RATE_WINDOW_MS', '60000');
+    envManager.set('THAILAW_RATE_INIT_MAX', '7');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '11');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '60000');
     const app = await createHttpServer(() => createTestMcpServer());
     const headers: Array<string | undefined> = [undefined, '', 'first, second'];
 
@@ -1375,9 +1375,9 @@ async function runTests() {
   }, results);
 
   await testFunction('Rate limiting: unknown-session POSTs exhaust the init limiter', async () => {
-    envManager.set('MCP_RATE_INIT_MAX', '2');
-    envManager.set('MCP_RATE_SESSION_MAX', '10');
-    envManager.set('MCP_RATE_WINDOW_MS', '60000');
+    envManager.set('THAILAW_RATE_INIT_MAX', '2');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '10');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '60000');
     const app = await createHttpServer(() => createTestMcpServer());
 
     for (let id = 1; id <= 2; id++) {
@@ -1403,9 +1403,9 @@ async function runTests() {
   }, results);
 
   await testFunction('Rate limiting: stale-header initialize stays on the init limiter', async () => {
-    envManager.set('MCP_RATE_INIT_MAX', '2');
-    envManager.set('MCP_RATE_SESSION_MAX', '10');
-    envManager.set('MCP_RATE_WINDOW_MS', '60000');
+    envManager.set('THAILAW_RATE_INIT_MAX', '2');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '10');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '60000');
     const app = await createHttpServer(() => createTestMcpServer());
     const staleId = 'stale-session-id';
     const initializeBody = (id: number) => ({
@@ -1441,8 +1441,8 @@ async function runTests() {
   }, results);
 
   await testFunction('Rate limiting: POST /mcp returns 429 after exceeding initLimiter limit', async () => {
-    envManager.set('MCP_RATE_INIT_MAX', '3');
-    envManager.set('MCP_RATE_WINDOW_MS', '60000');
+    envManager.set('THAILAW_RATE_INIT_MAX', '3');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '60000');
     const app = await createHttpServer(() => createTestMcpServer());
 
     for (let i = 0; i < 3; i++) {
@@ -1464,11 +1464,11 @@ async function runTests() {
     envManager.restore();
   }, results);
 
-  await testFunction('Rate limiting: invalid MCP_RATE_INIT_MAX falls back to default (does not fail open)', async () => {
+  await testFunction('Rate limiting: invalid THAILAW_RATE_INIT_MAX falls back to default (does not fail open)', async () => {
     // 'abc' has no leading digit → raw parseInt yields NaN → pre-fix the limiter
     // was disabled (fail-open). With validation it falls back to the default of 20.
-    envManager.set('MCP_RATE_INIT_MAX', 'abc');
-    envManager.set('MCP_RATE_WINDOW_MS', '60000');
+    envManager.set('THAILAW_RATE_INIT_MAX', 'abc');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '60000');
     const app = await createHttpServer(() => createTestMcpServer());
 
     let lastStatus = 0;
@@ -1479,14 +1479,14 @@ async function runTests() {
         .send({ jsonrpc: '2.0', method: 'tools/list', id: i });
       lastStatus = res.status;
     }
-    // Restore env before asserting so a failed assertion can't leak MCP_RATE_* into later tests.
+    // Restore env before asserting so a failed assertion can't leak THAILAW_RATE_* into later tests.
     envManager.restore();
     assert.equal(lastStatus, 429, 'limiter must stay active (default 20) on invalid input, not fail open');
   }, results);
 
   await testFunction('Rate limiting: GET /mcp returns 429 after exceeding sessionLimiter limit', async () => {
-    envManager.set('MCP_RATE_SESSION_MAX', '3');
-    envManager.set('MCP_RATE_WINDOW_MS', '60000');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '3');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '60000');
     const app = await createHttpServer(() => createTestMcpServer());
 
     for (let i = 0; i < 3; i++) {
@@ -1505,8 +1505,8 @@ async function runTests() {
   }, results);
 
   await testFunction('Rate limiting: DELETE /mcp returns 429 after exceeding sessionLimiter limit', async () => {
-    envManager.set('MCP_RATE_SESSION_MAX', '3');
-    envManager.set('MCP_RATE_WINDOW_MS', '60000');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '3');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '60000');
     const app = await createHttpServer(() => createTestMcpServer());
 
     for (let i = 0; i < 3; i++) {
@@ -1543,9 +1543,9 @@ async function runTests() {
   }, results);
 
   await testFunction('Rate limiting: /health keeps its independent fixed limit of 60', async () => {
-    envManager.set('MCP_RATE_WINDOW_MS', '120000');
-    envManager.set('MCP_RATE_INIT_MAX', '2');
-    envManager.set('MCP_RATE_SESSION_MAX', '3');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '120000');
+    envManager.set('THAILAW_RATE_INIT_MAX', '2');
+    envManager.set('THAILAW_RATE_SESSION_MAX', '3');
 
     try {
       const app = await createHttpServer(() => createTestMcpServer());
@@ -1561,7 +1561,7 @@ async function runTests() {
   }, results);
 
   await testFunction('Rate limiting: trust proxy suppresses X-Forwarded-For validation warning', async () => {
-    envManager.delete('MCP_HTTP_TRUST_PROXY');
+    envManager.delete('THAILAW_HTTP_TRUST_PROXY');
 
     const defaultApp = await createHttpServer(() => createTestMcpServer());
     const defaultOutput = await captureConsoleOutput(async () => {
@@ -1576,7 +1576,7 @@ async function runTests() {
       'negative control should emit express-rate-limit X-Forwarded-For validation warning'
     );
 
-    envManager.set('MCP_HTTP_TRUST_PROXY', 'true');
+    envManager.set('THAILAW_HTTP_TRUST_PROXY', 'true');
 
     const trustedApp = await createHttpServer(() => createTestMcpServer());
     const trustedOutput = await captureConsoleOutput(async () => {
@@ -1596,8 +1596,8 @@ async function runTests() {
   }, results);
 
   await testFunction('Rate limiting: POST /mcp limit resets after window expires', async () => {
-    envManager.set('MCP_RATE_INIT_MAX', '2');
-    envManager.set('MCP_RATE_WINDOW_MS', '200');
+    envManager.set('THAILAW_RATE_INIT_MAX', '2');
+    envManager.set('THAILAW_RATE_WINDOW_MS', '200');
     const app = await createHttpServer(() => createTestMcpServer());
 
     // Exhaust the limit

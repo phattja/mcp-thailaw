@@ -10,7 +10,7 @@ import {
 import { snapshotProcessEnv } from '../helpers/env-utils.js';
 
 const results = createTestResults();
-const isolationKey = 'MCP_SEARXNG_TEST_ENV_ISOLATION';
+const isolationKey = 'THAILAW_TEST_ENV_ISOLATION';
 
 async function runTests() {
   console.log('🧪 Testing: test-utils.ts\n');

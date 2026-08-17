@@ -54,7 +54,7 @@ For direct `web_url_read` requests, DNS answers are also validated before the TC
 
 When a URL-reader proxy is configured (`URL_READER_HTTP_PROXY`, `URL_READER_HTTPS_PROXY`, `HTTP_PROXY`, or `HTTPS_PROXY`), the proxy performs DNS resolution. In that mode, this client-side DNS validation cannot inspect the final resolved IP address; proxied deployments should rely on proxy, firewall, and egress controls to restrict internal network access.
 
-To allow private URL reads and private DNS-resolved targets (e.g. for internal deployments), set `MCP_HTTP_ALLOW_PRIVATE_URLS=true`. Do this only when internal fetching is intentional.
+To allow private URL reads and private DNS-resolved targets (e.g. for internal deployments), set `THAILAW_HTTP_ALLOW_PRIVATE_URLS=true`. Do this only when internal fetching is intentional.
 
 ### Delegated Browser Service
 
@@ -143,23 +143,23 @@ filesystem, and egress controls appropriate for untrusted content.
 
 ### Hardened HTTP Mode
 
-When `MCP_HTTP_PORT` is set, the server exposes an HTTP endpoint. By default it has no authentication. Enable hardened mode for any network-accessible deployment:
+When `THAILAW_HTTP_PORT` is set, the server exposes an HTTP endpoint. By default it has no authentication. Enable hardened mode for any network-accessible deployment:
 
 ```
-MCP_HTTP_HARDEN=true
-MCP_HTTP_AUTH_TOKEN=<strong-random-token>
-MCP_HTTP_ALLOWED_ORIGINS=https://your-app.example.com
+THAILAW_HTTP_HARDEN=true
+THAILAW_HTTP_AUTH_TOKEN=<strong-random-token>
+THAILAW_HTTP_ALLOWED_ORIGINS=https://your-app.example.com
 ```
 
 Hardened mode protects the MCP protocol endpoint (`/mcp`) with:
 
 - **Bearer token authentication** on every `/mcp` request (`Authorization: Bearer <token>`)
 - **Origin allowlist** — `/mcp` requests from unlisted browser origins are rejected
-- **DNS rebinding protection** — the `Host` header is validated against `MCP_HTTP_ALLOWED_HOSTS`. The default allows loopback access on the configured port (`127.0.0.1`, `localhost`, `[::1]` and their `:PORT` forms). A custom list is matched exactly against `Host`: an entry matches only when it carries the same port the client or proxy sends (e.g. `app.example.com:8443`).
+- **DNS rebinding protection** — the `Host` header is validated against `THAILAW_HTTP_ALLOWED_HOSTS`. The default allows loopback access on the configured port (`127.0.0.1`, `localhost`, `[::1]` and their `:PORT` forms). A custom list is matched exactly against `Host`: an entry matches only when it carries the same port the client or proxy sends (e.g. `app.example.com:8443`).
 
-With `MCP_HTTP_STATELESS=true`, bearer authorization and the hardened Host and Origin checks run before any per-request MCP server is constructed. Rate limiting also runs before construction, followed by the stateless capacity controls.
+With `THAILAW_HTTP_STATELESS=true`, bearer authorization and the hardened Host and Origin checks run before any per-request MCP server is constructed. Rate limiting also runs before construction, followed by the stateless capacity controls.
 
-`MCP_HTTP_HARDEN=true` will fail to start if `MCP_HTTP_AUTH_TOKEN` or `MCP_HTTP_ALLOWED_ORIGINS` are missing.
+`THAILAW_HTTP_HARDEN=true` will fail to start if `THAILAW_HTTP_AUTH_TOKEN` or `THAILAW_HTTP_ALLOWED_ORIGINS` are missing.
 
 `GET /health` intentionally remains unauthenticated so container orchestrators
 and load balancers can perform liveness checks. It is independently limited to
@@ -176,16 +176,16 @@ STDIO mode (default) is the most secure deployment: the server communicates only
 For HTTP mode, bind to `127.0.0.1` unless external access is required:
 
 ```
-MCP_HTTP_HOST=127.0.0.1
+THAILAW_HTTP_HOST=127.0.0.1
 ```
 
-The default bind address is `127.0.0.1` (loopback only); set `MCP_HTTP_HOST=0.0.0.0` to expose the port on all interfaces.
+The default bind address is `127.0.0.1` (loopback only); set `THAILAW_HTTP_HOST=0.0.0.0` to expose the port on all interfaces.
 
 Optional stateless mode isolates each POST in a fresh MCP server and transport. It does not preserve cross-request sessions, subscriptions, resumability, or standalone notification streams. Responses remain confined to negotiated JSON or an SSE stream within the initiating POST; GET and DELETE on `/mcp` are rejected with HTTP 405.
 
 Stateless mode uses global and per-client-IP in-flight caps plus a request lifetime so abandoned or expensive requests cannot occupy unbounded process resources. Saturation is rejected before server construction. These are process-local controls: horizontally scaled deployments enforce the global cap independently in each process.
 
-The per-IP cap uses Express's resolved request IP, just like rate limiting and request diagnostics. Configure `MCP_HTTP_TRUST_PROXY` only for a known proxy topology whose edge strips and sets forwarding headers. Otherwise clients can spoof `X-Forwarded-For`, evade fair per-IP allocation, and influence logs. Application capacity limits complement, but do not replace, reverse-proxy connection limits and infrastructure-level timeouts.
+The per-IP cap uses Express's resolved request IP, just like rate limiting and request diagnostics. Configure `THAILAW_HTTP_TRUST_PROXY` only for a known proxy topology whose edge strips and sets forwarding headers. Otherwise clients can spoof `X-Forwarded-For`, evade fair per-IP allocation, and influence logs. Application capacity limits complement, but do not replace, reverse-proxy connection limits and infrastructure-level timeouts.
 
 Requests whose client IP cannot be resolved share one fail-closed capacity bucket. This avoids treating missing identity data as a new client on every request, at the cost of shared contention among those unusual connections.
 
@@ -218,26 +218,26 @@ Use the default STDIO transport. No additional configuration is needed beyond `S
 ### Internal Network (HTTP)
 
 ```
-MCP_HTTP_HOST=127.0.0.1   # bind to loopback only
-MCP_HTTP_PORT=3000
-# Optional for serverless/process-local isolation: MCP_HTTP_STATELESS=true
+THAILAW_HTTP_HOST=127.0.0.1   # bind to loopback only
+THAILAW_HTTP_PORT=3000
+# Optional for serverless/process-local isolation: THAILAW_HTTP_STATELESS=true
 ```
 
 ### Public / Internet-Facing (HTTP)
 
 ```
-MCP_HTTP_HARDEN=true
-MCP_HTTP_HOST=127.0.0.1             # put a reverse proxy in front
-MCP_HTTP_TRUST_PROXY=1              # trust one reverse-proxy hop
-MCP_HTTP_AUTH_TOKEN=<random-256bit>
-MCP_HTTP_ALLOWED_ORIGINS=https://your-app.example.com
-MCP_HTTP_ALLOWED_HOSTS=your-app.example.com   # exact Host match; add ":port" if the proxy forwards one
-MCP_HTTP_ALLOW_PRIVATE_URLS=false   # default, keep this off
+THAILAW_HTTP_HARDEN=true
+THAILAW_HTTP_HOST=127.0.0.1             # put a reverse proxy in front
+THAILAW_HTTP_TRUST_PROXY=1              # trust one reverse-proxy hop
+THAILAW_HTTP_AUTH_TOKEN=<random-256bit>
+THAILAW_HTTP_ALLOWED_ORIGINS=https://your-app.example.com
+THAILAW_HTTP_ALLOWED_HOSTS=your-app.example.com   # exact Host match; add ":port" if the proxy forwards one
+THAILAW_HTTP_ALLOW_PRIVATE_URLS=false   # default, keep this off
 ```
 
 Place the server behind a TLS-terminating reverse proxy (nginx, Caddy, Traefik). Do not expose the MCP HTTP port directly to the internet.
 
-Enable `MCP_HTTP_TRUST_PROXY` only when the server is behind a trusted reverse proxy that strips and sets `X-Forwarded-For`. Enabling it on a directly exposed server lets clients spoof their IP address to evade rate limits and forge request IPs in logs.
+Enable `THAILAW_HTTP_TRUST_PROXY` only when the server is behind a trusted reverse proxy that strips and sets `X-Forwarded-For`. Enabling it on a directly exposed server lets clients spoof their IP address to evade rate limits and forge request IPs in logs.
 
 ### Secrets in Environment Variables
 
@@ -253,7 +253,7 @@ Environment configuration is captured when the process starts. Restart the
 server after rotating or changing SearXNG Basic Auth credentials so both
 requests and diagnostic redaction use the new values.
 
-Because credentials may be embedded in it, treat the whole `SEARXNG_URL` as a secret: `AUTH_PASSWORD` remains available as a legacy global fallback when a `SEARXNG_URL` entry has no userinfo, and `MCP_HTTP_AUTH_TOKEN`, proxy credentials, and any credentials embedded in `SEARXNG_URL` are secrets. Avoid committing them to source control. Use secret management (Docker secrets, environment injection at runtime, or a secrets manager) in production.
+Because credentials may be embedded in it, treat the whole `SEARXNG_URL` as a secret: `AUTH_PASSWORD` remains available as a legacy global fallback when a `SEARXNG_URL` entry has no userinfo, and `THAILAW_HTTP_AUTH_TOKEN`, proxy credentials, and any credentials embedded in `SEARXNG_URL` are secrets. Avoid committing them to source control. Use secret management (Docker secrets, environment injection at runtime, or a secrets manager) in production.
 
 If an older release emitted SearXNG credentials into logs or client-visible
 errors, upgrade before further use, rotate the affected credentials, and remove
@@ -278,7 +278,7 @@ The following are **out of scope**:
 - Vulnerabilities in SearXNG itself (report those to the [SearXNG project](https://github.com/searxng/searxng/security))
 - Attacks requiring the attacker to already control the environment or process
 - Denial-of-service via resource exhaustion (no SLA is implied)
-- `MCP_HTTP_EXPOSE_FULL_CONFIG=true` leaking config — this is an explicit opt-in debugging flag
+- `THAILAW_HTTP_EXPOSE_FULL_CONFIG=true` leaking config — this is an explicit opt-in debugging flag
 
 ## Dependency Auditing
 

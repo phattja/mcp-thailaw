@@ -1,4 +1,4 @@
-# Contributing to mcp-searxng
+# Contributing to mcp-thailaw
 
 We welcome contributions! Follow these guidelines to get started.
 
@@ -7,9 +7,9 @@ Please read and follow the [Code of Conduct](CODE_OF_CONDUCT.md) when participat
 ## Getting Started
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/mcp-searxng.git
-cd mcp-searxng
-git remote add upstream https://github.com/ihor-sokoliuk/mcp-searxng.git
+git clone https://github.com/YOUR_USERNAME/mcp-thailaw.git
+cd mcp-thailaw
+git remote add upstream https://github.com/phattja/mcp-thailaw.git
 npm install
 ```
 

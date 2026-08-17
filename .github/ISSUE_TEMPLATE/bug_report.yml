@@ -41,7 +41,7 @@ body:
       label: Transport mode
       options:
         - STDIO (default)
-        - HTTP (MCP_HTTP_PORT set)
+        - HTTP (THAILAW_HTTP_PORT set)
     validations:
       required: true
 

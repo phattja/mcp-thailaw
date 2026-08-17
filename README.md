@@ -50,7 +50,7 @@ node dist/cli.js \
   --embedding-model gpustack-bge-m3
 ```
 
-CLI flags override the matching environment variables (`QDRANT_URL`, `EMBEDDING_URL`, `MCP_HTTP_PORT`, ...).
+CLI flags override the matching environment variables (`QDRANT_URL`, `EMBEDDING_URL`, `THAILAW_HTTP_PORT`, ...).
 
 Connect the client to `http://localhost:8005/mcp`.
 
@@ -113,8 +113,8 @@ Or:
 docker build -t mcp-thailaw:latest -f Dockerfile .
 docker run --rm -p 8005:8005 \
   --add-host=host.docker.internal:host-gateway \
-  -e MCP_HTTP_PORT=8005 \
-  -e MCP_HTTP_HOST=0.0.0.0 \
+  -e THAILAW_HTTP_PORT=8005 \
+  -e THAILAW_HTTP_HOST=0.0.0.0 \
   -e QDRANT_URL=http://host.docker.internal:6333 \
   -e EMBEDDING_URL=http://host.docker.internal:57863/v1/embeddings \
   mcp-thailaw:latest

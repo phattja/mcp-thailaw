@@ -44,18 +44,18 @@ mcp-thailaw \
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `--http-port`, `--port` / `MCP_HTTP_PORT` | _(unset)_ | When set, serve Streamable HTTP instead of STDIO |
-| `--http-host` / `MCP_HTTP_HOST` | `127.0.0.1` | Bind address. Use `0.0.0.0` in Docker / Open WebUI |
-| `MCP_HTTP_STATELESS` | `false` | One-shot POST sessions for serverless hosts |
-| `MCP_HTTP_HARDEN` | `false` | Require auth token + allowed origins |
-| `MCP_HTTP_AUTH_TOKEN` | _(unset)_ | Bearer token when hardened |
-| `MCP_HTTP_ALLOWED_ORIGINS` | _(unset)_ | Comma-separated origins when hardened |
-| `MCP_HTTP_ALLOWED_HOSTS` | loopback + port | Host header allowlist when hardened |
-| `MCP_HTTP_TRUST_PROXY` | `false` | Express trust-proxy setting |
-| `MCP_HTTP_EXPOSE_FULL_CONFIG` | `false` | Include URLs in the config resource while hardened |
-| `MCP_RATE_WINDOW_MS` | `60000` | Rate-limit window |
-| `MCP_RATE_INIT_MAX` | `20` | Max unauthenticated / init requests per window |
-| `MCP_RATE_SESSION_MAX` | `300` | Max in-session requests per window |
+| `--http-port`, `--port` / `THAILAW_HTTP_PORT` | _(unset)_ | When set, serve Streamable HTTP instead of STDIO |
+| `--http-host` / `THAILAW_HTTP_HOST` | `127.0.0.1` | Bind address. Use `0.0.0.0` in Docker / Open WebUI |
+| `THAILAW_HTTP_STATELESS` | `false` | One-shot POST sessions for serverless hosts |
+| `THAILAW_HTTP_HARDEN` | `false` | Require auth token + allowed origins |
+| `THAILAW_HTTP_AUTH_TOKEN` | _(unset)_ | Bearer token when hardened |
+| `THAILAW_HTTP_ALLOWED_ORIGINS` | _(unset)_ | Comma-separated origins when hardened |
+| `THAILAW_HTTP_ALLOWED_HOSTS` | loopback + port | Host header allowlist when hardened |
+| `THAILAW_HTTP_TRUST_PROXY` | `false` | Express trust-proxy setting |
+| `THAILAW_HTTP_EXPOSE_FULL_CONFIG` | `false` | Include URLs in the config resource while hardened |
+| `THAILAW_RATE_WINDOW_MS` | `60000` | Rate-limit window |
+| `THAILAW_RATE_INIT_MAX` | `20` | Max unauthenticated / init requests per window |
+| `THAILAW_RATE_SESSION_MAX` | `300` | Max in-session requests per window |
 
 Open WebUI example:
 

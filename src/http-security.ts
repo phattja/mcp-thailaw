@@ -40,7 +40,7 @@ function parseTrustProxy(value: string | undefined): boolean | number | string {
   return trimmed;
 }
 
-// Default DNS-rebinding allowlist when MCP_HTTP_ALLOWED_HOSTS is unset. The SDK
+// Default DNS-rebinding allowlist when THAILAW_HTTP_ALLOWED_HOSTS is unset. The SDK
 // transport matches the raw Host header (port included) with exact Array.includes,
 // so the bind port must be baked into the loopback defaults or hardened mode 403s
 // every request on any non-80 port (BUG-012). The bare hostnames are always kept
@@ -55,10 +55,10 @@ function defaultAllowedHosts(port?: number): string[] {
 }
 
 export function getHttpSecurityConfig(port?: number): HttpSecurityConfig {
-  const harden = isEnabled(process.env.MCP_HTTP_HARDEN);
-  const authToken = process.env.MCP_HTTP_AUTH_TOKEN;
-  const allowedOrigins = parseCsv(process.env.MCP_HTTP_ALLOWED_ORIGINS);
-  const allowedHosts = parseCsv(process.env.MCP_HTTP_ALLOWED_HOSTS);
+  const harden = isEnabled(process.env.THAILAW_HTTP_HARDEN);
+  const authToken = process.env.THAILAW_HTTP_AUTH_TOKEN;
+  const allowedOrigins = parseCsv(process.env.THAILAW_HTTP_ALLOWED_ORIGINS);
+  const allowedHosts = parseCsv(process.env.THAILAW_HTTP_ALLOWED_HOSTS);
 
   return {
     harden,
@@ -68,9 +68,9 @@ export function getHttpSecurityConfig(port?: number): HttpSecurityConfig {
     allowedOrigins,
     enableDnsRebindingProtection: harden,
     allowedHosts: allowedHosts.length > 0 ? allowedHosts : defaultAllowedHosts(port),
-    trustProxy: parseTrustProxy(process.env.MCP_HTTP_TRUST_PROXY),
-    exposeFullConfig: isEnabled(process.env.MCP_HTTP_EXPOSE_FULL_CONFIG),
-    allowPrivateUrls: isEnabled(process.env.MCP_HTTP_ALLOW_PRIVATE_URLS),
+    trustProxy: parseTrustProxy(process.env.THAILAW_HTTP_TRUST_PROXY),
+    exposeFullConfig: isEnabled(process.env.THAILAW_HTTP_EXPOSE_FULL_CONFIG),
+    allowPrivateUrls: isEnabled(process.env.THAILAW_HTTP_ALLOW_PRIVATE_URLS),
   };
 }
 
@@ -80,11 +80,11 @@ export function validateHttpSecurityConfig(config: HttpSecurityConfig): void {
   }
 
   if (!config.authToken) {
-    throw new Error("MCP_HTTP_HARDEN=true requires MCP_HTTP_AUTH_TOKEN to be set.");
+    throw new Error("THAILAW_HTTP_HARDEN=true requires THAILAW_HTTP_AUTH_TOKEN to be set.");
   }
 
   if (config.allowedOrigins.length === 0) {
-    throw new Error("MCP_HTTP_HARDEN=true requires MCP_HTTP_ALLOWED_ORIGINS to be set.");
+    throw new Error("THAILAW_HTTP_HARDEN=true requires THAILAW_HTTP_ALLOWED_ORIGINS to be set.");
   }
 }
 
