@@ -99,6 +99,7 @@ export const SEARCH_THAI_LAW_TOOL: Tool = {
   name: "search_thai_law",
   description:
     "ค้นหากฎหมายไทยจากฐานข้อมูล OCS Krisdika (สำนักงานคณะกรรมการกฤษฎีกา) ด้วย semantic search. "
+    + "ค่าเริ่มต้นคืนเฉพาะฉบับล่าสุดที่มีผลบังคับใช้ (is_latest=true). "
     + "ใช้สำหรับค้นหาบทบัญญัติ มาตรา หรือเนื้อหาที่เกี่ยวข้องกับกฎหมายไทย.",
   inputSchema: {
     type: "object",
@@ -129,7 +130,8 @@ export const SEARCH_THAI_LAW_TOOL: Tool = {
       },
       is_latest: {
         type: "boolean",
-        description: "กรองเฉพาะฉบับล่าสุดที่มีผลบังคับใช้",
+        description: "กรองเฉพาะฉบับล่าสุดที่มีผลบังคับใช้ (ค่าเริ่มต้น true)",
+        default: true,
       },
       response_format: {
         type: "string",

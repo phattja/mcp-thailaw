@@ -97,7 +97,7 @@ Semantic search over Thai statutes, sections, and related legal text.
 - \`score_threshold\` (optional): Minimum relevance score from 0.0 to 1.0 (default 0.30)
 - \`law_code\` (optional): Filter by law group code
 - \`category\` (optional): Filter by law category such as "1B"
-- \`is_latest\` (optional): Keep only the latest in-force version
+- \`is_latest\` (optional): Keep only the latest in-force version. Defaults to \`true\`. Set \`false\` to search historical versions.
 - \`response_format\` (optional): \`text\` (default) or \`json\`
 
 ### 2. thailaw_collection_info

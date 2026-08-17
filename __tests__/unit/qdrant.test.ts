@@ -28,7 +28,21 @@ async function runTests() {
     fetchMocker.restore();
   }, results);
 
-  await testFunction("queryPoints sends filter when provided", async () => {
+  await testFunction("queryPoints defaults to is_latest=true", async () => {
+    const capturing = createCapturingMockFetch();
+    fetchMocker.mock(async (url, options) => {
+      await capturing.mockFetch(url, options);
+      return createMockFetch({ json: { result: { points: [] } } })(url, options);
+    });
+    await queryPoints([0.1], { limit: 3, scoreThreshold: 0.2 });
+    const body = JSON.parse(String(capturing.getCapturedOptions()?.body));
+    assert.deepEqual(body.filter, {
+      must: [{ key: "is_latest", match: { value: true } }],
+    });
+    fetchMocker.restore();
+  }, results);
+
+  await testFunction("queryPoints sends extra filters with is_latest=true", async () => {
     const capturing = createCapturingMockFetch();
     fetchMocker.mock(async (url, options) => {
       await capturing.mockFetch(url, options);
@@ -37,15 +51,33 @@ async function runTests() {
     await queryPoints([0.1], {
       limit: 3,
       scoreThreshold: 0.2,
-      filter: { lawCode: "A01", isLatest: true },
+      filter: { lawCode: "A01" },
     });
     const body = JSON.parse(String(capturing.getCapturedOptions()?.body));
     assert.equal(body.limit, 3);
     assert.deepEqual(body.filter, {
       must: [
-        { key: "law_code", match: { value: "A01" } },
         { key: "is_latest", match: { value: true } },
+        { key: "law_code", match: { value: "A01" } },
       ],
+    });
+    fetchMocker.restore();
+  }, results);
+
+  await testFunction("queryPoints honors isLatest=false", async () => {
+    const capturing = createCapturingMockFetch();
+    fetchMocker.mock(async (url, options) => {
+      await capturing.mockFetch(url, options);
+      return createMockFetch({ json: { result: { points: [] } } })(url, options);
+    });
+    await queryPoints([0.1], {
+      limit: 3,
+      scoreThreshold: 0.2,
+      filter: { isLatest: false },
+    });
+    const body = JSON.parse(String(capturing.getCapturedOptions()?.body));
+    assert.deepEqual(body.filter, {
+      must: [{ key: "is_latest", match: { value: false } }],
     });
     fetchMocker.restore();
   }, results);

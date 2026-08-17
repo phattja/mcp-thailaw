@@ -11,6 +11,7 @@ SearXNG history below 0.1.0 is retained for provenance.
 ### Changed
 
 - Renamed HTTP transport environment variables from `MCP_*` to `THAILAW_*` (for example `THAILAW_HTTP_PORT`, `THAILAW_HTTP_HOST`, `THAILAW_HTTP_HARDEN`). CLI flags are unchanged and still override these variables.
+- `search_thai_law` keeps the `is_latest` argument and defaults it to `true`, so omitted calls return only the latest in-force version.
 
 ## [0.1.0] - 2026-08-17
 

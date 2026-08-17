@@ -65,23 +65,17 @@ function collectionUrl(suffix = ""): string {
   return `${config.qdrantUrl}/collections/${encodeURIComponent(config.collectionName)}${suffix}`;
 }
 
-function buildFilter(filter?: QdrantFilter): Record<string, unknown> | undefined {
-  if (!filter) {
-    return undefined;
-  }
-
-  const must: Array<Record<string, unknown>> = [];
-  if (filter.lawCode) {
+function buildFilter(filter?: QdrantFilter): Record<string, unknown> {
+  const must: Array<Record<string, unknown>> = [
+    { key: "is_latest", match: { value: filter?.isLatest ?? true } },
+  ];
+  if (filter?.lawCode) {
     must.push({ key: "law_code", match: { value: filter.lawCode } });
   }
-  if (filter.category) {
+  if (filter?.category) {
     must.push({ key: "category", match: { value: filter.category } });
   }
-  if (filter.isLatest !== undefined) {
-    must.push({ key: "is_latest", match: { value: filter.isLatest } });
-  }
-
-  return must.length > 0 ? { must } : undefined;
+  return { must };
 }
 
 async function qdrantFetch(
@@ -114,10 +108,7 @@ export async function queryPoints(
     score_threshold: options.scoreThreshold,
     with_payload: true,
   };
-  const filter = buildFilter(options.filter);
-  if (filter) {
-    body.filter = filter;
-  }
+  body.filter = buildFilter(options.filter);
 
   const response = await qdrantFetch(
     collectionUrl("/points/query"),

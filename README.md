@@ -71,7 +71,7 @@ The local defaults match the prototype in `thai_law_mcp.py`:
   * `score_threshold` (number, optional, 0.0–1.0, default 0.30)
   * `law_code` (string, optional)
   * `category` (string, optional)
-  * `is_latest` (boolean, optional)
+  * `is_latest` (boolean, optional, default `true`)
   * `response_format` (`text` or `json`, optional)
 * **thailaw_collection_info** — Qdrant collection status, point count, vector size
   * `refresh` (boolean, optional)

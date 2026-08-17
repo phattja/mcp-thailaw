@@ -107,13 +107,14 @@ export async function performThaiLawSearch(
   const topK = Math.min(args.top_k ?? config.defaultTopK, config.maxResults);
   const scoreThreshold = args.score_threshold ?? config.defaultScoreThreshold;
   const responseFormat: ResponseFormat = args.response_format ?? "text";
+  const isLatest = args.is_latest ?? true;
   const cacheArgs = {
     query: args.query,
     top_k: topK,
     score_threshold: scoreThreshold,
     law_code: args.law_code ?? "",
     category: args.category ?? "",
-    is_latest: args.is_latest ?? null,
+    is_latest: isLatest,
     response_format: responseFormat,
     collection: config.collectionName,
   };
@@ -139,7 +140,7 @@ export async function performThaiLawSearch(
       filter: {
         lawCode: args.law_code?.trim() || undefined,
         category: args.category?.trim() || undefined,
-        isLatest: args.is_latest,
+        isLatest,
       },
       signal: timeout.signal,
     });
