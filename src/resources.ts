@@ -92,12 +92,13 @@ This is a Model Context Protocol (MCP) server that searches Thai law from the OC
 Semantic search over Thai statutes, sections, and related legal text.
 
 **Parameters:**
-- \`query\` (required): Search text, for example "ลักทรัพย์" or "มาตรา 420"
+- \`query\` (required): Search text, for example "ลักทรัพย์" or "มาตรา ๓๓๕". Arabic article numbers such as 335 are converted to Thai digits ๓๓๕.
 - \`top_k\` (optional): Maximum number of hits (default 40)
 - \`score_threshold\` (optional): Minimum relevance score from 0.0 to 1.0 (default 0.30)
 - \`law_code\` (optional): Filter by law group code
 - \`category\` (optional): Filter by law category such as "1B"
 - \`is_latest\` (optional): Keep only the latest in-force version. Defaults to \`true\`. Set \`false\` to search historical versions.
+- \`group_by_law\` (optional): Reconstruct each มาตรา from its fragments and return official statute layout. Defaults to \`true\`.
 - \`response_format\` (optional): \`text\` (default) or \`json\`
 
 ### 2. thailaw_collection_info

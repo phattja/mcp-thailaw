@@ -10,6 +10,7 @@ export interface SearchThaiLawArgs {
   law_code?: string;
   category?: string;
   is_latest?: boolean;
+  group_by_law?: boolean;
   response_format?: ResponseFormat;
 }
 
@@ -68,6 +69,10 @@ export function isSearchThaiLawArgs(args: unknown): args is SearchThaiLawArgs {
     return false;
   }
 
+  if (searchArgs.group_by_law !== undefined && typeof searchArgs.group_by_law !== "boolean") {
+    return false;
+  }
+
   if (
     searchArgs.response_format !== undefined
     && (
@@ -99,14 +104,15 @@ export const SEARCH_THAI_LAW_TOOL: Tool = {
   name: "search_thai_law",
   description:
     "ค้นหากฎหมายไทยจากฐานข้อมูล OCS Krisdika (สำนักงานคณะกรรมการกฤษฎีกา) ด้วย semantic search. "
-    + "ค่าเริ่มต้นคืนเฉพาะฉบับล่าสุดที่มีผลบังคับใช้ (is_latest=true). "
+    + "ค่าเริ่มต้นคืนเฉพาะฉบับล่าสุดที่มีผลบังคับใช้ (is_latest=true) "
+    + "และรวมชิ้นส่วนของมาตราเดียวกันแล้วจัดรูปแบบเหมือนราชกิจจานุเบกษา (group_by_law=true). "
     + "ใช้สำหรับค้นหาบทบัญญัติ มาตรา หรือเนื้อหาที่เกี่ยวข้องกับกฎหมายไทย.",
   inputSchema: {
     type: "object",
     properties: {
       query: {
         type: "string",
-        description: "คำค้นหา เช่น ลักทรัพย์, สัญญาจ้าง, มาตรา 420",
+        description: "คำค้นหา เช่น ลักทรัพย์, สัญญาจ้าง, มาตรา ๓๓๕. ถ้าใส่เลขมาตราเป็น 335 ระบบแปลงเป็นตัวไทย ๓๓๕ และคืนเฉพาะมาตรานั้น",
       },
       top_k: {
         type: "integer",
@@ -131,6 +137,11 @@ export const SEARCH_THAI_LAW_TOOL: Tool = {
       is_latest: {
         type: "boolean",
         description: "กรองเฉพาะฉบับล่าสุดที่มีผลบังคับใช้ (ค่าเริ่มต้น true)",
+        default: true,
+      },
+      group_by_law: {
+        type: "boolean",
+        description: "รวมชิ้นส่วนของมาตราเดียวกันและคืนข้อความในรูปแบบทางการ (ค่าเริ่มต้น true)",
         default: true,
       },
       response_format: {

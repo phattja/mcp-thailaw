@@ -6,6 +6,7 @@ export interface QdrantFilter {
   lawCode?: string;
   category?: string;
   isLatest?: boolean;
+  textContains?: string;
 }
 
 export interface QdrantHit {
@@ -30,6 +31,16 @@ interface QueryResponse {
       score?: number;
       payload?: Record<string, unknown> | null;
     }>;
+  };
+}
+
+interface ScrollResponse {
+  result?: {
+    points?: Array<{
+      id?: string | number;
+      payload?: Record<string, unknown> | null;
+    }>;
+    next_page_offset?: string | number | Record<string, unknown> | null;
   };
 }
 
@@ -74,6 +85,9 @@ function buildFilter(filter?: QdrantFilter): Record<string, unknown> {
   }
   if (filter?.category) {
     must.push({ key: "category", match: { value: filter.category } });
+  }
+  if (filter?.textContains) {
+    must.push({ key: "text", match: { text: filter.textContains } });
   }
   return { must };
 }
@@ -145,6 +159,80 @@ export async function queryPoints(
       score: point.score,
       payload: point.payload ?? {},
     }));
+}
+
+export async function scrollPoints(
+  options: {
+    filter?: QdrantFilter;
+    limit?: number;
+    maxPoints?: number;
+    signal?: AbortSignal;
+  } = {},
+): Promise<QdrantHit[]> {
+  const pageSize = options.limit ?? 16;
+  const maxPoints = options.maxPoints ?? 32;
+  const hits: QdrantHit[] = [];
+  let offset: string | number | Record<string, unknown> | null | undefined;
+
+  while (hits.length < maxPoints) {
+    const body: Record<string, unknown> = {
+      limit: Math.min(pageSize, maxPoints - hits.length),
+      with_payload: true,
+      with_vector: false,
+      filter: buildFilter(options.filter),
+    };
+    if (offset !== undefined && offset !== null) {
+      body.offset = offset;
+    }
+
+    const response = await qdrantFetch(
+      collectionUrl("/points/scroll"),
+      {
+        method: "POST",
+        headers: qdrantHeaders(),
+        body: JSON.stringify(body),
+      },
+      options.signal,
+    );
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      throw createServerError(response.status, response.statusText, text, {
+        url: collectionUrl("/points/scroll"),
+        target: "Qdrant",
+      });
+    }
+
+    let payload: ScrollResponse;
+    try {
+      payload = await response.json() as ScrollResponse;
+    } catch {
+      throw new MCPThaiLawError("Qdrant returned a non-JSON scroll response.");
+    }
+
+    const points = payload.result?.points ?? [];
+    for (const point of points) {
+      if (typeof point.id !== "string" && typeof point.id !== "number") {
+        continue;
+      }
+      hits.push({
+        id: point.id,
+        score: 0,
+        payload: point.payload ?? {},
+      });
+      if (hits.length >= maxPoints) {
+        break;
+      }
+    }
+
+    const next = payload.result?.next_page_offset;
+    if (next === undefined || next === null || points.length === 0) {
+      break;
+    }
+    offset = next;
+  }
+
+  return hits;
 }
 
 export async function fetchCollectionInfo(signal?: AbortSignal): Promise<QdrantCollectionInfo> {

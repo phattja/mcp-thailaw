@@ -14,6 +14,7 @@ import { runTests as runSearchCacheTests } from "./unit/search-cache.test.js";
 import { runTests as runErrorHandlerTests } from "./unit/error-handler.test.js";
 import { runTests as runResourcesTests } from "./unit/resources.test.js";
 import { runTests as runSearchTests } from "./unit/search.test.js";
+import { runTests as runStatuteTests } from "./unit/statute.test.js";
 import { runTests as runEmbeddingTests } from "./unit/embedding.test.js";
 import { runTests as runQdrantTests } from "./unit/qdrant.test.js";
 import { runTests as runHttpServerUnitTests } from "./unit/http-server.test.js";
@@ -43,6 +44,7 @@ const testSuites: TestSuite[] = [
   { name: "Error Handler", category: "unit", run: runErrorHandlerTests },
   { name: "Resources", category: "unit", run: runResourcesTests },
   { name: "Search", category: "unit", run: runSearchTests },
+  { name: "Statute", category: "unit", run: runStatuteTests },
   { name: "Embedding", category: "unit", run: runEmbeddingTests },
   { name: "Qdrant", category: "unit", run: runQdrantTests },
   { name: "HTTP Server", category: "unit", run: runHttpServerUnitTests },

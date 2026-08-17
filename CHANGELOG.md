@@ -8,14 +8,19 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.2] - 2026-08-17
+
 ### Added
 
 - Documented self-hosted Qdrant ingest from Hugging Face (`scripts/ingest_thai_law_qdrant.py`, `docs/self-hosted-qdrant.md`).
+- Official มาตรา reconstruction: extra Qdrant fetch by section id, merge fragments, return statute layout to agents.
 
 ### Changed
 
 - Default `top_k` is now 40. The operator ceiling `THAILAW_MAX_RESULTS` is 100.
 - Default embedding URL is now `http://127.0.0.1:3003/v1` (POST path `/v1/embeddings`).
+- `search_thai_law` groups chunks by มาตรา (`group_by_law`, default true).
+- A specific article number in the query is converted to Thai digits (`335` → `๓๓๕`) and only that มาตรา is returned.
 
 ## [0.1.0-dev.1] - 2026-08-17
 

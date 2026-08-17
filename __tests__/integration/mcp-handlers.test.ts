@@ -31,6 +31,11 @@ function mockSearchStack() {
         json: { data: [{ index: 0, embedding: [0.1, 0.2, 0.3] }] },
       })(url);
     }
+    if (target.includes("/points/scroll")) {
+      return createMockFetch({
+        json: { result: { points: [] } },
+      })(url);
+    }
     if (target.includes("/points/query")) {
       return createMockFetch({
         json: {

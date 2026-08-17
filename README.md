@@ -72,6 +72,7 @@ The local defaults match the prototype in `thai_law_mcp.py`:
   * `law_code` (string, optional)
   * `category` (string, optional)
   * `is_latest` (boolean, optional, default `true`)
+  * `group_by_law` (boolean, optional, default `true`) — reconstruct each มาตรา from its fragments and return official statute layout
   * `response_format` (`text` or `json`, optional)
 * **thailaw_collection_info** — Qdrant collection status, point count, vector size
   * `refresh` (boolean, optional)

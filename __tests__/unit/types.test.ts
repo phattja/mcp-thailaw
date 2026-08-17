@@ -21,6 +21,7 @@ async function runTests() {
     assert.equal(isSearchThaiLawArgs({ query: "test", law_code: "1B", category: "1B" }), true);
     assert.equal(isSearchThaiLawArgs({ query: "test", is_latest: true, response_format: "json" }), true);
     assert.equal(isSearchThaiLawArgs({ query: "test", is_latest: false }), true);
+    assert.equal(isSearchThaiLawArgs({ query: "test", group_by_law: false }), true);
   }, results);
 
   await testFunction("isSearchThaiLawArgs rejects invalid cases", () => {

@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import { strict as assert } from "node:assert";
-import { fetchCollectionInfo, queryPoints } from "../../src/qdrant.js";
+import { fetchCollectionInfo, queryPoints, scrollPoints } from "../../src/qdrant.js";
 import { FetchMocker, createCapturingMockFetch, createMockFetch } from "../helpers/mock-fetch.js";
 import { testFunction, createTestResults, printTestSummary } from "../helpers/test-utils.js";
 
@@ -79,6 +79,32 @@ async function runTests() {
     assert.deepEqual(body.filter, {
       must: [{ key: "is_latest", match: { value: false } }],
     });
+    fetchMocker.restore();
+  }, results);
+
+  await testFunction("scrollPoints uses textContains and maps points", async () => {
+    const capturing = createCapturingMockFetch();
+    fetchMocker.mock(async (url, options) => {
+      await capturing.mockFetch(url, options);
+      return createMockFetch({
+        json: {
+          result: {
+            points: [{ id: "sec-1", payload: { text: "มาตรา ๓๓๕", law_code: "A01" } }],
+          },
+        },
+      })(url, options);
+    });
+    const hits = await scrollPoints({
+      filter: { lawCode: "A01", textContains: "มาตรา/ส่วน 1590017" },
+    });
+    const body = JSON.parse(String(capturing.getCapturedOptions()?.body));
+    assert.equal(capturing.getCapturedUrl().includes("/points/scroll"), true);
+    assert.deepEqual(body.filter.must[2], {
+      key: "text",
+      match: { text: "มาตรา/ส่วน 1590017" },
+    });
+    assert.equal(hits.length, 1);
+    assert.equal(hits[0].payload.law_code, "A01");
     fetchMocker.restore();
   }, results);
 
