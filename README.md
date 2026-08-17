@@ -11,7 +11,8 @@ AI Assistant / Open WebUI
   mcp-thailaw  (this project — Node.js)
         │  OpenAI-compatible /v1/embeddings
         ▼
-  Embedding server (bge-m3)
+  Embedding server (Qwen3-Embedding-4B, 2560-d)
+        │  optional rerank (Qwen3-Reranker-4B :3004)
         │  Qdrant query_points
         ▼
   Qdrant collection `krisdika`
@@ -31,7 +32,9 @@ AI Assistant / Open WebUI
         "QDRANT_URL": "http://localhost:6333",
         "QDRANT_COLLECTION": "krisdika",
         "EMBEDDING_URL": "http://127.0.0.1:3003/v1",
-        "EMBEDDING_MODEL": "gpustack-bge-m3"
+        "EMBEDDING_MODEL": "Qwen3-Embedding-4B",
+        "RERANK_URL": "http://127.0.0.1:3004/v1",
+        "RERANK_MODEL": "Qwen3-Reranker-4B"
       }
     }
   }
@@ -47,7 +50,9 @@ node dist/cli.js \
   --qdrant-url http://127.0.0.1:6333 \
   --qdrant-collection krisdika \
   --embedding-url http://127.0.0.1:3003/v1 \
-  --embedding-model gpustack-bge-m3
+  --embedding-model Qwen3-Embedding-4B \
+  --rerank-url http://127.0.0.1:3004/v1 \
+  --rerank-model Qwen3-Reranker-4B
 ```
 
 CLI flags override the matching environment variables (`QDRANT_URL`, `EMBEDDING_URL`, `THAILAW_HTTP_PORT`, ...).
@@ -59,7 +64,8 @@ The local defaults match the prototype in `thai_law_mcp.py`:
 | Setting | Default |
 | --- | --- |
 | Qdrant | `http://localhost:6333` / collection `krisdika` |
-| Embeddings | `http://127.0.0.1:3003/v1` / `gpustack-bge-m3` |
+| Embeddings | `http://127.0.0.1:3003/v1` / `Qwen3-Embedding-4B` (2560-d) |
+| Rerank | `http://127.0.0.1:3004/v1` / `Qwen3-Reranker-4B` |
 | Top K | `5` |
 | Score threshold | `0.30` |
 

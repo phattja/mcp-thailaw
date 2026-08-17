@@ -6,7 +6,10 @@ export const SERVER_NAME = "phattja/mcp-thailaw";
 export const DEFAULT_QDRANT_URL = "http://localhost:6333";
 export const DEFAULT_COLLECTION_NAME = "krisdika";
 export const DEFAULT_EMBEDDING_URL = "http://127.0.0.1:3003/v1";
-export const DEFAULT_EMBEDDING_MODEL = "gpustack-bge-m3";
+export const DEFAULT_EMBEDDING_MODEL = "Qwen-Qwen3-Embedding-4B";
+export const DEFAULT_EMBEDDING_DIMENSIONS = 2560;
+export const DEFAULT_RERANK_URL = "http://127.0.0.1:3004/v1";
+export const DEFAULT_RERANK_MODEL = "Qwen-Qwen3-Reranker-4B";
 export const DEFAULT_TOP_K = 5;
 export const DEFAULT_SCORE_THRESHOLD = 0.3;
 export const DEFAULT_MAX_RESULTS = 100;
@@ -19,6 +22,11 @@ export interface ThaiLawConfig {
   embeddingUrl: string;
   embeddingModel: string;
   embeddingApiKey?: string;
+  embeddingDimensions: number;
+  rerankUrl: string;
+  rerankModel: string;
+  rerankApiKey?: string;
+  rerankEnabled: boolean;
   defaultTopK: number;
   defaultScoreThreshold: number;
   maxResults: number;
@@ -56,6 +64,28 @@ function resolveEmbeddingEndpoint(url: string): string {
     return trimmed;
   }
   return `${trimmed}/embeddings`;
+}
+
+function resolveRerankEndpoint(url: string): string {
+  const trimmed = url.replace(/\/+$/, "");
+  if (trimmed.endsWith("/rerank") || trimmed.endsWith("/reranking")) {
+    return trimmed;
+  }
+  return `${trimmed}/rerank`;
+}
+
+function parseBoolean(raw: string | undefined, fallback: boolean): boolean {
+  if (raw === undefined || raw.trim() === "") {
+    return fallback;
+  }
+  const value = raw.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(value)) {
+    return true;
+  }
+  if (["0", "false", "no", "off"].includes(value)) {
+    return false;
+  }
+  return fallback;
 }
 
 function firstString(...values: Array<string | undefined>): string | undefined {
@@ -117,6 +147,18 @@ export function getThaiLawConfig(env: NodeJS.ProcessEnv = process.env): ThaiLawC
     ),
     embeddingModel: firstString(cli.embeddingModel, env.EMBEDDING_MODEL) ?? DEFAULT_EMBEDDING_MODEL,
     embeddingApiKey: firstString(cli.embeddingApiKey, env.EMBEDDING_API_KEY),
+    embeddingDimensions: firstNumber(
+      cli.embeddingDimensions,
+      env.THAILAW_VECTOR_SIZE,
+      DEFAULT_EMBEDDING_DIMENSIONS,
+      (raw, fallback) => parseBoundedInteger(raw, fallback, 32, 8192),
+    ),
+    rerankUrl: resolveRerankEndpoint(
+      firstString(cli.rerankUrl, env.RERANK_URL) ?? DEFAULT_RERANK_URL,
+    ),
+    rerankModel: firstString(cli.rerankModel, env.RERANK_MODEL) ?? DEFAULT_RERANK_MODEL,
+    rerankApiKey: firstString(cli.rerankApiKey, env.RERANK_API_KEY),
+    rerankEnabled: cli.rerankEnabled ?? parseBoolean(env.THAILAW_RERANK, true),
     defaultTopK: firstNumber(
       cli.defaultTopK,
       env.THAILAW_TOP_K,
@@ -167,6 +209,9 @@ export function envWithCliOverrides(env: NodeJS.ProcessEnv = process.env): NodeJ
   if (cli.embeddingUrl) merged.EMBEDDING_URL = cli.embeddingUrl;
   if (cli.embeddingModel) merged.EMBEDDING_MODEL = cli.embeddingModel;
   if (cli.embeddingApiKey) merged.EMBEDDING_API_KEY = cli.embeddingApiKey;
+  if (cli.rerankUrl) merged.RERANK_URL = cli.rerankUrl;
+  if (cli.rerankModel) merged.RERANK_MODEL = cli.rerankModel;
+  if (cli.rerankApiKey) merged.RERANK_API_KEY = cli.rerankApiKey;
   if (cli.httpPort !== undefined) merged.THAILAW_HTTP_PORT = String(cli.httpPort);
   if (cli.httpHost) merged.THAILAW_HTTP_HOST = cli.httpHost;
   return merged;
@@ -199,6 +244,14 @@ export function validateThaiLawConfig(config: ThaiLawConfig = getThaiLawConfig()
 
   if (!config.embeddingModel) {
     issues.push("EMBEDDING_MODEL must not be empty");
+  }
+
+  if (config.rerankEnabled) {
+    const rerankIssue = validateHttpUrl(config.rerankUrl, "RERANK_URL");
+    if (rerankIssue) issues.push(rerankIssue);
+    if (!config.rerankModel) {
+      issues.push("RERANK_MODEL must not be empty");
+    }
   }
 
   if (issues.length === 0) {

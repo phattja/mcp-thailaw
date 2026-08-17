@@ -15,7 +15,9 @@ import { runTests as runErrorHandlerTests } from "./unit/error-handler.test.js";
 import { runTests as runResourcesTests } from "./unit/resources.test.js";
 import { runTests as runSearchTests } from "./unit/search.test.js";
 import { runTests as runStatuteTests } from "./unit/statute.test.js";
+import { runTests as runTimelineTests } from "./unit/timeline.test.js";
 import { runTests as runEmbeddingTests } from "./unit/embedding.test.js";
+import { runTests as runRerankTests } from "./unit/rerank.test.js";
 import { runTests as runQdrantTests } from "./unit/qdrant.test.js";
 import { runTests as runHttpServerUnitTests } from "./unit/http-server.test.js";
 import { runTests as runVersionTests } from "./unit/version.test.js";
@@ -45,7 +47,9 @@ const testSuites: TestSuite[] = [
   { name: "Resources", category: "unit", run: runResourcesTests },
   { name: "Search", category: "unit", run: runSearchTests },
   { name: "Statute", category: "unit", run: runStatuteTests },
+  { name: "Timeline", category: "unit", run: runTimelineTests },
   { name: "Embedding", category: "unit", run: runEmbeddingTests },
+  { name: "Rerank", category: "unit", run: runRerankTests },
   { name: "Qdrant", category: "unit", run: runQdrantTests },
   { name: "HTTP Server", category: "unit", run: runHttpServerUnitTests },
   { name: "Version", category: "unit", run: runVersionTests },

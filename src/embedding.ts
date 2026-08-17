@@ -32,6 +32,7 @@ export async function getEmbedding(
       body: JSON.stringify({
         model: config.embeddingModel,
         input: text,
+        dimensions: config.embeddingDimensions,
       }),
       signal,
     });

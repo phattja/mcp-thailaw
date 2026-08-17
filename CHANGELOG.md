@@ -8,6 +8,11 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+### Changed
+
+- Default embedding model is `Qwen3-Embedding-4B` (2560-d). Search reranks with `Qwen3-Reranker-4B` at `http://127.0.0.1:3004/v1/rerank` (`THAILAW_RERANK=false` to skip).
+- When several snapshots of the same มาตรา are marked `is_latest`, return the highest `timeline_code` from a local URL map (not from Qdrant). The Qdrant collection is left unchanged.
+
 ## [0.1.0-dev.3] - 2026-08-17
 
 ### Changed

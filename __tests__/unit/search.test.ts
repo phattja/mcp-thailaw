@@ -11,6 +11,7 @@ import {
   mergeArticleText,
   mergeOverlappingText,
   preferQueryMatra,
+  timelineRank,
 } from "../../src/search.js";
 import { createNoResultsMessage } from "../../src/error-handler.js";
 import { testFunction, createTestResults, printTestSummary } from "../helpers/test-utils.js";
@@ -185,6 +186,42 @@ async function runTests() {
     ], "มาตรา 335 อาญา");
     assert.equal(filtered.length, 1);
     assert.equal(filtered[0].matra, "๓๓๕");
+  }, results);
+
+  await testFunction("timelineRank reads the snapshot suffix", () => {
+    assert.equal(timelineRank("ป0006-1D-0003-63"), 63);
+    assert.equal(timelineRank("ป0006-1D-0003-18"), 18);
+    assert.equal(timelineRank(undefined), -1);
+  }, results);
+
+  await testFunction("groupResultsByArticle prefers the later timeline snapshot", () => {
+    const grouped = groupResultsByArticle([
+      {
+        score: 0.9,
+        title: "ประมวลกฎหมายอาญา",
+        law_code: "ป0006-1D-0003",
+        category: "1D",
+        publish_date: "1956-11-15",
+        reference_url: "https://example.com/old",
+        text: "### มาตรา/ส่วน 1\nมาตรา ๓๓๕ ผู้ใดลักทรัพย์ ต้องระวางโทษปรับตั้งแต่สองพันบาทถึงหนึ่งหมื่นบาท",
+        chunk_index: 1,
+        timeline_code: "ป0006-1D-0003-18",
+      },
+      {
+        score: 0.7,
+        title: "ประมวลกฎหมายอาญา",
+        law_code: "ป0006-1D-0003",
+        category: "1D",
+        publish_date: "1956-11-15",
+        reference_url: "https://example.com/new",
+        text: "### มาตรา/ส่วน 2\nมาตรา ๓๓๕ ผู้ใดลักทรัพย์ ต้องระวางโทษปรับตั้งแต่สองหมื่นบาทถึงหนึ่งแสนบาท",
+        chunk_index: 1,
+        timeline_code: "ป0006-1D-0003-63",
+      },
+    ]);
+    assert.equal(grouped.length, 1);
+    assert.ok(grouped[0].text.includes("สองหมื่นบาทถึงหนึ่งแสนบาท"));
+    assert.equal(grouped[0].timeline_code, "ป0006-1D-0003-63");
   }, results);
 
   await testFunction("formatCollectionInfo is JSON", () => {

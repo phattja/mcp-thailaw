@@ -5,6 +5,11 @@ export interface CliOverrides {
   embeddingUrl?: string;
   embeddingModel?: string;
   embeddingApiKey?: string;
+  embeddingDimensions?: number;
+  rerankUrl?: string;
+  rerankModel?: string;
+  rerankApiKey?: string;
+  rerankEnabled?: boolean;
   defaultTopK?: number;
   defaultScoreThreshold?: number;
   maxResults?: number;
@@ -33,6 +38,9 @@ type StringFlag =
   | "embeddingUrl"
   | "embeddingModel"
   | "embeddingApiKey"
+  | "rerankUrl"
+  | "rerankModel"
+  | "rerankApiKey"
   | "httpHost";
 
 const STRING_FLAGS: Record<string, StringFlag> = {
@@ -43,6 +51,9 @@ const STRING_FLAGS: Record<string, StringFlag> = {
   "--embedding-url": "embeddingUrl",
   "--embedding-model": "embeddingModel",
   "--embedding-api-key": "embeddingApiKey",
+  "--rerank-url": "rerankUrl",
+  "--rerank-model": "rerankModel",
+  "--rerank-api-key": "rerankApiKey",
   "--http-host": "httpHost",
 };
 
@@ -51,9 +62,11 @@ type NumberFlag =
   | "defaultScoreThreshold"
   | "maxResults"
   | "fetchTimeoutMs"
-  | "httpPort";
+  | "httpPort"
+  | "embeddingDimensions";
 
 const NUMBER_FLAGS: Record<string, { key: NumberFlag; min: number; max: number; integer: boolean }> = {
+  "--vector-size": { key: "embeddingDimensions", min: 32, max: 8192, integer: true },
   "--top-k": { key: "defaultTopK", min: 1, max: 100, integer: true },
   "--score-threshold": { key: "defaultScoreThreshold", min: 0, max: 1, integer: false },
   "--max-results": { key: "maxResults", min: 1, max: 100, integer: true },
@@ -115,6 +128,15 @@ export function parseCliArgs(argv: string[]): ParsedCli {
       parsed.version = true;
       continue;
     }
+    if (flag === "--rerank") {
+      const raw = takeValue(flag, inline, rest).trim().toLowerCase();
+      parsed.overrides.rerankEnabled = !["0", "false", "no", "off"].includes(raw);
+      continue;
+    }
+    if (flag === "--no-rerank") {
+      parsed.overrides.rerankEnabled = false;
+      continue;
+    }
 
     const stringKey = STRING_FLAGS[flag];
     if (stringKey) {
@@ -134,6 +156,8 @@ export function parseCliArgs(argv: string[]): ParsedCli {
         parsed.overrides.defaultScoreThreshold = value;
       } else if (numberSpec.key === "maxResults") {
         parsed.overrides.maxResults = value;
+      } else if (numberSpec.key === "embeddingDimensions") {
+        parsed.overrides.embeddingDimensions = value;
       } else {
         parsed.overrides.fetchTimeoutMs = value;
       }

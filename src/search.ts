@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getThaiLawConfig, validateThaiLawConfig } from "./config.js";
 import { getEmbedding } from "./embedding.js";
+import { rerankResults } from "./rerank.js";
 import { createConfigurationError, createNoResultsMessage } from "./error-handler.js";
 import { logMessage } from "./logging.js";
 import { fetchCollectionInfo, queryPoints, scrollPoints, type QdrantCollectionInfo, type QdrantHit } from "./qdrant.js";
@@ -16,6 +17,7 @@ import {
   rewriteQueryMatraToThai,
   splitStatuteSections,
 } from "./statute.js";
+import { timelineCodeForUrl } from "./timeline.js";
 import type { ResponseFormat, SearchThaiLawArgs } from "./types.js";
 
 export interface ThaiLawResult {
@@ -31,6 +33,18 @@ export interface ThaiLawResult {
   is_latest?: boolean;
   matra?: string;
   section_id?: string;
+  timeline_code?: string;
+}
+
+export function timelineRank(code?: string): number {
+  if (!code) {
+    return -1;
+  }
+  const match = /-(\d+)$/.exec(code.trim());
+  if (!match) {
+    return -1;
+  }
+  return Number(match[1]);
 }
 
 const MAX_SECTION_FETCHES = 8;
@@ -62,6 +76,7 @@ export function hitToResult(hit: QdrantHit): ThaiLawResult {
     text: payloadString(payload, "text"),
     chunk_index: payloadNumber(payload, "chunk_index"),
     is_latest: payloadBoolean(payload, "is_latest"),
+    timeline_code: timelineCodeForUrl(payloadString(payload, "reference_url")),
   };
 }
 
@@ -232,8 +247,13 @@ export function groupResultsByArticle(results: ThaiLawResult[]): ThaiLawResult[]
       deduped.set(key, result);
       continue;
     }
-    const keepCurrent = result.text.length > existing.text.length
-      || (result.text.length === existing.text.length && result.score > existing.score);
+    const resultRank = timelineRank(result.timeline_code);
+    const existingRank = timelineRank(existing.timeline_code);
+    const keepCurrent = resultRank > existingRank
+      || (resultRank === existingRank && (
+        result.text.length > existing.text.length
+        || (result.text.length === existing.text.length && result.score > existing.score)
+      ));
     if (keepCurrent) {
       deduped.set(key, { ...result, score: Math.max(result.score, existing.score) });
     } else {
@@ -254,11 +274,31 @@ export async function completeSectionFragments(
   },
 ): Promise<ThaiLawResult[]> {
   const pieces = splitResultsBySection(results);
+  if (options.preferMatra) {
+    const wantedKey = normalizeMatraKey(options.preferMatra);
+    const lawCode = pieces.find((item) => item.matra && normalizeMatraKey(item.matra) === wantedKey)?.law_code.trim();
+    try {
+      const located = await scrollPoints({
+        filter: {
+          lawCode: lawCode || undefined,
+          isLatest: options.isLatest,
+          textContains: `มาตรา ${options.preferMatra}`,
+        },
+        maxPoints: 80,
+        signal: options.signal,
+      });
+      pieces.push(...splitResultsBySection(located.map(hitToResult)));
+    } catch {
+      // Vector hits are enough if the locator scroll fails.
+    }
+  }
+
   const ranked = new Map<string, {
     lawCode: string;
     sectionId: string;
     score: number;
     matra?: string;
+    timeline_code?: string;
   }>();
   for (const result of pieces) {
     const sectionId = result.section_id ?? extractSectionIds(result.text)[0];
@@ -274,16 +314,22 @@ export async function completeSectionFragments(
         sectionId,
         score: result.score,
         matra: result.matra,
+        timeline_code: result.timeline_code,
       });
     }
   }
 
   const wanted = options.preferMatra ? normalizeMatraKey(options.preferMatra) : undefined;
   const rankedList = [...ranked.values()];
-  const preferred = wanted
+  const matching = wanted
     ? rankedList.filter((item) => item.matra && normalizeMatraKey(item.matra) === wanted)
-    : [];
-  const toFetch = (preferred.length > 0 ? preferred : rankedList)
+    : rankedList;
+  const pool = matching.length > 0 ? matching : rankedList;
+  const maxTimeline = Math.max(-1, ...pool.map((item) => timelineRank(item.timeline_code)));
+  const latest = maxTimeline >= 0
+    ? pool.filter((item) => timelineRank(item.timeline_code) === maxTimeline)
+    : pool;
+  const toFetch = (latest.length > 0 ? latest : pool)
     .sort((left, right) => right.score - left.score)
     .slice(0, options.maxFetches ?? MAX_SECTION_FETCHES);
 
@@ -331,7 +377,19 @@ export function preferQueryMatra(results: ThaiLawResult[], query: string): ThaiL
   if (matched.length === 0) {
     return results;
   }
-  return matched.sort((left, right) => right.score - left.score);
+  const scoredLaws = new Set(
+    matched.filter((result) => result.score > 0).map((result) => result.law_code),
+  );
+  const focused = scoredLaws.size > 0
+    ? matched.filter((result) => scoredLaws.has(result.law_code))
+    : matched;
+  return focused.sort((left, right) => {
+    const timelineDelta = timelineRank(right.timeline_code) - timelineRank(left.timeline_code);
+    if (timelineDelta !== 0) {
+      return timelineDelta;
+    }
+    return right.score - left.score;
+  });
 }
 
 export function formatSearchText(query: string, results: ThaiLawResult[]): string {
@@ -408,6 +466,7 @@ export async function performThaiLawSearch(
     category: args.category ?? "",
     is_latest: isLatest,
     group_by_law: groupByLaw,
+    rerank: config.rerankEnabled,
     response_format: responseFormat,
     collection: config.collectionName,
   };
@@ -453,6 +512,15 @@ export async function performThaiLawSearch(
     } else {
       results = chunks;
     }
+    if (config.rerankEnabled && results.length > 1) {
+      try {
+        results = await rerankResults(searchQuery, results, timeout.signal);
+      } catch (error) {
+        logMessage(mcpServer, "warning", "Rerank failed; using vector ranking", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
     const output = responseFormat === "json"
       ? formatSearchJson(args.query, config.collectionName, results)
       : formatSearchText(args.query, results);
@@ -487,7 +555,12 @@ export async function performCollectionInfo(
   try {
     logMessage(mcpServer, "info", `Fetching collection info: ${config.collectionName}`);
     const info = await fetchCollectionInfo(timeout.signal);
-    const output = formatCollectionInfo(info, config.embeddingModel, config.embeddingUrl);
+    const output = formatCollectionInfo(info, config.embeddingModel, config.embeddingUrl, {
+      rerankModel: config.rerankModel,
+      rerankUrl: config.rerankUrl,
+      rerankEnabled: config.rerankEnabled,
+      embeddingDimensions: config.embeddingDimensions,
+    });
     searchCache.set("thailaw_collection_info", cacheArgs, output);
     return output;
   } finally {
@@ -499,15 +572,25 @@ export function formatCollectionInfo(
   info: QdrantCollectionInfo,
   embeddingModel: string,
   embeddingUrl: string,
+  extras?: {
+    rerankModel?: string;
+    rerankUrl?: string;
+    rerankEnabled?: boolean;
+    embeddingDimensions?: number;
+  },
 ): string {
   return JSON.stringify({
     collection: info.name,
     status: info.status ?? "unknown",
     points_count: info.pointsCount ?? null,
     indexed_vectors_count: info.indexedVectorsCount ?? null,
-    vector_size: info.vectorSize ?? null,
+    vector_size: info.vectorSize ?? extras?.embeddingDimensions ?? null,
     distance: info.distance ?? null,
     embedding_model: embeddingModel,
     embedding_url: embeddingUrl,
+    embedding_dimensions: extras?.embeddingDimensions ?? null,
+    rerank_model: extras?.rerankModel ?? null,
+    rerank_url: extras?.rerankUrl ?? null,
+    rerank_enabled: extras?.rerankEnabled ?? null,
   }, null, 2);
 }
