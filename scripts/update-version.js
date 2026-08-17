@@ -21,7 +21,7 @@ const versionPath = path.join(__dirname, '..', 'src', 'version.ts');
 let content = fs.readFileSync(versionPath, 'utf8');
 
 // Define a static version string to replace
-const staticVersionRegex = /const packageVersion = "([\d\.]+|unknown)";/;
+const staticVersionRegex = /const packageVersion = "([^"]+)";/;
 
 // Replace with updated version from package.json
 if (staticVersionRegex.test(content)) {

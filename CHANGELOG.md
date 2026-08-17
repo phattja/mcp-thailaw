@@ -8,19 +8,26 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.1] - 2026-08-17
+
+First development release of `mcp-thailaw`.
+
+### Added
+
+- Thai law semantic search over Qdrant collection `krisdika` (`search_thai_law`, `thailaw_collection_info`).
+- CLI flags for Qdrant, embeddings, and HTTP listen settings. Flags override environment variables.
+- `node:latest` Docker image and host-network Compose layout.
+
 ### Changed
 
-- Renamed HTTP transport environment variables from `MCP_*` to `THAILAW_*` (for example `THAILAW_HTTP_PORT`, `THAILAW_HTTP_HOST`, `THAILAW_HTTP_HARDEN`). CLI flags are unchanged and still override these variables.
-- `search_thai_law` keeps the `is_latest` argument and defaults it to `true`, so omitted calls return only the latest in-force version.
+- Replaced SearXNG web search with the Thai-law retrieval flow from `thai_law_mcp.py`.
+- Renamed HTTP transport environment variables from `MCP_*` to `THAILAW_*`.
+- `is_latest` defaults to `true` so omitted searches return only the latest in-force version.
 
-## [0.1.0] - 2026-08-17
+### Notes
 
-### Changed
-
-- Replaced SearXNG web search with Thai law semantic search over Qdrant collection `krisdika`.
-- New tools: `search_thai_law`, `thailaw_collection_info`.
-- Defaults match `thai_law_mcp.py`: Qdrant `http://localhost:6333`, embeddings `gpustack-bge-m3` at `http://127.0.0.1:57863/v1/embeddings`, top_k 5, score threshold 0.30.
-- Kept Streamable HTTP / STDIO transports, Docker, and HTTP hardening from the template.
+- This is a pre-release for development and testing. The API may still change.
+- Built on [mcp-searxng](https://github.com/ihor-sokoliuk/mcp-searxng) by Ihor Sokoliuk.
 
 ## [1.15.0] - 2026-08-11
 
