@@ -16,7 +16,7 @@ mcp-thailaw \
   --qdrant-collection krisdika \
   --embedding-url http://127.0.0.1:3003/v1 \
   --embedding-model Qwen3-VL-Embedding-2B \
-  --rerank-url http://127.0.0.1:3004/v1 \
+  --rerank-url http://127.0.0.1:3003/v1 \
   --rerank-model Qwen3-VL-Reranker-2B
 ```
 
@@ -31,7 +31,7 @@ mcp-thailaw \
 | `--embedding-model` | `EMBEDDING_MODEL` | `Qwen3-VL-Embedding-2B` | Model name in the embeddings request |
 | `--embedding-api-key` | `EMBEDDING_API_KEY` | _(unset)_ | Sent as `Authorization: Bearer ...` |
 | `--vector-size` | `THAILAW_VECTOR_SIZE` | `2048` | Embedding dimensions sent as `dimensions` |
-| `--rerank-url` | `RERANK_URL` | `http://127.0.0.1:3004/v1` | llama-server rerank base (POST `/v1/rerank`) |
+| `--rerank-url` | `RERANK_URL` | `http://127.0.0.1:3003/v1` | llama-server rerank base (POST `/v1/rerank`) |
 | `--rerank-model` | `RERANK_MODEL` | `Qwen3-VL-Reranker-2B` | Model name in the rerank request |
 | `--rerank-api-key` | `RERANK_API_KEY` | _(unset)_ | Optional bearer token |
 | `--rerank` / `--no-rerank` | `THAILAW_RERANK` | `true` | Rerank retrieved มาตรา after vector search |

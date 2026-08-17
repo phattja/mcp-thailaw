@@ -35,7 +35,7 @@ async function runTests() {
     assert.equal(config.embeddingUrl, "http://127.0.0.1:3003/v1/embeddings");
     assert.equal(config.embeddingDimensions, 2048);
     assert.equal(config.rerankModel, "Qwen3-VL-Reranker-2B");
-    assert.equal(config.rerankUrl, "http://127.0.0.1:3004/v1/rerank");
+    assert.equal(config.rerankUrl, "http://127.0.0.1:3003/v1/rerank");
     assert.equal(config.rerankEnabled, true);
     assert.equal(config.defaultTopK, 5);
     assert.equal(config.defaultScoreThreshold, 0.3);

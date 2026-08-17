@@ -12,7 +12,7 @@ AI Assistant / Open WebUI
         │  OpenAI-compatible /v1/embeddings
         ▼
   Embedding server (Qwen3-VL-Embedding-2B, 2048-d)
-        │  optional rerank (Qwen3-VL-Reranker-2B :3004)
+        │  optional rerank (Qwen3-VL-Reranker-2B :3003)
         │  Qdrant query_points
         ▼
   Qdrant collection `krisdika`
@@ -33,7 +33,7 @@ AI Assistant / Open WebUI
         "QDRANT_COLLECTION": "krisdika",
         "EMBEDDING_URL": "http://127.0.0.1:3003/v1",
         "EMBEDDING_MODEL": "Qwen3-VL-Embedding-2B",
-        "RERANK_URL": "http://127.0.0.1:3004/v1",
+        "RERANK_URL": "http://127.0.0.1:3003/v1",
         "RERANK_MODEL": "Qwen3-VL-Reranker-2B"
       }
     }
@@ -51,7 +51,7 @@ node dist/cli.js \
   --qdrant-collection krisdika \
   --embedding-url http://127.0.0.1:3003/v1 \
   --embedding-model Qwen3-VL-Embedding-2B \
-  --rerank-url http://127.0.0.1:3004/v1 \
+  --rerank-url http://127.0.0.1:3003/v1 \
   --rerank-model Qwen3-VL-Reranker-2B
 ```
 
@@ -65,7 +65,7 @@ The local defaults match the prototype in `thai_law_mcp.py`:
 | --- | --- |
 | Qdrant | `http://localhost:6333` / collection `krisdika` |
 | Embeddings | `http://127.0.0.1:3003/v1` / `Qwen3-VL-Embedding-2B` (2048-d) |
-| Rerank | `http://127.0.0.1:3004/v1` / `Qwen3-VL-Reranker-2B` |
+| Rerank | `http://127.0.0.1:3003/v1` / `Qwen3-VL-Reranker-2B` |
 | Top K | `5` |
 | Score threshold | `0.30` |
 

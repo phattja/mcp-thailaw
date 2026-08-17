@@ -129,7 +129,7 @@ Common settings:
 - \`--embedding-url\` / \`EMBEDDING_URL\`: OpenAI-compatible embeddings endpoint
 - \`--embedding-model\` / \`EMBEDDING_MODEL\`: Embedding model name (default Qwen3-VL-Embedding-2B)
 - \`--embedding-api-key\` / \`EMBEDDING_API_KEY\`: Optional bearer token
-- \`--rerank-url\` / \`RERANK_URL\`: llama-server rerank endpoint (default http://127.0.0.1:3004/v1/rerank)
+- \`--rerank-url\` / \`RERANK_URL\`: llama-server rerank endpoint (default http://127.0.0.1:3003/v1/rerank)
 - \`--rerank-model\` / \`RERANK_MODEL\`: Rerank model name (default Qwen3-VL-Reranker-2B)
 - \`--top-k\`, \`--score-threshold\`, \`--max-results\`
 - \`--http-port\` / \`THAILAW_HTTP_PORT\`: Enable HTTP transport on the specified port

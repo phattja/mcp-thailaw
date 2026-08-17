@@ -96,7 +96,7 @@ node dist/cli.js \
   --qdrant-collection krisdika \
   --embedding-url http://127.0.0.1:3003/v1 \
   --embedding-model Qwen3-VL-Embedding-2B \
-  --rerank-url http://127.0.0.1:3004/v1 \
+  --rerank-url http://127.0.0.1:3003/v1 \
   --rerank-model Qwen3-VL-Reranker-2B
 ```
 

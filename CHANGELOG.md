@@ -8,6 +8,12 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.6] - 2026-08-17
+
+### Changed
+
+- Default rerank URL is now the same llama-server as embeddings: `http://127.0.0.1:3003/v1/rerank`.
+
 ## [0.1.0-dev.5] - 2026-08-17
 
 ### Changed
