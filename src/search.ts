@@ -16,6 +16,7 @@ import {
   normalizeMatraKey,
   rewriteQueryMatraToThai,
   splitStatuteSections,
+  thaiDigitsToArabic,
 } from "./statute.js";
 import { timelineCodeForUrl } from "./timeline.js";
 import type { ResponseFormat, SearchThaiLawArgs } from "./types.js";
@@ -64,8 +65,46 @@ function payloadBoolean(payload: Record<string, unknown>, key: string): boolean 
   return typeof value === "boolean" ? value : undefined;
 }
 
+function payloadObject(value: unknown): Record<string, unknown> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+  return value as Record<string, unknown>;
+}
+
+function payloadSection(payload: Record<string, unknown>): Record<string, unknown> {
+  return payloadObject(payload.section) ?? {};
+}
+
+function scalarToString(value: unknown): string {
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return "";
+}
+
+function sectionField(payload: Record<string, unknown>, key: string): string {
+  return scalarToString(payloadSection(payload)[key]) || scalarToString(payload[key]);
+}
+
+export function sectionNoMatchValues(raw: string): string[] {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return [];
+  }
+  const thai = formatMatraThai(trimmed);
+  const arabic = thaiDigitsToArabic(thai);
+  return [...new Set([trimmed, thai, arabic].filter((item) => item.length > 0))];
+}
+
 export function hitToResult(hit: QdrantHit): ThaiLawResult {
   const payload = hit.payload;
+  const content = sectionField(payload, "content") || payloadString(payload, "text");
+  const sectionId = sectionField(payload, "sectionId");
+  const sectionNo = sectionField(payload, "sectionNo");
   return {
     score: hit.score,
     title: payloadString(payload, "title", "ไม่มีชื่อ"),
@@ -73,10 +112,14 @@ export function hitToResult(hit: QdrantHit): ThaiLawResult {
     category: payloadString(payload, "category"),
     publish_date: payloadString(payload, "publish_date"),
     reference_url: payloadString(payload, "reference_url"),
-    text: payloadString(payload, "text"),
+    text: content,
     chunk_index: payloadNumber(payload, "chunk_index"),
     is_latest: payloadBoolean(payload, "is_latest"),
-    timeline_code: timelineCodeForUrl(payloadString(payload, "reference_url")),
+    section_id: sectionId || undefined,
+    matra: extractPrimaryMatra(content) ?? (sectionNo ? formatMatraThai(sectionNo) : undefined),
+    timeline_code: payloadString(payload, "timeline_code")
+      || timelineCodeForUrl(payloadString(payload, "reference_url"))
+      || undefined,
   };
 }
 
@@ -282,7 +325,7 @@ export async function completeSectionFragments(
         filter: {
           lawCode: lawCode || undefined,
           isLatest: options.isLatest,
-          textContains: `มาตรา ${options.preferMatra}`,
+          sectionNo: sectionNoMatchValues(options.preferMatra),
         },
         maxPoints: 80,
         signal: options.signal,
@@ -343,20 +386,24 @@ export async function completeSectionFragments(
         filter: {
           lawCode: target.lawCode,
           isLatest: options.isLatest,
-          textContains: `มาตรา/ส่วน ${target.sectionId}`,
+          sectionId: target.sectionId,
         },
         signal: options.signal,
       });
       return hits.flatMap((hit) => {
         const raw = hitToResult(hit);
-        if (!extractSectionIds(raw.text).includes(target.sectionId)) {
+        const extractedIds = extractSectionIds(raw.text);
+        if (extractedIds.length > 0 && !extractedIds.includes(target.sectionId)) {
+          return [];
+        }
+        if (raw.section_id && raw.section_id !== String(target.sectionId)) {
           return [];
         }
         const body = extractSectionBody(raw.text, target.sectionId);
         raw.score = target.score;
         raw.section_id = target.sectionId;
         raw.text = body || raw.text;
-        raw.matra = extractPrimaryMatra(raw.text);
+        raw.matra = extractPrimaryMatra(raw.text) ?? raw.matra;
         return [raw];
       });
     } catch {

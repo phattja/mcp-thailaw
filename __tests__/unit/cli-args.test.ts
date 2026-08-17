@@ -17,7 +17,7 @@ async function runTests() {
       "--embedding-model",
       "bge-m3",
       "--rerank-model",
-      "Qwen3-Reranker-4B",
+      "Qwen3-VL-Reranker-2B",
       "--http-port",
       "8005",
     ]);
@@ -25,7 +25,7 @@ async function runTests() {
     assert.equal(parsed.overrides.qdrantUrl, "http://qdrant:6333");
     assert.equal(parsed.overrides.embeddingUrl, "http://embed/v1/embeddings");
     assert.equal(parsed.overrides.embeddingModel, "bge-m3");
-    assert.equal(parsed.overrides.rerankModel, "Qwen3-Reranker-4B");
+    assert.equal(parsed.overrides.rerankModel, "Qwen3-VL-Reranker-2B");
     assert.equal(parsed.overrides.httpPort, 8005);
   }, results);
 

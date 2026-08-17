@@ -2,14 +2,14 @@
 
 `mcp-thailaw` does not ship the law index. For a self-hosted build you run **Qdrant**, an **OpenAI-compatible embedding server**, and the ingest script that loads [open-law-data-thailand/ocs-krisdika](https://huggingface.co/datasets/open-law-data-thailand/ocs-krisdika) from Hugging Face.
 
-The ingest script in this repository is `scripts/ingest_thai_law_qdrant.py`. It prefers a local JSONL tree (`THAILAW_JSONL_ROOT`, default `/ai/jupyter/home/ocs-krisdika-data`). If that tree is missing it downloads raw JSONL from Hugging Face. Each JSONL **section** becomes one Qdrant point, with every document and section field in the payload.
+The ingest script in this repository is `scripts/ingest_thai_law_qdrant.py`. It prefers a local JSONL tree (`THAILAW_JSONL_ROOT`, default `/ai/jupyter/home/ocs-krisdika-data`). If that tree is missing it downloads raw JSONL from Hugging Face. Each JSONL **section** becomes one Qdrant point. Document fields stay at the payload root; section fields live under `section`.
 
 ```
 Hugging Face  ocs-krisdika JSONL
         │  snapshot_download
         ▼
   ingest_thai_law_qdrant.py
-        │  POST /v1/embeddings  (bge-m3, 1024-dim)
+        │  POST /v1/embeddings  (Qwen3-VL-Embedding-2B, 2048-dim)
         ▼
   Embedding server
         │  Qdrant upsert  (cosine)
@@ -46,8 +46,8 @@ A full ingest **deletes and recreates** the collection, then embeds every select
 export QDRANT_URL=http://localhost:6333
 export QDRANT_COLLECTION=krisdika
 export EMBEDDING_URL=http://127.0.0.1:3003/v1
-export EMBEDDING_MODEL=Qwen-Qwen3-Embedding-4B
-export THAILAW_VECTOR_SIZE=2560
+export EMBEDDING_MODEL=Qwen3-VL-Embedding-2B
+export THAILAW_VECTOR_SIZE=2048
 export THAILAW_JSONL_ROOT=/home/jupyter/ocs-krisdika-data
 export THAILAW_MAX_DOCS=50
 
@@ -62,13 +62,13 @@ Then run again without `THAILAW_MAX_DOCS` for the full index. `THAILAW_ONLY_LATE
 | `QDRANT_COLLECTION` | `krisdika` | Collection name |
 | `QDRANT_API_KEY` | _(unset)_ | Optional Qdrant API key |
 | `EMBEDDING_URL` | `http://127.0.0.1:3003/v1` | OpenAI-compatible embeddings endpoint |
-| `EMBEDDING_MODEL` | `Qwen-Qwen3-Embedding-4B` | Model name sent to the embedding server (must match llama-server `/v1/models` id) |
+| `EMBEDDING_MODEL` | `Qwen3-VL-Embedding-2B` | Model name sent to the embedding server (must match llama-server `/v1/models` id) |
 | `EMBEDDING_API_KEY` | _(unset)_ | Optional bearer token |
 | `THAILAW_JSONL_ROOT` | `/home/jupyter/ocs-krisdika-data` | Local dataset tree. Host path `/ai/jupyter/home/...` is remapped to `/home/jupyter/...` inside the Jupyter container |
 | `THAILAW_JSONL_FILE` | _(unset)_ | Ingest only this one `.jsonl` file (same path remap) |
 | `THAILAW_ONLY_LATEST` | `true` | Ingest only documents with `is_latest=true` |
 | `THAILAW_MAX_DOCS` | _(unset)_ | Limit the number of laws (for a test run) |
-| `THAILAW_VECTOR_SIZE` | `2560` | Must match Qwen3-Embedding-4B (native 2560) |
+| `THAILAW_VECTOR_SIZE` | `2048` | Must match Qwen3-VL-Embedding-2B (native 2048) |
 | `THAILAW_BATCH_SIZE` | `32` | Embedding / upsert batch size |
 
 These `QDRANT_*` and `EMBEDDING_*` names are the same ones `mcp-thailaw` uses at search time.
@@ -77,13 +77,15 @@ These `QDRANT_*` and `EMBEDDING_*` names are the same ones `mcp-thailaw` uses at
 
 Each Qdrant point is **one JSONL section** (one มาตรา/ข้อ), not a 1100-character slice of the whole law.
 
-Document fields: `filename`, `law_code`, `timeline_code`, `category`, `title`, `is_latest`, `publish_date`, `year`, `month`, `reference_url`, `raw_enc_id`
+Document fields (payload root): `filename`, `law_code`, `timeline_code`, `category`, `title`, `is_latest`, `publish_date`, `year`, `month`, `reference_url`, `raw_enc_id`
 
-Section fields: `sectionId`, `sectionTypeId`, `sectionNo`, `sectionName`, `contentNo`, `content`
+Section object (`section`): `sectionId`, `sectionTypeId`, `sectionNo`, `sectionName`, `contentNo`, `content`
 
-Also: `text` (embed string), `source` (`ocs-krisdika`), `chunk_index` (section order), `jsonl_file`
+Also at root: `source` (`ocs-krisdika`), `chunk_index` (section order), `jsonl_file`
 
-Vectors: **2560-dim**, **cosine** (`Qwen3-Embedding-4B`). Query-time MCP embeddings must use the same model and size. After ingest, `mcp-thailaw` searches with `is_latest=true` by default.
+The embed string is sent to the embedding server only. It is **not** stored as `text`.
+
+Vectors: **2048-dim**, **cosine** (`Qwen3-VL-Embedding-2B`). Query-time MCP embeddings must use the same model and size. After ingest, `mcp-thailaw` searches with `is_latest=true` by default.
 
 ## Point mcp-thailaw at the collection
 
@@ -93,9 +95,9 @@ node dist/cli.js \
   --qdrant-url http://127.0.0.1:6333 \
   --qdrant-collection krisdika \
   --embedding-url http://127.0.0.1:3003/v1 \
-  --embedding-model Qwen-Qwen3-Embedding-4B \
+  --embedding-model Qwen3-VL-Embedding-2B \
   --rerank-url http://127.0.0.1:3004/v1 \
-  --rerank-model Qwen-Qwen3-Reranker-4B
+  --rerank-model Qwen3-VL-Reranker-2B
 ```
 
 Use `thailaw_collection_info` to confirm point count and vector size.

@@ -3,7 +3,8 @@
 
 Does not download from Hugging Face.
 Refuses to write to the master collection name `krisdika`.
-Stores every document and section field present in the JSONL.
+Stores document fields at the payload root and section fields under payload["section"].
+The embed string is not stored as payload["text"].
 Uses Qdrant HTTP + the embedding server only (no qdrant_client).
 """
 
@@ -29,10 +30,10 @@ JSONL_FILE = os.environ.get(
 EMBEDDING_URL = os.environ.get("EMBEDDING_URL", "http://127.0.0.1:3003/v1").rstrip("/")
 if not EMBEDDING_URL.endswith("/embeddings"):
     EMBEDDING_URL = f"{EMBEDDING_URL}/embeddings"
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "gpustack-bge-m3")
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "Qwen3-VL-Embedding-2B")
 EMBEDDING_API_KEY = os.environ.get("EMBEDDING_API_KEY") or None
 
-VECTOR_SIZE = int(os.environ.get("THAILAW_VECTOR_SIZE", "1024"))
+VECTOR_SIZE = int(os.environ.get("THAILAW_VECTOR_SIZE", "2048"))
 BATCH_SIZE = int(os.environ.get("THAILAW_BATCH_SIZE", "32"))
 ONLY_LATEST = os.environ.get("THAILAW_ONLY_LATEST", "true").strip().lower() not in {"0", "false", "no"}
 
@@ -108,6 +109,7 @@ def get_embeddings(texts: list[str]) -> list[list[float]]:
 
 
 def search_text(item: dict, section: dict) -> str:
+    """Temporary embed input only. Never written to Qdrant payload."""
     title = item.get("title") or "ไม่มีชื่อ"
     content = (section.get("content") or "").strip()
     return "\n".join([
@@ -121,6 +123,15 @@ def search_text(item: dict, section: dict) -> str:
         "",
         content,
     ])
+
+
+def section_payload(section: dict) -> dict:
+    nested = {}
+    for key in SECTION_FIELDS:
+        value = payload_value(section.get(key))
+        if value is not None:
+            nested[key] = value
+    return nested
 
 
 def collection_exists(name: str) -> bool:
@@ -189,15 +200,18 @@ def main() -> int:
                     value = payload_value(item.get(key))
                     if value is not None:
                         payload[key] = value
-                for key in SECTION_FIELDS:
-                    value = payload_value(section.get(key))
-                    if value is not None:
-                        payload[key] = value
-                payload["text"] = search_text(item, section)
+                nested = section_payload(section)
+                if not nested:
+                    continue
+                payload["section"] = nested
                 payload["source"] = "ocs-krisdika"
                 payload["chunk_index"] = section_index
                 payload["jsonl_file"] = os.path.basename(JSONL_FILE)
-                points.append({"id": str(uuid.uuid4()), "payload": payload})
+                points.append({
+                    "id": str(uuid.uuid4()),
+                    "payload": payload,
+                    "embed_text": search_text(item, section),
+                })
                 section_index += 1
 
     print(f"   → {doc_count} documents → {len(points)} section points")
@@ -209,7 +223,7 @@ def main() -> int:
     for index in range(0, len(points), BATCH_SIZE):
         batch = points[index : index + BATCH_SIZE]
         print(f"   batch {index // BATCH_SIZE + 1}/{(len(points) + BATCH_SIZE - 1) // BATCH_SIZE} ({len(batch)} pts)")
-        embeddings = get_embeddings([point["payload"]["text"] for point in batch])
+        embeddings = get_embeddings([point["embed_text"] for point in batch])
         qdrant("PUT", f"/collections/{COLLECTION_NAME}/points?wait=true", {
             "points": [
                 {"id": point["id"], "vector": embedding, "payload": point["payload"]}
@@ -222,8 +236,8 @@ def main() -> int:
         "timeline_code": "keyword",
         "is_latest": "bool",
         "reference_url": "keyword",
-        "sectionId": "integer",
-        "sectionNo": "keyword",
+        "section.sectionId": "integer",
+        "section.sectionNo": "keyword",
         "publish_date": "keyword",
     }.items():
         try:

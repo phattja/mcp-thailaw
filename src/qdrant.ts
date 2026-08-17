@@ -7,6 +7,8 @@ export interface QdrantFilter {
   category?: string;
   isLatest?: boolean;
   textContains?: string;
+  sectionId?: string | number;
+  sectionNo?: string | string[];
 }
 
 export interface QdrantHit {
@@ -76,18 +78,71 @@ function collectionUrl(suffix = ""): string {
   return `${config.qdrantUrl}/collections/${encodeURIComponent(config.collectionName)}${suffix}`;
 }
 
+function matchValue(key: string, value: string | number | boolean): Record<string, unknown> {
+  return { key, match: { value } };
+}
+
+function matchAny(key: string, values: Array<string | number>): Record<string, unknown> {
+  if (values.length === 1) {
+    return matchValue(key, values[0]);
+  }
+  return { key, match: { any: values } };
+}
+
+function orMust(conditions: Array<Record<string, unknown>>): Record<string, unknown> | undefined {
+  if (conditions.length === 0) {
+    return undefined;
+  }
+  if (conditions.length === 1) {
+    return conditions[0];
+  }
+  return { should: conditions };
+}
+
+function numericIfPossible(value: string | number): string | number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  const raw = String(value).trim();
+  return /^\d+$/.test(raw) ? Number(raw) : raw;
+}
+
 function buildFilter(filter?: QdrantFilter): Record<string, unknown> {
   const must: Array<Record<string, unknown>> = [
-    { key: "is_latest", match: { value: filter?.isLatest ?? true } },
+    matchValue("is_latest", filter?.isLatest ?? true),
   ];
   if (filter?.lawCode) {
-    must.push({ key: "law_code", match: { value: filter.lawCode } });
+    must.push(matchValue("law_code", filter.lawCode));
   }
   if (filter?.category) {
-    must.push({ key: "category", match: { value: filter.category } });
+    must.push(matchValue("category", filter.category));
   }
   if (filter?.textContains) {
     must.push({ key: "text", match: { text: filter.textContains } });
+  }
+  if (filter?.sectionId !== undefined && filter.sectionId !== "") {
+    const sectionId = numericIfPossible(filter.sectionId);
+    const sectionIdFilter = orMust([
+      matchValue("section.sectionId", sectionId),
+      matchValue("sectionId", sectionId),
+    ]);
+    if (sectionIdFilter) {
+      must.push(sectionIdFilter);
+    }
+  }
+  if (filter?.sectionNo !== undefined) {
+    const values = (Array.isArray(filter.sectionNo) ? filter.sectionNo : [filter.sectionNo])
+      .map((item) => String(item).trim())
+      .filter((item) => item.length > 0);
+    if (values.length > 0) {
+      const sectionNoFilter = orMust([
+        matchAny("section.sectionNo", values),
+        matchAny("sectionNo", values),
+      ]);
+      if (sectionNoFilter) {
+        must.push(sectionNoFilter);
+      }
+    }
   }
   return { must };
 }

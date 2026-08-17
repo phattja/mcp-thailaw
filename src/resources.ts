@@ -22,7 +22,7 @@ Options:
   --embedding-url <url>          OpenAI-compatible embeddings endpoint
   --embedding-model <name>       Embedding model name
   --embedding-api-key <key>      Embedding server bearer token
-  --vector-size <n>              Embedding dimensions (default 2560)
+  --vector-size <n>              Embedding dimensions (default 2048)
   --rerank-url <url>             llama-server /v1/rerank endpoint
   --rerank-model <name>          Rerank model name
   --rerank-api-key <key>         Rerank server bearer token
@@ -92,7 +92,7 @@ export function createHelpResource() {
   return `# Thai Law MCP Server Help
 
 ## Overview
-This is a Model Context Protocol (MCP) server that searches Thai law from the OCS Krisdika dataset stored in Qdrant. Queries are embedded with Qwen3-Embedding-4B (2560-d) and optionally reranked with Qwen3-Reranker-4B.
+This is a Model Context Protocol (MCP) server that searches Thai law from the OCS Krisdika dataset stored in Qdrant. Queries are embedded with Qwen3-VL-Embedding-2B (2048-d) and optionally reranked with Qwen3-VL-Reranker-2B.
 
 ## Available Tools
 
@@ -127,10 +127,10 @@ Common settings:
 - \`--qdrant-collection\` / \`QDRANT_COLLECTION\`: Collection name (default krisdika)
 - \`--qdrant-api-key\` / \`QDRANT_API_KEY\`: Optional Qdrant API key
 - \`--embedding-url\` / \`EMBEDDING_URL\`: OpenAI-compatible embeddings endpoint
-- \`--embedding-model\` / \`EMBEDDING_MODEL\`: Embedding model name (default Qwen3-Embedding-4B)
+- \`--embedding-model\` / \`EMBEDDING_MODEL\`: Embedding model name (default Qwen3-VL-Embedding-2B)
 - \`--embedding-api-key\` / \`EMBEDDING_API_KEY\`: Optional bearer token
 - \`--rerank-url\` / \`RERANK_URL\`: llama-server rerank endpoint (default http://127.0.0.1:3004/v1/rerank)
-- \`--rerank-model\` / \`RERANK_MODEL\`: Rerank model name (default Qwen3-Reranker-4B)
+- \`--rerank-model\` / \`RERANK_MODEL\`: Rerank model name (default Qwen3-VL-Reranker-2B)
 - \`--top-k\`, \`--score-threshold\`, \`--max-results\`
 - \`--http-port\` / \`THAILAW_HTTP_PORT\`: Enable HTTP transport on the specified port
 

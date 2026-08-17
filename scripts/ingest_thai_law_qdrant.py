@@ -2,8 +2,9 @@
 """
 Ingest open-law-data-thailand/ocs-krisdika into a self-hosted Qdrant collection.
 
-One Qdrant point per JSONL section. Every document and section field is stored
-in the payload so a มาตรา can be rebuilt without a sidecar map.
+One Qdrant point per JSONL section. Document fields stay at the payload root.
+Section fields live under payload["section"]. The embed string is sent to the
+embedding server only — it is not stored as payload["text"].
 
 Uses a local JSONL tree when present (no Hugging Face download). Otherwise
 downloads raw JSONL from Hugging Face (avoids datasets schema errors).
@@ -13,14 +14,14 @@ Environment (same names as mcp-thailaw):
   QDRANT_COLLECTION       default krisdika
   QDRANT_API_KEY          optional
   EMBEDDING_URL           default http://127.0.0.1:3003/v1
-  EMBEDDING_MODEL         default Qwen-Qwen3-Embedding-4B
+  EMBEDDING_MODEL         default Qwen3-VL-Embedding-2B
   EMBEDDING_API_KEY       optional bearer token
   THAILAW_JSONL_ROOT      default /home/jupyter/ocs-krisdika-data
                           (/ai/jupyter/home/... is remapped to /home/jupyter/...)
   THAILAW_JSONL_FILE      optional single .jsonl (overrides ROOT)
   THAILAW_ONLY_LATEST     default true  (ingest only is_latest documents)
   THAILAW_MAX_DOCS        optional int  (limit for a test run)
-  THAILAW_VECTOR_SIZE     default 2560  (Qwen3-Embedding-4B native)
+  THAILAW_VECTOR_SIZE     default 2048  (Qwen3-VL-Embedding-2B native)
   THAILAW_BATCH_SIZE      default 32
 """
 
@@ -41,10 +42,10 @@ QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY") or None
 EMBEDDING_URL = os.environ.get("EMBEDDING_URL", "http://127.0.0.1:3003/v1").rstrip("/")
 if not EMBEDDING_URL.endswith("/embeddings"):
     EMBEDDING_URL = f"{EMBEDDING_URL}/embeddings"
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "Qwen-Qwen3-Embedding-4B")
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "Qwen3-VL-Embedding-2B")
 EMBEDDING_API_KEY = os.environ.get("EMBEDDING_API_KEY") or None
 
-VECTOR_SIZE = int(os.environ.get("THAILAW_VECTOR_SIZE", "2560"))
+VECTOR_SIZE = int(os.environ.get("THAILAW_VECTOR_SIZE", "2048"))
 BATCH_SIZE = int(os.environ.get("THAILAW_BATCH_SIZE", "32"))
 ONLY_LATEST = os.environ.get("THAILAW_ONLY_LATEST", "true").strip().lower() not in {"0", "false", "no"}
 MAX_DOCS_RAW = os.environ.get("THAILAW_MAX_DOCS", "").strip()
@@ -126,6 +127,7 @@ def get_embeddings(texts: list[str]) -> list[list[float]]:
 
 
 def search_text(item: dict, section: dict) -> str:
+    """Temporary embed input only. Never written to Qdrant payload."""
     title = item.get("title") or "ไม่มีชื่อ"
     content = str(section.get("content") or "").strip()
     return "\n".join([
@@ -140,6 +142,15 @@ def search_text(item: dict, section: dict) -> str:
         "",
         content,
     ])
+
+
+def section_payload(section: dict) -> dict:
+    nested = {}
+    for key in SECTION_FIELDS:
+        value = payload_value(section.get(key))
+        if value is not None:
+            nested[key] = value
+    return nested
 
 
 def resolve_jsonl_files() -> list[str]:
@@ -178,7 +189,7 @@ def main() -> None:
         if len(test_emb[0]) != VECTOR_SIZE:
             print(
                 f"❌ Embedding dim {len(test_emb[0])} != THAILAW_VECTOR_SIZE={VECTOR_SIZE}. "
-                "Qwen3-Embedding-4B must be 2560 (or set THAILAW_VECTOR_SIZE to the live dim).",
+                "Qwen3-VL-Embedding-2B must be 2048 (or set THAILAW_VECTOR_SIZE to the live dim).",
             )
             return
     except Exception as exc:
@@ -207,7 +218,7 @@ def main() -> None:
     total_chunks = 0
     doc_count = 0
 
-    print("5. Processing documents (one point per section, all JSONL fields)...")
+    print("5. Processing documents (one point per section; section.* nested, no stored text)...")
     for file_path in tqdm(jsonl_files, desc="Files"):
         try:
             with open(file_path, "r", encoding="utf-8") as handle:
@@ -236,18 +247,21 @@ def main() -> None:
                             value = payload_value(item.get(key))
                             if value is not None:
                                 payload[key] = value
-                        for key in SECTION_FIELDS:
-                            value = payload_value(section.get(key))
-                            if value is not None:
-                                payload[key] = value
+                        nested = section_payload(section)
+                        if not nested:
+                            continue
+                        payload["section"] = nested
                         if "title" not in payload:
                             payload["title"] = "ไม่มีชื่อ"
-                        payload["text"] = search_text(item, section)
                         payload["source"] = "ocs-krisdika"
                         payload["chunk_index"] = section_index
                         payload["jsonl_file"] = os.path.basename(file_path)
 
-                        points.append({"id": str(uuid.uuid4()), "payload": payload})
+                        points.append({
+                            "id": str(uuid.uuid4()),
+                            "payload": payload,
+                            "embed_text": search_text(item, section),
+                        })
                         total_chunks += 1
                         section_index += 1
 
@@ -269,7 +283,7 @@ def main() -> None:
     print("6. Embedding + uploading to Qdrant...")
     for index in tqdm(range(0, len(points), BATCH_SIZE), desc="Upload"):
         batch = points[index : index + BATCH_SIZE]
-        texts = [point["payload"]["text"] for point in batch]
+        texts = [point["embed_text"] for point in batch]
         try:
             embeddings = get_embeddings(texts)
         except Exception as exc:
@@ -288,8 +302,8 @@ def main() -> None:
         "timeline_code": PayloadSchemaType.KEYWORD,
         "is_latest": PayloadSchemaType.BOOL,
         "reference_url": PayloadSchemaType.KEYWORD,
-        "sectionId": PayloadSchemaType.INTEGER,
-        "sectionNo": PayloadSchemaType.KEYWORD,
+        "section.sectionId": PayloadSchemaType.INTEGER,
+        "section.sectionNo": PayloadSchemaType.KEYWORD,
         "publish_date": PayloadSchemaType.KEYWORD,
     }.items():
         try:

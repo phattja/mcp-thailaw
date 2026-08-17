@@ -108,6 +108,25 @@ async function runTests() {
     fetchMocker.restore();
   }, results);
 
+  await testFunction("scrollPoints filters nested section.sectionId", async () => {
+    const capturing = createCapturingMockFetch();
+    fetchMocker.mock(async (url, options) => {
+      await capturing.mockFetch(url, options);
+      return createMockFetch({ json: { result: { points: [] } } })(url, options);
+    });
+    await scrollPoints({
+      filter: { lawCode: "A01", sectionId: "1590017" },
+    });
+    const body = JSON.parse(String(capturing.getCapturedOptions()?.body));
+    assert.deepEqual(body.filter.must[2], {
+      should: [
+        { key: "section.sectionId", match: { value: 1590017 } },
+        { key: "sectionId", match: { value: 1590017 } },
+      ],
+    });
+    fetchMocker.restore();
+  }, results);
+
   await testFunction("fetchCollectionInfo maps collection stats", async () => {
     fetchMocker.mock(createMockFetch({
       json: {

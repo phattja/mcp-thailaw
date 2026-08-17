@@ -8,6 +8,13 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.5] - 2026-08-17
+
+### Changed
+
+- Default embedding model is `Qwen3-VL-Embedding-2B` (2048-d). Search reranks with `Qwen3-VL-Reranker-2B`.
+- Ingest nests JSONL section fields under `payload.section` and no longer stores the embed string as `text`. MCP reads `section.content` / `section.sectionId` / `section.sectionNo`.
+
 ## [0.1.0-dev.4] - 2026-08-17
 
 ### Changed

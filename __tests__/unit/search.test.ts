@@ -11,6 +11,7 @@ import {
   mergeArticleText,
   mergeOverlappingText,
   preferQueryMatra,
+  sectionNoMatchValues,
   timelineRank,
 } from "../../src/search.js";
 import { createNoResultsMessage } from "../../src/error-handler.js";
@@ -41,6 +42,33 @@ async function runTests() {
     assert.equal(result.chunk_index, 2);
     assert.equal(result.is_latest, true);
     assert.equal(result.score, 0.81234);
+    assert.equal(result.text, "มาตรา 334 ผู้ใดลักทรัพย์");
+  }, results);
+
+  await testFunction("hitToResult reads nested section and ignores embed text", () => {
+    const result = hitToResult({
+      id: "nested",
+      score: 0.91,
+      payload: {
+        title: "ประมวลกฎหมายอาญา",
+        law_code: "ป0006-1D-0003",
+        timeline_code: "ป0006-1D-0003-63",
+        section: {
+          sectionId: 1590017,
+          sectionNo: "335",
+          content: "มาตรา ๓๓๕ ผู้ใดลักทรัพย์",
+        },
+        text: "this embed string must not be stored or returned",
+      },
+    });
+    assert.equal(result.text, "มาตรา ๓๓๕ ผู้ใดลักทรัพย์");
+    assert.equal(result.section_id, "1590017");
+    assert.equal(result.matra, "๓๓๕");
+    assert.equal(result.timeline_code, "ป0006-1D-0003-63");
+  }, results);
+
+  await testFunction("sectionNoMatchValues includes Thai and Arabic digits", () => {
+    assert.deepEqual(sectionNoMatchValues("๓๓๕"), ["๓๓๕", "335"]);
   }, results);
 
   await testFunction("formatSearchText matches the prototype layout", () => {
