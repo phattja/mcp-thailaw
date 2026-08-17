@@ -5,16 +5,29 @@ import { getHttpSecurityConfig } from "./http-security.js";
 import { getThaiLawConfig, SERVER_NAME } from "./config.js";
 
 export const REQUIRED_CONFIGURATION_GUIDANCE =
-  "QDRANT_URL and EMBEDDING_URL default to the local Krisdika stack if unset.";
+  "Qdrant and embedding settings come from CLI flags, then environment variables, then built-in defaults.";
 export const OPTIONAL_CONFIGURATION_GUIDANCE =
-  "All other environment variables are optional; see CONFIGURATION.md for the complete reference.";
+  "Startup flags override environment variables. See CONFIGURATION.md for the complete reference.";
 
 export function createCliHelpText(): string {
   return `Usage: mcp-thailaw [options]
 
 Options:
-  --help, -h       Show this help and exit
-  --version, -v    Print the package version and exit
+  --help, -h                     Show this help and exit
+  --version, -v                  Print the package version and exit
+  --qdrant-url <url>             Qdrant base URL
+  --qdrant-collection <name>     Qdrant collection name
+  --collection <name>            Alias for --qdrant-collection
+  --qdrant-api-key <key>         Qdrant API key
+  --embedding-url <url>          OpenAI-compatible embeddings endpoint
+  --embedding-model <name>       Embedding model name
+  --embedding-api-key <key>      Embedding server bearer token
+  --top-k <n>                    Default search hit count
+  --score-threshold <n>          Default minimum score (0-1)
+  --max-results <n>              Operator ceiling for top_k
+  --fetch-timeout-ms <n>         Upstream timeout in milliseconds
+  --http-port, --port <n>        Enable Streamable HTTP on this port
+  --http-host <host>             HTTP bind address
 
 Configuration:
   ${REQUIRED_CONFIGURATION_GUIDANCE}
@@ -22,7 +35,7 @@ Configuration:
 
 Transport:
   STDIO is the default transport.
-  MCP_HTTP_PORT enables HTTP transport.
+  --http-port or MCP_HTTP_PORT enables HTTP transport.
 `.trimEnd();
 }
 
@@ -98,15 +111,17 @@ Inspect the configured Qdrant collection: point count, vector size, and embeddin
 ${REQUIRED_CONFIGURATION_GUIDANCE}
 ${OPTIONAL_CONFIGURATION_GUIDANCE}
 
-Common variables:
-- \`QDRANT_URL\`: Qdrant base URL (default http://localhost:6333)
-- \`QDRANT_COLLECTION\`: Collection name (default krisdika)
-- \`QDRANT_API_KEY\`: Optional Qdrant API key
-- \`EMBEDDING_URL\`: OpenAI-compatible embeddings endpoint
-- \`EMBEDDING_MODEL\`: Embedding model name (default gpustack-bge-m3)
-- \`EMBEDDING_API_KEY\`: Optional bearer token for the embedding server
-- \`THAILAW_TOP_K\`, \`THAILAW_SCORE_THRESHOLD\`, \`THAILAW_MAX_RESULTS\`
-- \`MCP_HTTP_PORT\`: Enable HTTP transport on the specified port
+Startup flags override environment variables.
+
+Common settings:
+- \`--qdrant-url\` / \`QDRANT_URL\`: Qdrant base URL (default http://localhost:6333)
+- \`--qdrant-collection\` / \`QDRANT_COLLECTION\`: Collection name (default krisdika)
+- \`--qdrant-api-key\` / \`QDRANT_API_KEY\`: Optional Qdrant API key
+- \`--embedding-url\` / \`EMBEDDING_URL\`: OpenAI-compatible embeddings endpoint
+- \`--embedding-model\` / \`EMBEDDING_MODEL\`: Embedding model name (default gpustack-bge-m3)
+- \`--embedding-api-key\` / \`EMBEDDING_API_KEY\`: Optional bearer token
+- \`--top-k\`, \`--score-threshold\`, \`--max-results\`
+- \`--http-port\` / \`MCP_HTTP_PORT\`: Enable HTTP transport on the specified port
 
 ## Transport Modes
 

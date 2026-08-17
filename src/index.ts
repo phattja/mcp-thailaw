@@ -24,8 +24,7 @@ import {
   sanitizeErrorForTransport,
 } from "./diagnostic-sanitizer.js";
 import { writeDiagnostic } from "./diagnostic-output.js";
-import { parseStrictInteger } from "./env-int.js";
-import { getThaiLawConfig, SERVER_NAME, validateThaiLawConfig } from "./config.js";
+import { getThaiLawConfig, resolveHttpListen, SERVER_NAME, validateThaiLawConfig } from "./config.js";
 import { packageVersion } from "./version.js";
 
 /**
@@ -173,15 +172,14 @@ export async function main() {
     process.exit(1);
   }
 
-  const httpPort = process.env.MCP_HTTP_PORT;
-  if (httpPort) {
-    const port = parseStrictInteger(httpPort);
-    if (port === undefined || port < 1 || port > 65535) {
-      writeDiagnostic("error", `Invalid HTTP port: ${httpPort}. Must be between 1-65535.`);
-      process.exit(1);
-    }
-
-    const host = resolveBindHost(process.env.MCP_HTTP_HOST);
+  const listen = resolveHttpListen();
+  if (listen.portError) {
+    writeDiagnostic("error", listen.portError);
+    process.exit(1);
+  }
+  if (listen.port !== undefined) {
+    const port = listen.port;
+    const host = resolveBindHost(listen.host);
     writeDiagnostic("log", `Starting HTTP transport on ${host}:${port}`);
     const app = await createHttpServer(createMcpServer, port);
 

@@ -1,4 +1,5 @@
 import { parseStrictInteger } from "./env-int.js";
+import type { CliOverrides } from "./cli-args.js";
 
 export const SERVER_NAME = "phattja/mcp-thailaw";
 
@@ -24,9 +25,39 @@ export interface ThaiLawConfig {
   fetchTimeoutMs: number;
 }
 
+export interface HttpListenConfig {
+  port?: number;
+  host: string;
+  portError?: string;
+}
+
+let cliOverrides: CliOverrides = {};
+
+export function setCliOverrides(overrides: CliOverrides): void {
+  cliOverrides = { ...overrides };
+}
+
+export function resetCliOverrides(): void {
+  cliOverrides = {};
+}
+
+export function getCliOverrides(): CliOverrides {
+  return { ...cliOverrides };
+}
+
 function trimOrUndefined(value: string | undefined): string | undefined {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
+}
+
+function firstString(...values: Array<string | undefined>): string | undefined {
+  for (const value of values) {
+    const trimmed = trimOrUndefined(value);
+    if (trimmed !== undefined) {
+      return trimmed;
+    }
+  }
+  return undefined;
 }
 
 function parseBoundedInteger(
@@ -56,34 +87,79 @@ function parseScoreThreshold(raw: string | undefined, fallback: number): number 
   return parsed;
 }
 
+function firstNumber(cliValue: number | undefined, envRaw: string | undefined, fallback: number, parse: (raw: string | undefined, fallback: number) => number): number {
+  return cliValue !== undefined ? cliValue : parse(envRaw, fallback);
+}
+
 export function getThaiLawConfig(env: NodeJS.ProcessEnv = process.env): ThaiLawConfig {
-  const maxResults = parseBoundedInteger(
+  const cli = cliOverrides;
+  const maxResults = firstNumber(
+    cli.maxResults,
     env.THAILAW_MAX_RESULTS,
     DEFAULT_MAX_RESULTS,
-    1,
-    100,
+    (raw, fallback) => parseBoundedInteger(raw, fallback, 1, 100),
   );
 
   return {
-    qdrantUrl: (trimOrUndefined(env.QDRANT_URL) ?? DEFAULT_QDRANT_URL).replace(/\/+$/, ""),
-    collectionName: trimOrUndefined(env.QDRANT_COLLECTION) ?? DEFAULT_COLLECTION_NAME,
-    qdrantApiKey: trimOrUndefined(env.QDRANT_API_KEY),
-    embeddingUrl: trimOrUndefined(env.EMBEDDING_URL) ?? DEFAULT_EMBEDDING_URL,
-    embeddingModel: trimOrUndefined(env.EMBEDDING_MODEL) ?? DEFAULT_EMBEDDING_MODEL,
-    embeddingApiKey: trimOrUndefined(env.EMBEDDING_API_KEY),
-    defaultTopK: parseBoundedInteger(env.THAILAW_TOP_K, DEFAULT_TOP_K, 1, maxResults),
-    defaultScoreThreshold: parseScoreThreshold(
+    qdrantUrl: (firstString(cli.qdrantUrl, env.QDRANT_URL) ?? DEFAULT_QDRANT_URL).replace(/\/+$/, ""),
+    collectionName: firstString(cli.collectionName, env.QDRANT_COLLECTION) ?? DEFAULT_COLLECTION_NAME,
+    qdrantApiKey: firstString(cli.qdrantApiKey, env.QDRANT_API_KEY),
+    embeddingUrl: firstString(cli.embeddingUrl, env.EMBEDDING_URL) ?? DEFAULT_EMBEDDING_URL,
+    embeddingModel: firstString(cli.embeddingModel, env.EMBEDDING_MODEL) ?? DEFAULT_EMBEDDING_MODEL,
+    embeddingApiKey: firstString(cli.embeddingApiKey, env.EMBEDDING_API_KEY),
+    defaultTopK: firstNumber(
+      cli.defaultTopK,
+      env.THAILAW_TOP_K,
+      DEFAULT_TOP_K,
+      (raw, fallback) => parseBoundedInteger(raw, fallback, 1, maxResults),
+    ),
+    defaultScoreThreshold: firstNumber(
+      cli.defaultScoreThreshold,
       env.THAILAW_SCORE_THRESHOLD,
       DEFAULT_SCORE_THRESHOLD,
+      parseScoreThreshold,
     ),
     maxResults,
-    fetchTimeoutMs: parseBoundedInteger(
+    fetchTimeoutMs: firstNumber(
+      cli.fetchTimeoutMs,
       env.FETCH_TIMEOUT_MS,
       DEFAULT_FETCH_TIMEOUT_MS,
-      1000,
-      300000,
+      (raw, fallback) => parseBoundedInteger(raw, fallback, 1000, 300000),
     ),
   };
+}
+
+export function resolveHttpListen(env: NodeJS.ProcessEnv = process.env): HttpListenConfig {
+  const cli = cliOverrides;
+  const rawPort = cli.httpPort !== undefined ? String(cli.httpPort) : env.MCP_HTTP_PORT;
+  const host = firstString(cli.httpHost, env.MCP_HTTP_HOST) ?? "127.0.0.1";
+  if (rawPort === undefined || rawPort.trim() === "") {
+    return { host };
+  }
+
+  const parsed = parseStrictInteger(rawPort);
+  if (parsed === undefined || parsed < 1 || parsed > 65535) {
+    return {
+      host,
+      portError: `Invalid HTTP port: ${rawPort}. Must be between 1-65535.`,
+    };
+  }
+
+  return { port: parsed, host };
+}
+
+export function envWithCliOverrides(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const cli = cliOverrides;
+  const merged: NodeJS.ProcessEnv = { ...env };
+  if (cli.qdrantUrl) merged.QDRANT_URL = cli.qdrantUrl;
+  if (cli.collectionName) merged.QDRANT_COLLECTION = cli.collectionName;
+  if (cli.qdrantApiKey) merged.QDRANT_API_KEY = cli.qdrantApiKey;
+  if (cli.embeddingUrl) merged.EMBEDDING_URL = cli.embeddingUrl;
+  if (cli.embeddingModel) merged.EMBEDDING_MODEL = cli.embeddingModel;
+  if (cli.embeddingApiKey) merged.EMBEDDING_API_KEY = cli.embeddingApiKey;
+  if (cli.httpPort !== undefined) merged.MCP_HTTP_PORT = String(cli.httpPort);
+  if (cli.httpHost) merged.MCP_HTTP_HOST = cli.httpHost;
+  return merged;
 }
 
 export function validateHttpUrl(value: string, name: string): string | undefined {

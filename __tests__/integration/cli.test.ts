@@ -39,9 +39,24 @@ async function runTests() {
       assert.ok(result.stdout.includes("--help, -h"));
       assert.ok(result.stdout.includes("--version, -v"));
       assert.ok(result.stdout.includes("STDIO is the default transport"));
-      assert.ok(result.stdout.includes("MCP_HTTP_PORT enables HTTP transport"));
+      assert.ok(result.stdout.includes("--http-port or MCP_HTTP_PORT enables HTTP transport"));
+      assert.ok(result.stdout.includes("--qdrant-url"));
+      assert.ok(result.stdout.includes("--embedding-url"));
       assert.ok(result.stdout.includes("CONFIGURATION.md"));
     }
+  }, results);
+
+  await testFunction("unknown startup flag exits with an error", () => {
+    const env = { ...process.env };
+    delete env.MCP_HTTP_PORT;
+    const result = spawnSync(process.execPath, ["--import", "tsx", "src/cli.ts", "--nope"], {
+      cwd: process.cwd(),
+      env,
+      encoding: "utf8",
+      timeout: 8000,
+    });
+    assert.equal(result.status, 1);
+    assert.ok(result.stderr.includes("Unknown option: --nope"));
   }, results);
 
   printTestSummary(results, "CLI");

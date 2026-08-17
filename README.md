@@ -41,10 +41,16 @@ AI Assistant / Open WebUI
 ### HTTP (Open WebUI)
 
 ```bash
-MCP_HTTP_PORT=8005 MCP_HTTP_HOST=0.0.0.0 npm start
-# or after build:
-MCP_HTTP_PORT=8005 MCP_HTTP_HOST=0.0.0.0 node dist/cli.js
+node dist/cli.js \
+  --http-port 8005 \
+  --http-host 0.0.0.0 \
+  --qdrant-url http://127.0.0.1:6333 \
+  --qdrant-collection krisdika \
+  --embedding-url http://127.0.0.1:57863/v1/embeddings \
+  --embedding-model gpustack-bge-m3
 ```
+
+CLI flags override the matching environment variables (`QDRANT_URL`, `EMBEDDING_URL`, `MCP_HTTP_PORT`, ...).
 
 Connect the client to `http://localhost:8005/mcp`.
 
@@ -90,7 +96,7 @@ node dist/cli.js
 Run Streamable HTTP (Open WebUI):
 
 ```bash
-MCP_HTTP_PORT=8005 MCP_HTTP_HOST=0.0.0.0 node dist/cli.js
+node dist/cli.js --http-port 8005 --http-host 0.0.0.0
 ```
 
 ### Docker

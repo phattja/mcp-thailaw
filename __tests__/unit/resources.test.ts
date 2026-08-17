@@ -28,7 +28,9 @@ async function runTests() {
     assert.ok(help.includes("--help, -h"));
     assert.ok(help.includes("--version, -v"));
     assert.ok(help.includes("STDIO is the default transport"));
-    assert.ok(help.includes("MCP_HTTP_PORT enables HTTP transport"));
+    assert.ok(help.includes("--http-port or MCP_HTTP_PORT enables HTTP transport"));
+    assert.ok(help.includes("--qdrant-url"));
+    assert.ok(help.includes("--embedding-url"));
     assert.ok(help.includes("CONFIGURATION.md"));
   }, results);
 

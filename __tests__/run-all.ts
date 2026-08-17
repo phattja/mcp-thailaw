@@ -8,6 +8,7 @@ import { runTests as runDiagnosticSanitizerTests } from "./unit/diagnostic-sanit
 import { runTests as runDiagnosticOutputTests } from "./unit/diagnostic-output.test.js";
 import { runTests as runTypesTests } from "./unit/types.test.js";
 import { runTests as runConfigTests } from "./unit/config.test.js";
+import { runTests as runCliArgsTests } from "./unit/cli-args.test.js";
 import { runTests as runCacheTests } from "./unit/cache.test.js";
 import { runTests as runSearchCacheTests } from "./unit/search-cache.test.js";
 import { runTests as runErrorHandlerTests } from "./unit/error-handler.test.js";
@@ -36,6 +37,7 @@ const testSuites: TestSuite[] = [
   { name: "Diagnostic Output", category: "unit", run: runDiagnosticOutputTests },
   { name: "Types", category: "unit", run: runTypesTests },
   { name: "Config", category: "unit", run: runConfigTests },
+  { name: "CLI Args", category: "unit", run: runCliArgsTests },
   { name: "Cache", category: "unit", run: runCacheTests },
   { name: "Search Cache", category: "unit", run: runSearchCacheTests },
   { name: "Error Handler", category: "unit", run: runErrorHandlerTests },

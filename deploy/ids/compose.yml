@@ -27,6 +27,13 @@ services:
       - EMBEDDING_MODEL=gpustack-bge-m3
     ipc: host
     entrypoint: ["/ai/thailaw/start.sh"]
+    command:
+      - --http-port=8005
+      - --http-host=0.0.0.0
+      - --qdrant-url=http://127.0.0.1:6333
+      - --qdrant-collection=krisdika
+      - --embedding-url=http://127.0.0.1:57863/v1/embeddings
+      - --embedding-model=gpustack-bge-m3
     volumes:
       - /etc/sudoers.d:/etc/sudoers.d:ro
       - /etc/passwd:/etc/passwd:ro

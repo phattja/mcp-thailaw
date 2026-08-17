@@ -1,21 +1,37 @@
 # Configuration
 
-Environment variables for `mcp-thailaw`. None are required; unset values use the local Krisdika stack defaults from `thai_law_mcp.py`.
+Qdrant and embedding settings are read in this order:
+
+1. Startup flags (`mcp-thailaw --qdrant-url ...`)
+2. Environment variables
+3. Built-in defaults from the original `thai_law_mcp.py` stack
+
+Startup flags always override environment variables.
+
+```bash
+mcp-thailaw \
+  --http-port 8005 \
+  --http-host 0.0.0.0 \
+  --qdrant-url http://127.0.0.1:6333 \
+  --qdrant-collection krisdika \
+  --embedding-url http://127.0.0.1:57863/v1/embeddings \
+  --embedding-model gpustack-bge-m3
+```
 
 ## Search backend
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `QDRANT_URL` | `http://localhost:6333` | Qdrant base URL |
-| `QDRANT_COLLECTION` | `krisdika` | Collection name |
-| `QDRANT_API_KEY` | _(unset)_ | Sent as the `api-key` header |
-| `EMBEDDING_URL` | `http://127.0.0.1:57863/v1/embeddings` | OpenAI-compatible embeddings endpoint |
-| `EMBEDDING_MODEL` | `gpustack-bge-m3` | Model name in the embeddings request |
-| `EMBEDDING_API_KEY` | _(unset)_ | Sent as `Authorization: Bearer ...` |
-| `THAILAW_TOP_K` | `5` | Default number of hits when the tool omits `top_k` |
-| `THAILAW_SCORE_THRESHOLD` | `0.30` | Default minimum cosine score |
-| `THAILAW_MAX_RESULTS` | `20` | Operator ceiling for `top_k` |
-| `FETCH_TIMEOUT_MS` | `30000` | Timeout for embedding + Qdrant calls |
+| Flag | Environment variable | Default | Description |
+| --- | --- | --- | --- |
+| `--qdrant-url` | `QDRANT_URL` | `http://localhost:6333` | Qdrant base URL |
+| `--qdrant-collection`, `--collection` | `QDRANT_COLLECTION` | `krisdika` | Collection name |
+| `--qdrant-api-key` | `QDRANT_API_KEY` | _(unset)_ | Sent as the `api-key` header |
+| `--embedding-url` | `EMBEDDING_URL` | `http://127.0.0.1:57863/v1/embeddings` | OpenAI-compatible embeddings endpoint |
+| `--embedding-model` | `EMBEDDING_MODEL` | `gpustack-bge-m3` | Model name in the embeddings request |
+| `--embedding-api-key` | `EMBEDDING_API_KEY` | _(unset)_ | Sent as `Authorization: Bearer ...` |
+| `--top-k` | `THAILAW_TOP_K` | `5` | Default number of hits when the tool omits `top_k` |
+| `--score-threshold` | `THAILAW_SCORE_THRESHOLD` | `0.30` | Default minimum cosine score |
+| `--max-results` | `THAILAW_MAX_RESULTS` | `20` | Operator ceiling for `top_k` |
+| `--fetch-timeout-ms` | `FETCH_TIMEOUT_MS` | `30000` | Timeout for embedding + Qdrant calls |
 
 ## Search cache
 
@@ -28,8 +44,8 @@ Environment variables for `mcp-thailaw`. None are required; unset values use the
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `MCP_HTTP_PORT` | _(unset)_ | When set, serve Streamable HTTP instead of STDIO |
-| `MCP_HTTP_HOST` | `127.0.0.1` | Bind address. Use `0.0.0.0` in Docker / Open WebUI |
+| `--http-port`, `--port` / `MCP_HTTP_PORT` | _(unset)_ | When set, serve Streamable HTTP instead of STDIO |
+| `--http-host` / `MCP_HTTP_HOST` | `127.0.0.1` | Bind address. Use `0.0.0.0` in Docker / Open WebUI |
 | `MCP_HTTP_STATELESS` | `false` | One-shot POST sessions for serverless hosts |
 | `MCP_HTTP_HARDEN` | `false` | Require auth token + allowed origins |
 | `MCP_HTTP_AUTH_TOKEN` | _(unset)_ | Bearer token when hardened |
@@ -44,11 +60,11 @@ Environment variables for `mcp-thailaw`. None are required; unset values use the
 Open WebUI example:
 
 ```bash
-MCP_HTTP_PORT=8005 \
-MCP_HTTP_HOST=0.0.0.0 \
-QDRANT_URL=http://localhost:6333 \
-EMBEDDING_URL=http://127.0.0.1:57863/v1/embeddings \
-node dist/cli.js
+node dist/cli.js \
+  --http-port 8005 \
+  --http-host 0.0.0.0 \
+  --qdrant-url http://localhost:6333 \
+  --embedding-url http://127.0.0.1:57863/v1/embeddings
 ```
 
 Then add an MCP server of type **streamable-http** at `http://localhost:8005/mcp`.

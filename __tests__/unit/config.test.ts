@@ -6,6 +6,9 @@ import {
   DEFAULT_EMBEDDING_MODEL,
   DEFAULT_QDRANT_URL,
   getThaiLawConfig,
+  resetCliOverrides,
+  resolveHttpListen,
+  setCliOverrides,
   validateThaiLawConfig,
 } from "../../src/config.js";
 import { testFunction, createTestResults, printTestSummary } from "../helpers/test-utils.js";
@@ -18,6 +21,7 @@ async function runTests() {
   console.log("🧪 Testing: config.ts\n");
 
   await testFunction("defaults match the Python prototype", () => {
+    resetCliOverrides();
     env.delete("QDRANT_URL");
     env.delete("QDRANT_COLLECTION");
     env.delete("EMBEDDING_URL");
@@ -34,6 +38,7 @@ async function runTests() {
   }, results);
 
   await testFunction("strips trailing slashes from QDRANT_URL", () => {
+    resetCliOverrides();
     env.set("QDRANT_URL", "http://qdrant.example:6333/");
     assert.equal(getThaiLawConfig().qdrantUrl, "http://qdrant.example:6333");
     env.restore();
@@ -46,6 +51,37 @@ async function runTests() {
     });
     assert.ok(issue);
     assert.ok(issue.includes("QDRANT_URL"));
+  }, results);
+
+  await testFunction("CLI overrides environment variables", () => {
+    resetCliOverrides();
+    env.set("QDRANT_URL", "http://env-qdrant:6333");
+    env.set("QDRANT_COLLECTION", "env-collection");
+    env.set("EMBEDDING_URL", "http://env-embed/v1/embeddings");
+    env.set("EMBEDDING_MODEL", "env-model");
+    env.set("THAILAW_TOP_K", "8");
+    env.set("MCP_HTTP_PORT", "9000");
+    env.set("MCP_HTTP_HOST", "127.0.0.1");
+    setCliOverrides({
+      qdrantUrl: "http://cli-qdrant:6333/",
+      collectionName: "cli-collection",
+      embeddingUrl: "http://cli-embed/v1/embeddings",
+      embeddingModel: "cli-model",
+      defaultTopK: 3,
+      httpPort: 8005,
+      httpHost: "0.0.0.0",
+    });
+    const config = getThaiLawConfig();
+    assert.equal(config.qdrantUrl, "http://cli-qdrant:6333");
+    assert.equal(config.collectionName, "cli-collection");
+    assert.equal(config.embeddingUrl, "http://cli-embed/v1/embeddings");
+    assert.equal(config.embeddingModel, "cli-model");
+    assert.equal(config.defaultTopK, 3);
+    const listen = resolveHttpListen();
+    assert.equal(listen.port, 8005);
+    assert.equal(listen.host, "0.0.0.0");
+    resetCliOverrides();
+    env.restore();
   }, results);
 
   printTestSummary(results, "Config");

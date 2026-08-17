@@ -7,22 +7,39 @@ import {
 } from "./diagnostic-sanitizer.js";
 import { writeDiagnostic } from "./diagnostic-output.js";
 import { packageVersion } from "./version.js";
+import { CliParseError, parseCliArgs } from "./cli-args.js";
+import { envWithCliOverrides, setCliOverrides } from "./config.js";
 
-initializeDiagnosticSanitizer();
-process.on('uncaughtException', handleUncaughtException);
-process.on('unhandledRejection', handleUnhandledRejection);
+process.on("uncaughtException", handleUncaughtException);
+process.on("unhandledRejection", handleUnhandledRejection);
 
-const args = process.argv.slice(2);
-if (args.length === 1 && (args[0] === "--version" || args[0] === "-v")) {
-  writeDiagnostic("log", packageVersion);
-} else if (args.length === 1 && (args[0] === "--help" || args[0] === "-h")) {
+let parsed;
+try {
+  parsed = parseCliArgs(process.argv.slice(2));
+} catch (error) {
+  const message = error instanceof CliParseError ? error.message : String(error);
+  writeDiagnostic("error", message);
+  writeDiagnostic("error", "Use --help for usage.");
+  process.exit(1);
+}
+
+if (parsed.help) {
   const { createCliHelpText } = await import("./resources.js");
   writeDiagnostic("log", createCliHelpText());
-} else {
-  void import("./index.js")
-    .then(({ main }) => main())
-    .catch((error) => {
-      writeDiagnostic("error", "Failed to start server:", sanitizeErrorForTransport(error));
-      process.exit(1);
-    });
+  process.exit(0);
 }
+
+if (parsed.version) {
+  writeDiagnostic("log", packageVersion);
+  process.exit(0);
+}
+
+setCliOverrides(parsed.overrides);
+initializeDiagnosticSanitizer(envWithCliOverrides());
+
+void import("./index.js")
+  .then(({ main }) => main())
+  .catch((error) => {
+    writeDiagnostic("error", "Failed to start server:", sanitizeErrorForTransport(error));
+    process.exit(1);
+  });
