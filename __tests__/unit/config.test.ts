@@ -33,7 +33,7 @@ async function runTests() {
     assert.equal(config.collectionName, DEFAULT_COLLECTION_NAME);
     assert.equal(config.embeddingModel, DEFAULT_EMBEDDING_MODEL);
     assert.equal(config.embeddingUrl, "http://127.0.0.1:3003/v1/embeddings");
-    assert.equal(config.defaultTopK, 40);
+    assert.equal(config.defaultTopK, 5);
     assert.equal(config.defaultScoreThreshold, 0.3);
     env.restore();
   }, results);

@@ -93,7 +93,7 @@ Semantic search over Thai statutes, sections, and related legal text.
 
 **Parameters:**
 - \`query\` (required): Search text, for example "ลักทรัพย์" or "มาตรา ๓๓๕". Arabic article numbers such as 335 are converted to Thai digits ๓๓๕.
-- \`top_k\` (optional): Maximum number of hits (default 40)
+- \`top_k\` (optional): Maximum number of vector hits before มาตรา merge (default 5)
 - \`score_threshold\` (optional): Minimum relevance score from 0.0 to 1.0 (default 0.30)
 - \`law_code\` (optional): Filter by law group code
 - \`category\` (optional): Filter by law category such as "1B"

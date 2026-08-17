@@ -8,6 +8,12 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.3] - 2026-08-17
+
+### Changed
+
+- Default `top_k` is now 5. Fragments are merged into complete มาตรา, so fewer raw hits are enough.
+
 ## [0.1.0-dev.2] - 2026-08-17
 
 ### Added

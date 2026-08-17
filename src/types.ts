@@ -118,7 +118,7 @@ export const SEARCH_THAI_LAW_TOOL: Tool = {
         type: "integer",
         minimum: 1,
         maximum: DEFAULT_MAX_RESULTS,
-        description: `จำนวนผลลัพธ์สูงสุด (ค่าเริ่มต้น ${DEFAULT_TOP_K})`,
+        description: `จำนวนชิ้นส่วนสูงสุดก่อนรวมเป็นมาตรา (ค่าเริ่มต้น ${DEFAULT_TOP_K})`,
       },
       score_threshold: {
         type: "number",
