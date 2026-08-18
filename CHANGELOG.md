@@ -8,6 +8,16 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.11] - 2026-08-18
+
+### Added
+
+- `search_krisdika_online` searches the live สำนักงานคณะกรรมการกฤษฎีกา catalog at https://www.ocs.go.th/searchlaw-law.
+- `search_krisdika` accepts `source`: `qdrant` (default), `online`, `both`, or `auto` (website fallback when Qdrant has no hit).
+- `krisdeka_connection_info` checks that https://www.ocs.go.th/searchlaw-law is reachable.
+- `search_krisdika_online` defaults to ค้นจากเนื้อหา as well as ค้นจากชื่อ.
+- `search_krisdika_online` follows each hit (`getPublicLawDoc`) and returns matching มาตรา from the latest version. Use `detail=list` for titles only.
+
 ## [0.1.0-dev.10] - 2026-08-18
 
 ### Fixed

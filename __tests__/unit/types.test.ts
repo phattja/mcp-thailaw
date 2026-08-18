@@ -3,10 +3,13 @@
 import { strict as assert } from "node:assert";
 import {
   SEARCH_KRISDIKA_TOOL,
+  SEARCH_KRISDIKA_ONLINE_TOOL,
   SEARCH_DEKA_TOOL,
   KRISDIKA_COLLECTION_INFO_TOOL,
+  KRISDEKA_CONNECTION_INFO_TOOL,
   DEKA_CONNECTION_INFO_TOOL,
   isSearchKrisdikaArgs,
+  isSearchOcsArgs,
   isSearchDekaArgs,
   isCollectionInfoArgs,
 } from "../../src/types.js";
@@ -25,6 +28,7 @@ async function runTests() {
     assert.equal(isSearchKrisdikaArgs({ query: "test", is_latest: true, response_format: "json" }), true);
     assert.equal(isSearchKrisdikaArgs({ query: "test", is_latest: false }), true);
     assert.equal(isSearchKrisdikaArgs({ query: "test", group_by_law: false }), true);
+    assert.equal(isSearchKrisdikaArgs({ query: "test", source: "auto" }), true);
   }, results);
 
   await testFunction("isSearchKrisdikaArgs rejects invalid cases", () => {
@@ -39,6 +43,15 @@ async function runTests() {
     assert.equal(isSearchKrisdikaArgs({ query: "test", score_threshold: 1.1 }), false);
     assert.equal(isSearchKrisdikaArgs({ query: "test", is_latest: "yes" }), false);
     assert.equal(isSearchKrisdikaArgs({ query: "test", response_format: "xml" }), false);
+  }, results);
+
+  await testFunction("isSearchOcsArgs accepts valid cases", () => {
+    assert.equal(isSearchOcsArgs({ query: "ลักทรัพย์" }), true);
+    assert.equal(isSearchOcsArgs({ query: "มาตรา 335", top_k: 3, category: "1D" }), true);
+    assert.equal(isSearchOcsArgs({ query: "test", topic: true, content: false }), true);
+    assert.equal(isSearchOcsArgs({ query: "" }), false);
+    assert.equal(isSearchOcsArgs({ query: "test", top_k: 21 }), false);
+    assert.equal(isSearchOcsArgs({ query: "test", topic: "yes" }), false);
   }, results);
 
   await testFunction("isSearchDekaArgs accepts valid cases", () => {
@@ -70,8 +83,10 @@ async function runTests() {
 
   await testFunction("tools expose expected names", () => {
     assert.equal(SEARCH_KRISDIKA_TOOL.name, "search_krisdika");
+    assert.equal(SEARCH_KRISDIKA_ONLINE_TOOL.name, "search_krisdika_online");
     assert.equal(SEARCH_DEKA_TOOL.name, "search_deka");
     assert.equal(KRISDIKA_COLLECTION_INFO_TOOL.name, "krisdika_collection_info");
+    assert.equal(KRISDEKA_CONNECTION_INFO_TOOL.name, "krisdeka_connection_info");
     assert.equal(DEKA_CONNECTION_INFO_TOOL.name, "deka_connection_info");
     assert.ok(SEARCH_KRISDIKA_TOOL.inputSchema);
     assert.ok(KRISDIKA_COLLECTION_INFO_TOOL.inputSchema);

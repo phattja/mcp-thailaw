@@ -11,16 +11,20 @@ import {
 
 import {
   SEARCH_KRISDIKA_TOOL,
+  SEARCH_KRISDIKA_ONLINE_TOOL,
   SEARCH_DEKA_TOOL,
   KRISDIKA_COLLECTION_INFO_TOOL,
+  KRISDEKA_CONNECTION_INFO_TOOL,
   DEKA_CONNECTION_INFO_TOOL,
   isSearchKrisdikaArgs,
+  isSearchOcsArgs,
   isSearchDekaArgs,
   isCollectionInfoArgs,
 } from "./types.js";
 import { logMessage, setLogLevel, getCurrentLogLevel } from "./logging.js";
 import { performKrisdikaSearch, performKrisdikaCollectionInfo } from "./search.js";
 import { performDekaConnectionInfo, performDekaSearch } from "./deka.js";
+import { performOcsConnectionInfo, performOcsSearch } from "./ocs.js";
 import { createConfigResource, createHelpResource } from "./resources.js";
 import { createHttpServer, resolveBindHost } from "./http-server.js";
 import {
@@ -57,8 +61,10 @@ export function createMcpServer(): McpServer {
     return {
       tools: [
         SEARCH_KRISDIKA_TOOL,
+        SEARCH_KRISDIKA_ONLINE_TOOL,
         SEARCH_DEKA_TOOL,
         KRISDIKA_COLLECTION_INFO_TOOL,
+        KRISDEKA_CONNECTION_INFO_TOOL,
         DEKA_CONNECTION_INFO_TOOL,
       ],
     };
@@ -75,6 +81,17 @@ export function createMcpServer(): McpServer {
         }
 
         const result = await performKrisdikaSearch(mcpServer, args, extra.signal);
+        return {
+          content: [{ type: "text", text: result }],
+        };
+      }
+
+      if (name === "search_krisdika_online" || name === "search_krisdeka_online") {
+        if (!isSearchOcsArgs(args)) {
+          throw new Error("Invalid arguments for กฤษฎีกา online search");
+        }
+
+        const result = await performOcsSearch(mcpServer, args, extra.signal);
         return {
           content: [{ type: "text", text: result }],
         };
@@ -97,6 +114,21 @@ export function createMcpServer(): McpServer {
         }
 
         const result = await performKrisdikaCollectionInfo(
+          mcpServer,
+          args?.refresh ?? false,
+          extra.signal,
+        );
+        return {
+          content: [{ type: "text", text: result }],
+        };
+      }
+
+      if (name === "krisdeka_connection_info" || name === "krisdika_connection_info") {
+        if (!isCollectionInfoArgs(args)) {
+          throw new Error("Invalid arguments for กฤษฎีกา connection info");
+        }
+
+        const result = await performOcsConnectionInfo(
           mcpServer,
           args?.refresh ?? false,
           extra.signal,

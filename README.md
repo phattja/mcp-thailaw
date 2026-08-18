@@ -79,6 +79,15 @@ The local defaults match the prototype in `thai_law_mcp.py`:
   * `category` (string, optional)
   * `is_latest` (boolean, optional, default `true`)
   * `group_by_law` (boolean, optional, default `true`) — reconstruct each มาตรา from its fragments and return official statute layout
+  * `source` — `qdrant` (default), `online` (https://www.ocs.go.th/searchlaw-law), `both`, or `auto` (Qdrant first, website if empty)
+  * `response_format` (`text` or `json`, optional)
+* **search_krisdika_online** — live catalog search on https://www.ocs.go.th/searchlaw-law
+  * `query` (string, required)
+  * `top_k` (integer, optional, 1–20, default 5)
+  * `topic`, `content` — ค้นจากชื่อ and ค้นจากเนื้อหา (both on by default)
+  * `detail` — `sections` (default) follows each law and returns matching latest มาตรา; `list` is titles only
+  * `sublaw` — related subordinate laws
+  * `category`, `state`, `year`, `acting`, `subject`, `letter`
   * `response_format` (`text` or `json`, optional)
 * **search_deka** — search Supreme Court judgments on https://deka.supremecourt.or.th/
   * `query` (string, optional if `case_no` or year is set)
@@ -92,6 +101,8 @@ The local defaults match the prototype in `thai_law_mcp.py`:
   * advanced: `litigant`, `judge`, `law_name`, `law_section`, `black_no`, …
   * `top_k`, `response_format`
 * **krisdika_collection_info** — Qdrant กฤษฎีกา collection status, point count, vector size
+  * `refresh` (boolean, optional)
+* **krisdeka_connection_info** — reachability of https://www.ocs.go.th/searchlaw-law
   * `refresh` (boolean, optional)
 * **deka_connection_info** — reachability of deka.supremecourt.or.th
   * `refresh` (boolean, optional)

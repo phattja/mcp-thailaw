@@ -15,6 +15,9 @@ export const DEFAULT_SCORE_THRESHOLD = 0.3;
 export const DEFAULT_MAX_RESULTS = 100;
 export const DEFAULT_DEKA_TOP_K = 5;
 export const DEFAULT_DEKA_MAX_RESULTS = 20;
+export const DEFAULT_OCS_TOP_K = 5;
+export const DEFAULT_OCS_MAX_RESULTS = 20;
+export const DEFAULT_OCS_SECTIONS_PER_LAW = 5;
 export const DEFAULT_FETCH_TIMEOUT_MS = 30000;
 
 export interface ThaiLawConfig {

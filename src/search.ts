@@ -19,6 +19,13 @@ import {
   thaiDigitsToArabic,
 } from "./statute.js";
 import { timelineCodeForUrl } from "./timeline.js";
+import {
+  combineKrisdikaSources,
+  isNoResultsText,
+  krisdikaToOcsArgs,
+  performOcsSearch,
+  resolveKrisdikaSource,
+} from "./ocs.js";
 import type { ResponseFormat, SearchKrisdikaArgs } from "./types.js";
 
 export interface ThaiLawResult {
@@ -489,7 +496,7 @@ function withTimeout(timeoutMs: number, signal?: AbortSignal): { signal: AbortSi
   };
 }
 
-export async function performKrisdikaSearch(
+async function performQdrantKrisdikaSearch(
   mcpServer: McpServer,
   args: SearchKrisdikaArgs,
   signal?: AbortSignal,
@@ -516,6 +523,7 @@ export async function performKrisdikaSearch(
     rerank: config.rerankEnabled,
     response_format: responseFormat,
     collection: config.collectionName,
+    source: "qdrant",
   };
 
   const cached = searchCache.get("search_krisdika", cacheArgs);
@@ -576,6 +584,62 @@ export async function performKrisdikaSearch(
     return output;
   } finally {
     timeout.cleanup();
+  }
+}
+
+export async function performKrisdikaSearch(
+  mcpServer: McpServer,
+  args: SearchKrisdikaArgs,
+  signal?: AbortSignal,
+): Promise<string> {
+  const source = resolveKrisdikaSource(args.source);
+  const ocsArgs = krisdikaToOcsArgs(args);
+  const responseFormat: ResponseFormat = args.response_format ?? "text";
+
+  if (source === "online") {
+    return performOcsSearch(mcpServer, ocsArgs, signal);
+  }
+
+  if (source === "both") {
+    let qdrant: string;
+    try {
+      qdrant = await performQdrantKrisdikaSearch(mcpServer, args, signal);
+    } catch (error) {
+      qdrant = error instanceof Error ? error.message : String(error);
+    }
+    let online: string;
+    try {
+      online = await performOcsSearch(mcpServer, ocsArgs, signal);
+    } catch (error) {
+      online = error instanceof Error ? error.message : String(error);
+    }
+    return combineKrisdikaSources(args.query, qdrant, online, responseFormat);
+  }
+
+  const qdrant = await performQdrantKrisdikaSearch(mcpServer, args, signal);
+  if (source !== "auto" || !isNoResultsText(qdrant, args.query)) {
+    return qdrant;
+  }
+
+  try {
+    const online = await performOcsSearch(mcpServer, ocsArgs, signal);
+    if (isNoResultsText(online, args.query)) {
+      return qdrant;
+    }
+    if (responseFormat === "json") {
+      return combineKrisdikaSources(args.query, qdrant, online, responseFormat);
+    }
+    return [
+      "ไม่พบในฐาน Qdrant จึงค้นจากเว็บกฤษฎีกา",
+      "แหล่งออนไลน์: https://www.ocs.go.th/searchlaw-law",
+      "",
+      online,
+    ].join("\n");
+  } catch (error) {
+    logMessage(mcpServer, "warning", "OCS fallback failed; returning Qdrant empty result", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return qdrant;
   }
 }
 

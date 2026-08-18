@@ -80,8 +80,10 @@ export function createConfigResource(mcpServer?: McpServer) {
     capabilities: {
       tools: [
         "search_krisdika",
+        "search_krisdika_online",
         "search_deka",
         "krisdika_collection_info",
+        "krisdeka_connection_info",
         "deka_connection_info",
       ],
       logging: true,
@@ -112,9 +114,23 @@ Semantic search over Thai statutes, sections, and related legal text.
 - \`category\` (optional): Filter by law category such as "1B"
 - \`is_latest\` (optional): Keep only the latest in-force version. Defaults to \`true\`. Set \`false\` to search historical versions.
 - \`group_by_law\` (optional): Reconstruct each มาตรา from its fragments and return official statute layout. Defaults to \`true\`.
+- \`source\` (optional): \`qdrant\` (default), \`online\` (เว็บ https://www.ocs.go.th/searchlaw-law), \`both\`, or \`auto\` (Qdrant first, then the website if nothing is found).
 - \`response_format\` (optional): \`text\` (default) or \`json\`
 
-### 2. search_deka
+### 2. search_krisdika_online
+Search the live สำนักงานคณะกรรมการกฤษฎีกา catalog at https://www.ocs.go.th/searchlaw-law. Use this when the user wants the website, both sources, or when Qdrant has no hit.
+
+**Parameters:**
+- \`query\` (required): Search text
+- \`top_k\` (optional): Maximum laws to return (default 5, max 20)
+- \`topic\`, \`content\`: ค้นจากชื่อ and ค้นจากเนื้อหา (both default true)
+- \`sublaw\`: related subordinate laws (default false)
+- \`detail\`: \`sections\` (default) opens the latest version of each law and returns matching มาตรา. \`list\` returns titles and snippets only.
+- \`category\`: law type such as \`1D\` / ประมวลกฎหมาย
+- \`state\`: \`current\` / \`pending\` / \`repealed\` (default current + pending)
+- \`year\`, \`acting\`, \`subject\`, \`letter\`, \`response_format\`
+
+### 3. search_deka
 Search Supreme Court judgments on https://deka.supremecourt.or.th/. Use this for case law (คำพิพากษาฎีกา), not the statute text.
 
 **Parameters:**
@@ -128,13 +144,19 @@ Search Supreme Court judgments on https://deka.supremecourt.or.th/. Use this for
 - Advanced: \`litigant\`, \`judge\`, \`panel_judge\`, \`law_name\`, \`law_section\`, \`black_no\`, \`department\`, \`remark\`
 - \`top_k\`, \`response_format\`
 
-### 3. krisdika_collection_info
+### 4. krisdika_collection_info
 Inspect the configured Qdrant กฤษฎีกา collection: point count, vector size, and embedding settings.
 
 **Parameters:**
 - \`refresh\` (optional): Bypass the process cache
 
-### 4. deka_connection_info
+### 5. krisdeka_connection_info
+Check that https://www.ocs.go.th/searchlaw-law is reachable. Returns HTTP status, latency, and catalog size when the search table can be read.
+
+**Parameters:**
+- \`refresh\` (optional): Bypass the process cache
+
+### 6. deka_connection_info
 Check that https://deka.supremecourt.or.th/ is reachable. Returns HTTP status, latency, and catalog size when the page can be parsed.
 
 **Parameters:**

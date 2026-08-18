@@ -77,8 +77,10 @@ async function runTests() {
     const { client } = await connect();
     const result = await client.listTools();
     assert.ok(result.tools.find((tool) => tool.name === "search_krisdika"));
+    assert.ok(result.tools.find((tool) => tool.name === "search_krisdika_online"));
     assert.ok(result.tools.find((tool) => tool.name === "search_deka"));
     assert.ok(result.tools.find((tool) => tool.name === "krisdika_collection_info"));
+    assert.ok(result.tools.find((tool) => tool.name === "krisdeka_connection_info"));
     assert.ok(result.tools.find((tool) => tool.name === "deka_connection_info"));
     await client.close();
   }, results);
@@ -112,6 +114,59 @@ async function runTests() {
     assert.ok(text.includes("เลขที่คำพิพากษาศาลฎีกา: 664/2569"));
     assert.ok(text.includes("ย่อสั้น:"));
     assert.ok(text.includes("ลักบัตร"));
+    await client.close();
+    fetchMocker.restore();
+  }, results);
+
+  await testFunction("tools/call search_krisdika_online returns OCS hits", async () => {
+    fetchMocker.mock(async (url) => {
+      if (url.toString().includes("list_table_search")) {
+        return createMockFetch({
+          json: {
+            meta: { total: 3, page: "1", perpage: "2" },
+            data: [{
+              lawCode: "ป0006-1D-0003",
+              lawNameTh: "ประมวลกฎหมายอาญา",
+              contentlaw: "ความผิดฐาน<mark>ลัก</mark><mark>ทรัพย์</mark>",
+              encTimelineID: "abc123",
+              publishDate: "13/11/2499",
+              year: 1956,
+              state: "01",
+            }],
+          },
+        })(url);
+      }
+      if (url.toString().includes("getLawDoc")) {
+        return createMockFetch({
+          json: {
+            respHeader: { errorCode: "SUCCESS" },
+            respBody: {
+              lawInfo: { timelineLawCode: "ป0006-1D-0003-65" },
+              lawSections: [{
+                sectionId: 334,
+                sectionTypeId: "4",
+                sectionNo: "334",
+                sectionLabel: "มาตรา 334",
+                sectionContent: "<p>ผู้ใดเอาทรัพย์ของผู้อื่นไปโดยทุจริต กระทำความผิดฐานลักทรัพย์</p>",
+              }],
+            },
+          },
+        })(url);
+      }
+      return createMockFetch({ status: 404, ok: false, statusText: "Not Found" })(url);
+    });
+    searchCache.clear();
+    const { client } = await connect();
+    const result = await client.callTool({
+      name: "search_krisdika_online",
+      arguments: { query: "ลักทรัพย์", top_k: 2 },
+    });
+    const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
+    assert.ok(text.includes("ประมวลกฎหมายอาญา"));
+    assert.ok(text.includes("ลักทรัพย์"));
+    assert.ok(text.includes("มาตราล่าสุด"));
+    assert.ok(text.includes("มาตรา 334"));
+    assert.ok(text.includes("ocs.go.th"));
     await client.close();
     fetchMocker.restore();
   }, results);
@@ -159,6 +214,36 @@ async function runTests() {
     const parsed = JSON.parse(text);
     assert.equal(parsed.status, "green");
     assert.equal(parsed.vector_size, 1024);
+    await client.close();
+    fetchMocker.restore();
+  }, results);
+
+  await testFunction("tools/call krisdeka_connection_info reports reachability", async () => {
+    fetchMocker.mock(async (url) => {
+      const target = url.toString();
+      if (target.includes("list_table_search")) {
+        return createMockFetch({
+          json: { meta: { total: 18432, page: "1", perpage: "1" }, data: [] },
+        })(url);
+      }
+      if (target.includes("ocs.go.th")) {
+        return createMockFetch({
+          body: "<html><title>ค้นหากฎหมาย</title></html>",
+        })(url);
+      }
+      return createMockFetch({ status: 404, ok: false, statusText: "Not Found" })(url);
+    });
+    searchCache.clear();
+    const { client } = await connect();
+    const result = await client.callTool({
+      name: "krisdeka_connection_info",
+      arguments: { refresh: true },
+    });
+    const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
+    const parsed = JSON.parse(text);
+    assert.equal(parsed.reachable, true);
+    assert.equal(parsed.catalog_count, 18432);
+    assert.ok(String(parsed.search_url).includes("ocs.go.th"));
     await client.close();
     fetchMocker.restore();
   }, results);
