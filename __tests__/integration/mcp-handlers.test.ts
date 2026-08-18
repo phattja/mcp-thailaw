@@ -89,12 +89,14 @@ async function runTests() {
       if (target.includes("deka.supremecourt.or.th")) {
         return createMockFetch({
           body: `
+            <div id="deka_result_info" class="container">
             พบ <span class="color-master">12</span> รายการ
             <li class="clear result"><ul>
             <li class="item_deka_no"><input class="deka-result" value="724864" />
             <label>1. คำพิพากษาศาลฎีกาที่ 664/2569</label></li>
             <li id="short_text_docid_724864"><p>การที่จำเลยลักบัตรตามประมวลกฎหมายอาญา มาตรา 334</p></li>
             </ul></li>
+            </div>
           `,
         })(url);
       }

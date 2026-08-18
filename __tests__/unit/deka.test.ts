@@ -1,13 +1,14 @@
 #!/usr/bin/env tsx
 
 import { strict as assert } from "node:assert";
-import { buildSearchBody, extractDekaLaws, formatDekaText, parseDekaCatalogCount, parseDekaSearchHtml, resolveDekaMode } from "../../src/deka.js";
+import { buildSearchBody, extractDekaLaws, extractDekaResultInfo, formatDekaJson, formatDekaText, parseDekaCatalogCount, parseDekaSearchHtml, resolveDekaMode } from "../../src/deka.js";
 import { createNoResultsMessage } from "../../src/error-handler.js";
 import { testFunction, createTestResults, printTestSummary } from "../helpers/test-utils.js";
 
 const results = createTestResults();
 
 const FIXTURE = `
+<div id="deka_result_info" class="container">
 พบ <span class="color-master">3,981</span> รายการ จากทั้งหมด 133,162 รายการ
 <li class="clear result"><ul>
 <li class="item_deka_no content-title">
@@ -27,6 +28,7 @@ const FIXTURE = `
 <p>โจทก์ฟ้องตาม ป.อ. ม. 334</p>
 </li>
 </ul></li>
+</div>
 `;
 
 async function runTests() {
@@ -50,7 +52,13 @@ async function runTests() {
   }, results);
 
   await testFunction("formatDekaText returns the empty message", () => {
-    assert.equal(formatDekaText("ไม่มี", 0, []), createNoResultsMessage("ไม่มี"));
+    assert.equal(formatDekaText("ไม่มี", ""), createNoResultsMessage("ไม่มี"));
+  }, results);
+
+  await testFunction("default basic search uses all documents and full text", () => {
+    const body = buildSearchBody({ query: "ลักทรัพย์" });
+    assert.equal(body.get("search_doctype"), "");
+    assert.equal(body.get("search_type"), "2");
   }, results);
 
   await testFunction("buildSearchBody maps basic ฉบับเต็ม, case number, and year range", () => {
@@ -90,18 +98,16 @@ async function runTests() {
     assert.equal(parseDekaCatalogCount(html), 133162);
   }, results);
 
-  await testFunction("formatDekaText lists case titles", () => {
-    const text = formatDekaText("ลักทรัพย์", 3981, [{
-      case_no: "664/2569",
-      docid: "724864",
-      title: "คำพิพากษาศาลฎีกาที่ 664/2569",
-      summary: "การที่จำเลยลักบัตร",
-      laws: ["ประมวลกฎหมายอาญา มาตรา 334"],
-      url: "https://deka.supremecourt.or.th/",
-    }]);
-    assert.ok(text.includes("พบ 3,981 คดี"));
+  await testFunction("formatDekaText returns the deka_result_info block as text", () => {
+    const block = extractDekaResultInfo(FIXTURE);
+    const text = formatDekaText("ลักทรัพย์", block);
+    assert.ok(block.includes('id="deka_result_info"'));
     assert.ok(text.includes("คำพิพากษาศาลฎีกาที่ 664/2569"));
     assert.ok(text.includes("การที่จำเลยลักบัตร"));
+    const parsed = JSON.parse(formatDekaJson("ลักทรัพย์", block));
+    assert.equal(parsed.query, "ลักทรัพย์");
+    assert.ok(parsed.html.includes("deka_result_info"));
+    assert.ok(parsed.text.includes("ลักบัตร"));
   }, results);
 
   printTestSummary(results, "Deka");

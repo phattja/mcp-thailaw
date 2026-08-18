@@ -1,10 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import {
-  DEFAULT_DEKA_MAX_RESULTS,
-  DEFAULT_DEKA_TOP_K,
-  getThaiLawConfig,
-  validateThaiLawConfig,
-} from "./config.js";
+import { getThaiLawConfig, validateThaiLawConfig } from "./config.js";
 import { createConfigurationError, createNetworkError, createNoResultsMessage, createServerError } from "./error-handler.js";
 import { getFetch } from "./http-client.js";
 import { logMessage } from "./logging.js";
@@ -13,7 +8,6 @@ import type { ResponseFormat, SearchDekaArgs } from "./types.js";
 import { packageVersion } from "./version.js";
 
 export const DEFAULT_DEKA_URL = "https://deka.supremecourt.or.th";
-const SUMMARY_LIMIT = 700;
 
 export interface DekaCase {
   case_no: string;
@@ -67,11 +61,11 @@ function resolveDocType(raw?: string): string {
 }
 
 function resolveTextScope(raw?: string): "1" | "2" {
-  const key = (raw ?? "short").trim().toLowerCase();
-  if (key === "2" || key === "full" || key === "ฉบับเต็ม" || key === "long") {
-    return "2";
+  const key = (raw ?? "full").trim().toLowerCase();
+  if (key === "1" || key === "short" || key === "ฉบับย่อ") {
+    return "1";
   }
-  return "1";
+  return "2";
 }
 
 const ADVANCED_FIELDS: Array<keyof SearchDekaArgs> = [
@@ -114,12 +108,15 @@ function setIf(body: URLSearchParams, key: string, value?: string): void {
   }
 }
 
-function stripHtml(html: string): string {
+export function htmlToReadableText(html: string): string {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<button[\s\S]*?<\/button>/gi, " ")
+    .replace(/<input[^>]*>/gi, " ")
+    .replace(/<hr\s*\/?>/gi, "\n")
     .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<\/p>/gi, "\n")
+    .replace(/<\/(?:p|li|div|h[1-6]|tr|ul)>/gi, "\n")
     .replace(/<[^>]+>/g, " ")
     .replace(/&nbsp;/gi, " ")
     .replace(/&amp;/g, "&")
@@ -128,15 +125,35 @@ function stripHtml(html: string): string {
     .replace(/&quot;/g, "\"")
     .replace(/&#39;/g, "'")
     .replace(/[ \t]+/g, " ")
-    .replace(/\n+/g, "\n")
+    .replace(/\n[ \t]+/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
 
-function truncate(text: string, limit: number): string {
-  if (text.length <= limit) {
-    return text;
+export function extractDekaResultInfo(html: string): string {
+  const open = /<div\s+id=["']deka_result_info["'][^>]*>/i.exec(html);
+  if (!open || open.index === undefined) {
+    return "";
   }
-  return `${text.slice(0, limit).trimEnd()}…`;
+  const start = open.index;
+  let index = start + open[0].length;
+  let depth = 1;
+  const lower = html.toLowerCase();
+  while (index < html.length && depth > 0) {
+    const nextOpen = lower.indexOf("<div", index);
+    const nextClose = lower.indexOf("</div>", index);
+    if (nextClose < 0) {
+      break;
+    }
+    if (nextOpen >= 0 && nextOpen < nextClose) {
+      depth += 1;
+      index = nextOpen + 4;
+    } else {
+      depth -= 1;
+      index = nextClose + 6;
+    }
+  }
+  return html.slice(start, index).trim();
 }
 
 export function extractDekaLaws(text: string): string[] {
@@ -186,7 +203,7 @@ export function parseDekaSearchHtml(html: string, baseUrl = DEFAULT_DEKA_URL): {
       `<li[^>]*id="short_text_docid_${docid || "\\d+"}"[^>]*>([\\s\\S]*?)</li>`,
       "i",
     ).exec(block);
-    const summary = truncate(stripHtml(shortMatch?.[1] ?? ""), SUMMARY_LIMIT);
+    const summary = htmlToReadableText(shortMatch?.[1] ?? "");
     const title = `คำพิพากษาศาลฎีกาที่ ${caseNo}`;
     cases.push({
       case_no: caseNo,
@@ -248,43 +265,30 @@ export function buildSearchBody(args: SearchDekaArgs): URLSearchParams {
   return body;
 }
 
-export function formatDekaText(query: string, total: number | undefined, cases: DekaCase[]): string {
-  if (cases.length === 0) {
+export function formatDekaText(query: string, resultHtml: string): string {
+  const text = htmlToReadableText(resultHtml);
+  if (!text) {
     return createNoResultsMessage(query);
   }
-
-  const header = total !== undefined
-    ? `พบ ${total.toLocaleString("en-US")} คดีจากศาลฎีกา แสดง ${cases.length} รายการแรกสำหรับ "${query}"`
-    : `ผลค้นหาศาลฎีกาสำหรับ "${query}" (${cases.length} รายการ)`;
-
-  const blocks = cases.map((item, index) => {
-    const lines = [
-      `[${index + 1}] ${item.title}`,
-      `ลิงก์: ${item.url}`,
-    ];
-    if (item.laws.length > 0) {
-      lines.push(`กฎหมายที่อ้าง: ${item.laws.join(", ")}`);
-    }
-    lines.push("", "ย่อสั้น:", item.summary || "(ไม่มีย่อสั้น)", "-".repeat(60));
-    return lines.join("\n");
-  });
-
-  return [header, "", ...blocks].join("\n");
+  return text;
 }
 
-export function formatDekaJson(query: string, total: number | undefined, cases: DekaCase[]): string {
+export function formatDekaJson(query: string, resultHtml: string): string {
+  const text = htmlToReadableText(resultHtml);
   return JSON.stringify({
     query,
     source: "deka.supremecourt.or.th",
-    total,
-    results: cases,
+    url: dekaHomeUrl(),
+    total: parseDekaCatalogCount(resultHtml) ?? parseDekaCatalogCount(text) ?? null,
+    text,
+    html: resultHtml,
   }, null, 2);
 }
 
 export async function searchDekaCases(
   args: SearchDekaArgs,
   signal?: AbortSignal,
-): Promise<{ total?: number; cases: DekaCase[] }> {
+): Promise<{ html: string; resultHtml: string }> {
   const baseUrl = dekaBaseUrl();
   const url = `${baseUrl}/search`;
   const body = buildSearchBody(args);
@@ -316,7 +320,7 @@ export async function searchDekaCases(
   }
 
   const html = await response.text();
-  return parseDekaSearchHtml(html, baseUrl);
+  return { html, resultHtml: extractDekaResultInfo(html) };
 }
 
 export function parseDekaCatalogCount(html: string): number | undefined {
@@ -409,14 +413,13 @@ export async function performDekaSearch(
   }
 
   const config = getThaiLawConfig();
-  const topK = Math.min(args.top_k ?? DEFAULT_DEKA_TOP_K, DEFAULT_DEKA_MAX_RESULTS);
   const responseFormat: ResponseFormat = args.response_format ?? "text";
   const cacheArgs = {
     query: args.query ?? "",
-    top_k: topK,
+    top_k: args.top_k ?? "",
     mode: resolveDekaMode(args),
-    doc_type: args.doc_type ?? "",
-    text_scope: args.text_scope ?? "short",
+    doc_type: args.doc_type ?? "all",
+    text_scope: args.text_scope ?? "full",
     year: args.year ?? "",
     year_from: args.year_from ?? "",
     year_to: args.year_to ?? "",
@@ -439,9 +442,10 @@ export async function performDekaSearch(
 
   const label = args.query?.trim() || args.case_no?.trim() || "ฎีกา";
   logMessage(mcpServer, "info", `Searching Supreme Court Deka: ${label}`, {
-    topK,
     year: args.year,
     case_no: args.case_no,
+    text_scope: args.text_scope ?? "full",
+    doc_type: args.doc_type ?? "all",
   });
 
   const controller = new AbortController();
@@ -451,11 +455,10 @@ export async function performDekaSearch(
   signal?.addEventListener("abort", onAbort);
 
   try {
-    const { total, cases } = await searchDekaCases(args, controller.signal);
-    const limited = cases.slice(0, topK);
+    const { resultHtml } = await searchDekaCases(args, controller.signal);
     const output = responseFormat === "json"
-      ? formatDekaJson(label, total, limited)
-      : formatDekaText(label, total, limited);
+      ? formatDekaJson(label, resultHtml)
+      : formatDekaText(label, resultHtml);
     searchCache.set("search_deka", cacheArgs, output);
     return output;
   } finally {

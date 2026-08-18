@@ -8,6 +8,12 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.8] - 2026-08-18
+
+### Changed
+
+- `search_deka` defaults to every document type and ฉบับเต็ม, and returns the full `#deka_result_info` block as text (default) or json.
+
 ## [0.1.0-dev.7] - 2026-08-18
 
 ### Added
