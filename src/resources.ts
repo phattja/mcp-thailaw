@@ -54,7 +54,7 @@ export function createConfigResource(mcpServer?: McpServer) {
     serverInfo: {
       name: SERVER_NAME,
       version: packageVersion,
-      description: "MCP server for Thai law search over OCS Krisdika in Qdrant",
+      description: "MCP server for Thai law search over ฐานข้อมูลกฤษฎีกา in Qdrant",
     },
     environment: {
       ...(showFullConfig
@@ -78,7 +78,12 @@ export function createConfigResource(mcpServer?: McpServer) {
       currentLogLevel: getCurrentLogLevel(mcpServer),
     },
     capabilities: {
-      tools: ["search_thai_law", "thailaw_collection_info"],
+      tools: [
+        "search_krisdika",
+        "search_deka",
+        "krisdika_collection_info",
+        "deka_connection_info",
+      ],
       logging: true,
       resources: true,
       transports: process.env.THAILAW_HTTP_PORT ? ["stdio", "http"] : ["stdio"],
@@ -92,11 +97,11 @@ export function createHelpResource() {
   return `# Thai Law MCP Server Help
 
 ## Overview
-This is a Model Context Protocol (MCP) server that searches Thai law from the OCS Krisdika dataset stored in Qdrant. Queries are embedded with Qwen3-VL-Embedding-2B (2048-d) and optionally reranked with Qwen3-VL-Reranker-2B.
+This is a Model Context Protocol (MCP) server that searches Thai law from the สำนักงานคณะกรรมการกฤษฎีกา dataset stored in Qdrant. Queries are embedded with Qwen3-VL-Embedding-2B (2048-d) and optionally reranked with Qwen3-VL-Reranker-2B.
 
 ## Available Tools
 
-### 1. search_thai_law
+### 1. search_krisdika
 Semantic search over Thai statutes, sections, and related legal text.
 
 **Parameters:**
@@ -109,8 +114,27 @@ Semantic search over Thai statutes, sections, and related legal text.
 - \`group_by_law\` (optional): Reconstruct each มาตรา from its fragments and return official statute layout. Defaults to \`true\`.
 - \`response_format\` (optional): \`text\` (default) or \`json\`
 
-### 2. thailaw_collection_info
-Inspect the configured Qdrant collection: point count, vector size, and embedding settings.
+### 2. search_deka
+Search Supreme Court judgments on https://deka.supremecourt.or.th/. Use this for case law (คำพิพากษาฎีกา), not the statute text.
+
+**Parameters:**
+- \`query\`: Search text, for example "ลักทรัพย์" or "มาตรา ๓๓๕"
+- \`text_scope\`: \`short\` (ฉบับย่อ) or \`full\` (ฉบับเต็ม)
+- \`doc_type\`: all / judgment / order / decision
+- \`case_no\`, \`case_prefix\`: หมายเลขคำพิพากษา / คำสั่งคำร้อง
+- \`year\`, \`year_from\`, \`year_to\`: ช่วงเวลา ปี พ.ศ.
+- \`mode\`: \`basic\` (ค้นหาปกติ) or \`advanced\` (ค้นหาขั้นสูง)
+- Advanced: \`litigant\`, \`judge\`, \`panel_judge\`, \`law_name\`, \`law_section\`, \`black_no\`, \`department\`, \`remark\`
+- \`top_k\`, \`response_format\`
+
+### 3. krisdika_collection_info
+Inspect the configured Qdrant กฤษฎีกา collection: point count, vector size, and embedding settings.
+
+**Parameters:**
+- \`refresh\` (optional): Bypass the process cache
+
+### 4. deka_connection_info
+Check that https://deka.supremecourt.or.th/ is reachable. Returns HTTP status, latency, and catalog size when the page can be parsed.
 
 **Parameters:**
 - \`refresh\` (optional): Bypass the process cache

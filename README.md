@@ -1,6 +1,6 @@
 # Thai Law MCP Server
 
-**Semantic Thai law search for AI assistants — query OCS Krisdika (สำนักงานคณะกรรมการกฤษฎีกา) through Qdrant.**
+**Semantic Thai law search for AI assistants — query สำนักงานคณะกรรมการกฤษฎีกา through Qdrant.**
 
 An [MCP server](https://modelcontextprotocol.io/introduction) that embeds a query and searches the `krisdika` vector collection. The search backend is the Thai-law flow from `thai_law_mcp.py`. The server shape — STDIO and Streamable HTTP, Docker, and client wiring — comes from [mcp-searxng](https://github.com/ihor-sokoliuk/mcp-searxng).
 
@@ -71,7 +71,7 @@ The local defaults match the prototype in `thai_law_mcp.py`:
 
 ## Tools
 
-* **search_thai_law** — semantic search over Thai statutes
+* **search_krisdika** — semantic search over Thai statutes (กฤษฎีกา)
   * `query` (string, required)
   * `top_k` (integer, optional, 1–100, default 5)
   * `score_threshold` (number, optional, 0.0–1.0, default 0.30)
@@ -80,7 +80,18 @@ The local defaults match the prototype in `thai_law_mcp.py`:
   * `is_latest` (boolean, optional, default `true`)
   * `group_by_law` (boolean, optional, default `true`) — reconstruct each มาตรา from its fragments and return official statute layout
   * `response_format` (`text` or `json`, optional)
-* **thailaw_collection_info** — Qdrant collection status, point count, vector size
+* **search_deka** — search Supreme Court judgments on https://deka.supremecourt.or.th/
+  * `query` (string, optional if `case_no` or year is set)
+  * `text_scope` — `short` (ฉบับย่อ) or `full` (ฉบับเต็ม)
+  * `doc_type` — all / judgment / order / decision
+  * `case_no`, `case_prefix` — หมายเลขคำพิพากษา / คำสั่งคำร้อง
+  * `year`, `year_from`, `year_to` — ช่วงปี พ.ศ.
+  * `mode` — `basic` or `advanced`
+  * advanced: `litigant`, `judge`, `law_name`, `law_section`, `black_no`, …
+  * `top_k`, `response_format`
+* **krisdika_collection_info** — Qdrant กฤษฎีกา collection status, point count, vector size
+  * `refresh` (boolean, optional)
+* **deka_connection_info** — reachability of deka.supremecourt.or.th
   * `refresh` (boolean, optional)
 
 ## Installation

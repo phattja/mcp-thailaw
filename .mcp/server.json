@@ -7,12 +7,12 @@
     "url": "https://github.com/phattja/mcp-thailaw",
     "source": "github"
   },
-  "version": "0.1.0-dev.6",
+  "version": "0.1.0-dev.7",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "mcp-thailaw",
-      "version": "0.1.0-dev.6",
+      "version": "0.1.0-dev.7",
       "transport": {
         "type": "stdio"
       },

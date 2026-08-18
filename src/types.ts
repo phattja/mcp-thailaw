@@ -1,9 +1,15 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
-import { DEFAULT_MAX_RESULTS, DEFAULT_SCORE_THRESHOLD, DEFAULT_TOP_K } from "./config.js";
+import {
+  DEFAULT_DEKA_MAX_RESULTS,
+  DEFAULT_DEKA_TOP_K,
+  DEFAULT_MAX_RESULTS,
+  DEFAULT_SCORE_THRESHOLD,
+  DEFAULT_TOP_K,
+} from "./config.js";
 
 export type ResponseFormat = "text" | "json";
 
-export interface SearchThaiLawArgs {
+export interface SearchKrisdikaArgs {
   query: string;
   top_k?: number;
   score_threshold?: number;
@@ -18,9 +24,39 @@ export interface CollectionInfoArgs {
   refresh?: boolean;
 }
 
+export type DekaSearchMode = "basic" | "advanced";
+export type DekaTextScope = "short" | "full";
+export type DekaDocType = "all" | "judgment" | "order" | "decision" | "sc_order" | "decision_order";
+
+export interface SearchDekaArgs {
+  query?: string;
+  top_k?: number;
+  mode?: DekaSearchMode;
+  doc_type?: DekaDocType | string;
+  text_scope?: DekaTextScope | string;
+  case_no?: string;
+  case_prefix?: string;
+  year?: string | number;
+  year_from?: string | number;
+  year_to?: string | number;
+  litigant?: string;
+  judge?: string;
+  panel_judge?: string;
+  law_name?: string;
+  law_section?: string;
+  law_paragraph?: string;
+  law_subsection?: string;
+  law_other?: string;
+  law_condition?: "AND" | "OR" | string;
+  black_no?: string;
+  department?: string;
+  remark?: string;
+  response_format?: ResponseFormat;
+}
+
 const VALID_RESPONSE_FORMATS: readonly ResponseFormat[] = ["text", "json"];
 
-export function isSearchThaiLawArgs(args: unknown): args is SearchThaiLawArgs {
+export function isSearchKrisdikaArgs(args: unknown): args is SearchKrisdikaArgs {
   if (
     typeof args !== "object"
     || args === null
@@ -86,6 +122,100 @@ export function isSearchThaiLawArgs(args: unknown): args is SearchThaiLawArgs {
   return true;
 }
 
+const DEKA_OPTIONAL_STRINGS = [
+  "query",
+  "mode",
+  "doc_type",
+  "text_scope",
+  "case_no",
+  "case_prefix",
+  "litigant",
+  "judge",
+  "panel_judge",
+  "law_name",
+  "law_section",
+  "law_paragraph",
+  "law_subsection",
+  "law_other",
+  "law_condition",
+  "black_no",
+  "department",
+  "remark",
+] as const;
+
+const DEKA_OPTIONAL_YEARS = ["year", "year_from", "year_to"] as const;
+
+const DEKA_CRITERIA = [
+  "query",
+  "case_no",
+  "year",
+  "year_from",
+  "year_to",
+  "litigant",
+  "judge",
+  "panel_judge",
+  "law_name",
+  "law_section",
+  "black_no",
+  "department",
+  "remark",
+] as const;
+
+export function isSearchDekaArgs(args: unknown): args is SearchDekaArgs {
+  if (typeof args !== "object" || args === null) {
+    return false;
+  }
+
+  const searchArgs = args as Record<string, unknown>;
+  const hasCriterion = DEKA_CRITERIA.some((key) => {
+    const value = searchArgs[key];
+    return value !== undefined && String(value).trim() !== "";
+  });
+  if (!hasCriterion) {
+    return false;
+  }
+
+  if (
+    searchArgs.top_k !== undefined
+    && (
+      typeof searchArgs.top_k !== "number"
+      || !Number.isInteger(searchArgs.top_k)
+      || searchArgs.top_k < 1
+      || searchArgs.top_k > DEFAULT_DEKA_MAX_RESULTS
+    )
+  ) {
+    return false;
+  }
+
+  for (const key of DEKA_OPTIONAL_STRINGS) {
+    if (searchArgs[key] !== undefined && typeof searchArgs[key] !== "string") {
+      return false;
+    }
+  }
+
+  for (const key of DEKA_OPTIONAL_YEARS) {
+    if (
+      searchArgs[key] !== undefined
+      && typeof searchArgs[key] !== "string"
+      && typeof searchArgs[key] !== "number"
+    ) {
+      return false;
+    }
+  }
+
+  if (
+    searchArgs.response_format !== undefined
+    && (
+      typeof searchArgs.response_format !== "string"
+      || !VALID_RESPONSE_FORMATS.includes(searchArgs.response_format as ResponseFormat)
+    )
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
 export function isCollectionInfoArgs(args: unknown): args is CollectionInfoArgs {
   if (args === undefined || args === null) {
     return true;
@@ -100,10 +230,10 @@ export function isCollectionInfoArgs(args: unknown): args is CollectionInfoArgs 
   return true;
 }
 
-export const SEARCH_THAI_LAW_TOOL: Tool = {
-  name: "search_thai_law",
+export const SEARCH_KRISDIKA_TOOL: Tool = {
+  name: "search_krisdika",
   description:
-    "ค้นหากฎหมายไทยจากฐานข้อมูล OCS Krisdika (สำนักงานคณะกรรมการกฤษฎีกา) ด้วย semantic search. "
+    "ค้นหากฎหมายไทยจากฐานข้อมูลสำนักงานคณะกรรมการกฤษฎีกา ด้วย semantic search. "
     + "ค่าเริ่มต้นคืนเฉพาะฉบับล่าสุดที่มีผลบังคับใช้ (is_latest=true) "
     + "และรวมชิ้นส่วนของมาตราเดียวกันแล้วจัดรูปแบบเหมือนราชกิจจานุเบกษา (group_by_law=true). "
     + "ใช้สำหรับค้นหาบทบัญญัติ มาตรา หรือเนื้อหาที่เกี่ยวข้องกับกฎหมายไทย.",
@@ -154,16 +284,143 @@ export const SEARCH_THAI_LAW_TOOL: Tool = {
   },
 };
 
-export const COLLECTION_INFO_TOOL: Tool = {
-  name: "thailaw_collection_info",
+export const SEARCH_DEKA_TOOL: Tool = {
+  name: "search_deka",
   description:
-    "แสดงสถานะคอลเลกชัน Qdrant ของฐานกฎหมายไทย รวมจำนวนเอกสารและขนาดเวกเตอร์",
+    "ค้นหาคำพิพากษา คำสั่งคำร้อง และคำวินิจฉัยศาลฎีกาจาก https://deka.supremecourt.or.th/ "
+    + "รองรับค้นหาปกติ (คำค้น, ฉบับย่อ/ฉบับเต็ม, เลขคำพิพากษา, ช่วงปี พ.ศ.) และค้นหาขั้นสูง "
+    + "(คู่ความ, ผู้พิพากษา, กฎหมาย/มาตรา, เลขคดีดำ). ไม่ใช่ตัวบทกฎหมาย — ใช้คู่กับ search_krisdika เมื่อต้องการมาตรา.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      query: {
+        type: "string",
+        description: "คำค้น เช่น ลักทรัพย์ หรือ มาตรา ๓๓๕. เว้นว่างได้ถ้าใส่ case_no หรือช่วงปี",
+      },
+      top_k: {
+        type: "integer",
+        minimum: 1,
+        maximum: DEFAULT_DEKA_MAX_RESULTS,
+        description: `จำนวนคดีสูงสุดต่อครั้ง (ค่าเริ่มต้น ${DEFAULT_DEKA_TOP_K}, สูงสุด ${DEFAULT_DEKA_MAX_RESULTS})`,
+      },
+      mode: {
+        type: "string",
+        enum: ["basic", "advanced"],
+        description: "basic = ค้นหาปกติ, advanced = ค้นหาขั้นสูง (ค่าเริ่มต้น basic และเลื่อนเป็น advanced เองถ้ามีฟิลด์ขั้นสูง)",
+      },
+      doc_type: {
+        type: "string",
+        description: "ประเภทเอกสาร: all, judgment (คำพิพากษาศาลฎีกา), order (คำสั่งคำร้อง), decision (คำวินิจฉัย), sc_order, decision_order",
+      },
+      text_scope: {
+        type: "string",
+        enum: ["short", "full"],
+        description: "ค้นหาจากฉบับย่อ (short) หรือฉบับเต็ม (full). ค่าเริ่มต้น short",
+      },
+      case_no: {
+        type: "string",
+        description: "หมายเลขคำพิพากษา / คำสั่งคำร้อง เช่น 664/2569",
+      },
+      case_prefix: {
+        type: "string",
+        description: "คำนำหน้าเลขคดี เช่น ท. ยช. อม. หรือรหัสคำสั่ง ครพ.",
+      },
+      year: {
+        type: "string",
+        description: "ปี พ.ศ. ปีเดียว เช่น 2568 (เท่ากับ year_from=year_to)",
+      },
+      year_from: {
+        type: "string",
+        description: "ปี พ.ศ. เริ่มต้นของช่วงเวลา",
+      },
+      year_to: {
+        type: "string",
+        description: "ปี พ.ศ. สิ้นสุดของช่วงเวลา",
+      },
+      litigant: {
+        type: "string",
+        description: "ชื่อคู่ความ (ค้นหาขั้นสูง)",
+      },
+      judge: {
+        type: "string",
+        description: "เจ้าของสำนวน (ค้นหาขั้นสูง)",
+      },
+      panel_judge: {
+        type: "string",
+        description: "ผู้พิพากษาในองค์คณะ (ค้นหาขั้นสูง)",
+      },
+      law_name: {
+        type: "string",
+        description: "ชื่อกฎหมาย (ค้นหาขั้นสูง)",
+      },
+      law_section: {
+        type: "string",
+        description: "มาตรา (ค้นหาขั้นสูง)",
+      },
+      law_paragraph: {
+        type: "string",
+        description: "วรรค (ค้นหาขั้นสูง)",
+      },
+      law_subsection: {
+        type: "string",
+        description: "อนุมาตรา (ค้นหาขั้นสูง)",
+      },
+      law_other: {
+        type: "string",
+        description: "ข้อความอื่นของบทบัญญัติ (ค้นหาขั้นสูง)",
+      },
+      law_condition: {
+        type: "string",
+        enum: ["AND", "OR"],
+        description: "เงื่อนไขรวมกฎหมายหลายรายการ AND หรือ OR (ค้นหาขั้นสูง)",
+      },
+      black_no: {
+        type: "string",
+        description: "หมายเลขคดีดำของศาลฎีกา (ค้นหาขั้นสูง)",
+      },
+      department: {
+        type: "string",
+        description: "แผนก (ค้นหาขั้นสูง)",
+      },
+      remark: {
+        type: "string",
+        description: "หมายเหตุ (ค้นหาขั้นสูง)",
+      },
+      response_format: {
+        type: "string",
+        enum: ["text", "json"],
+        description: "รูปแบบผลลัพธ์: text (อ่านง่าย) หรือ json",
+      },
+    },
+  },
+};
+
+export const KRISDIKA_COLLECTION_INFO_TOOL: Tool = {
+  name: "krisdika_collection_info",
+  description:
+    "แสดงสถานะคอลเลกชัน Qdrant ของฐานข้อมูลกฤษฎีกา รวมจำนวนเอกสารและขนาดเวกเตอร์",
   inputSchema: {
     type: "object",
     properties: {
       refresh: {
         type: "boolean",
         description: "ข้ามแคชและดึงข้อมูลล่าสุดจาก Qdrant",
+      },
+    },
+  },
+};
+
+export const DEKA_CONNECTION_INFO_TOOL: Tool = {
+  name: "deka_connection_info",
+  description:
+    "ตรวจการเชื่อมต่อไปยังเว็บค้นคำพิพากษาศาลฎีกา https://deka.supremecourt.or.th/ "
+    + "คืนสถานะ HTTP, เวลาตอบ, และจำนวนคดีในฐานถ้าอ่านได้",
+  inputSchema: {
+    type: "object",
+    properties: {
+      refresh: {
+        type: "boolean",
+        description: "ข้ามแคชและตรวจการเชื่อมต่อใหม่",
       },
     },
   },

@@ -8,6 +8,20 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.7] - 2026-08-18
+
+### Added
+
+- `search_deka` searches คำพิพากษาศาลฎีกา on https://deka.supremecourt.or.th/ and returns case number, short digest, cited laws, and the site URL.
+- `deka_connection_info` checks that the Supreme Court search site is reachable.
+- `search_deka` supports basic and advanced fields: ฉบับย่อ/ฉบับเต็ม, เลขคำพิพากษา, ช่วงปี พ.ศ., ประเภทเอกสาร, คู่ความ, ผู้พิพากษา, กฎหมาย/มาตรา.
+
+### Changed
+
+- Renamed `search_thai_law` to `search_krisdika`.
+- Renamed `thailaw_collection_info` to `krisdika_collection_info`.
+- User-facing sentences now say กฤษฎีกา instead of Krisdika.
+
 ## [0.1.0-dev.6] - 2026-08-17
 
 ### Changed

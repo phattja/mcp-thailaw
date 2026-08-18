@@ -10,13 +10,17 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 import {
-  SEARCH_THAI_LAW_TOOL,
-  COLLECTION_INFO_TOOL,
-  isSearchThaiLawArgs,
+  SEARCH_KRISDIKA_TOOL,
+  SEARCH_DEKA_TOOL,
+  KRISDIKA_COLLECTION_INFO_TOOL,
+  DEKA_CONNECTION_INFO_TOOL,
+  isSearchKrisdikaArgs,
+  isSearchDekaArgs,
   isCollectionInfoArgs,
 } from "./types.js";
 import { logMessage, setLogLevel, getCurrentLogLevel } from "./logging.js";
-import { performThaiLawSearch, performCollectionInfo } from "./search.js";
+import { performKrisdikaSearch, performKrisdikaCollectionInfo } from "./search.js";
+import { performDekaConnectionInfo, performDekaSearch } from "./deka.js";
 import { createConfigResource, createHelpResource } from "./resources.js";
 import { createHttpServer, resolveBindHost } from "./http-server.js";
 import {
@@ -51,7 +55,12 @@ export function createMcpServer(): McpServer {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     logMessage(mcpServer, "debug", "Handling list_tools request");
     return {
-      tools: [SEARCH_THAI_LAW_TOOL, COLLECTION_INFO_TOOL],
+      tools: [
+        SEARCH_KRISDIKA_TOOL,
+        SEARCH_DEKA_TOOL,
+        KRISDIKA_COLLECTION_INFO_TOOL,
+        DEKA_CONNECTION_INFO_TOOL,
+      ],
     };
   });
 
@@ -60,23 +69,49 @@ export function createMcpServer(): McpServer {
     logMessage(mcpServer, "debug", `Handling call_tool request: ${name}`);
 
     try {
-      if (name === "search_thai_law") {
-        if (!isSearchThaiLawArgs(args)) {
-          throw new Error("Invalid arguments for Thai law search");
+      if (name === "search_krisdika") {
+        if (!isSearchKrisdikaArgs(args)) {
+          throw new Error("Invalid arguments for กฤษฎีกา search");
         }
 
-        const result = await performThaiLawSearch(mcpServer, args, extra.signal);
+        const result = await performKrisdikaSearch(mcpServer, args, extra.signal);
         return {
           content: [{ type: "text", text: result }],
         };
       }
 
-      if (name === "thailaw_collection_info") {
-        if (!isCollectionInfoArgs(args)) {
-          throw new Error("Invalid arguments for collection info");
+      if (name === "search_deka") {
+        if (!isSearchDekaArgs(args)) {
+          throw new Error("Invalid arguments for Supreme Court Deka search");
         }
 
-        const result = await performCollectionInfo(
+        const result = await performDekaSearch(mcpServer, args, extra.signal);
+        return {
+          content: [{ type: "text", text: result }],
+        };
+      }
+
+      if (name === "krisdika_collection_info") {
+        if (!isCollectionInfoArgs(args)) {
+          throw new Error("Invalid arguments for กฤษฎีกา collection info");
+        }
+
+        const result = await performKrisdikaCollectionInfo(
+          mcpServer,
+          args?.refresh ?? false,
+          extra.signal,
+        );
+        return {
+          content: [{ type: "text", text: result }],
+        };
+      }
+
+      if (name === "deka_connection_info") {
+        if (!isCollectionInfoArgs(args)) {
+          throw new Error("Invalid arguments for Deka connection info");
+        }
+
+        const result = await performDekaConnectionInfo(
           mcpServer,
           args?.refresh ?? false,
           extra.signal,

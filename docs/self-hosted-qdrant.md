@@ -100,7 +100,7 @@ node dist/cli.js \
   --rerank-model Qwen3-VL-Reranker-2B
 ```
 
-Use `thailaw_collection_info` to confirm point count and vector size.
+Use `krisdika_collection_info` to confirm point count and vector size.
 
 ## Dataset license
 

@@ -13,6 +13,8 @@ export const DEFAULT_RERANK_MODEL = "Qwen3-VL-Reranker-2B";
 export const DEFAULT_TOP_K = 5;
 export const DEFAULT_SCORE_THRESHOLD = 0.3;
 export const DEFAULT_MAX_RESULTS = 100;
+export const DEFAULT_DEKA_TOP_K = 5;
+export const DEFAULT_DEKA_MAX_RESULTS = 20;
 export const DEFAULT_FETCH_TIMEOUT_MS = 30000;
 
 export interface ThaiLawConfig {

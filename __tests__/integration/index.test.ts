@@ -3,7 +3,7 @@
 import { strict as assert } from "node:assert";
 import { createMcpServer } from "../../src/index.js";
 import { packageVersion } from "../../src/version.js";
-import { isSearchThaiLawArgs } from "../../src/types.js";
+import { isSearchKrisdikaArgs } from "../../src/types.js";
 import { createConfigResource, createHelpResource } from "../../src/resources.js";
 import { testFunction, createTestResults, printTestSummary } from "../helpers/test-utils.js";
 
@@ -23,9 +23,9 @@ async function runTests() {
   }, results);
 
   await testFunction("search type guard integration", () => {
-    assert.ok(isSearchThaiLawArgs({ query: "ลักทรัพย์", top_k: 3 }));
-    assert.ok(!isSearchThaiLawArgs({ query: "" }));
-    assert.ok(!isSearchThaiLawArgs(null));
+    assert.ok(isSearchKrisdikaArgs({ query: "ลักทรัพย์", top_k: 3 }));
+    assert.ok(!isSearchKrisdikaArgs({ query: "" }));
+    assert.ok(!isSearchKrisdikaArgs(null));
   }, results);
 
   await testFunction("config and help resources are available", () => {

@@ -76,17 +76,49 @@ async function runTests() {
   await testFunction("tools/list returns Thai law tools", async () => {
     const { client } = await connect();
     const result = await client.listTools();
-    assert.ok(result.tools.find((tool) => tool.name === "search_thai_law"));
-    assert.ok(result.tools.find((tool) => tool.name === "thailaw_collection_info"));
+    assert.ok(result.tools.find((tool) => tool.name === "search_krisdika"));
+    assert.ok(result.tools.find((tool) => tool.name === "search_deka"));
+    assert.ok(result.tools.find((tool) => tool.name === "krisdika_collection_info"));
+    assert.ok(result.tools.find((tool) => tool.name === "deka_connection_info"));
     await client.close();
   }, results);
 
-  await testFunction("tools/call search_thai_law returns formatted text", async () => {
+  await testFunction("tools/call search_deka returns a short digest", async () => {
+    fetchMocker.mock(async (url) => {
+      const target = url.toString();
+      if (target.includes("deka.supremecourt.or.th")) {
+        return createMockFetch({
+          body: `
+            พบ <span class="color-master">12</span> รายการ
+            <li class="clear result"><ul>
+            <li class="item_deka_no"><input class="deka-result" value="724864" />
+            <label>1. คำพิพากษาศาลฎีกาที่ 664/2569</label></li>
+            <li id="short_text_docid_724864"><p>การที่จำเลยลักบัตรตามประมวลกฎหมายอาญา มาตรา 334</p></li>
+            </ul></li>
+          `,
+        })(url);
+      }
+      return createMockFetch({ status: 404, ok: false, statusText: "Not Found" })(url);
+    });
+    searchCache.clear();
+    const { client } = await connect();
+    const result = await client.callTool({
+      name: "search_deka",
+      arguments: { query: "ลักทรัพย์" },
+    });
+    const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
+    assert.ok(text.includes("คำพิพากษาศาลฎีกาที่ 664/2569"));
+    assert.ok(text.includes("ลักบัตร"));
+    await client.close();
+    fetchMocker.restore();
+  }, results);
+
+  await testFunction("tools/call search_krisdika returns formatted text", async () => {
     mockSearchStack();
     searchCache.clear();
     const { client } = await connect();
     const result = await client.callTool({
-      name: "search_thai_law",
+      name: "search_krisdika",
       arguments: { query: "ลักทรัพย์" },
     });
     const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
@@ -96,12 +128,12 @@ async function runTests() {
     fetchMocker.restore();
   }, results);
 
-  await testFunction("tools/call search_thai_law supports json format", async () => {
+  await testFunction("tools/call search_krisdika supports json format", async () => {
     mockSearchStack();
     searchCache.clear();
     const { client } = await connect();
     const result = await client.callTool({
-      name: "search_thai_law",
+      name: "search_krisdika",
       arguments: { query: "ลักทรัพย์", response_format: "json" },
     });
     const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
@@ -112,18 +144,42 @@ async function runTests() {
     fetchMocker.restore();
   }, results);
 
-  await testFunction("tools/call thailaw_collection_info returns stats", async () => {
+  await testFunction("tools/call krisdika_collection_info returns stats", async () => {
     mockSearchStack();
     searchCache.clear();
     const { client } = await connect();
     const result = await client.callTool({
-      name: "thailaw_collection_info",
+      name: "krisdika_collection_info",
       arguments: { refresh: true },
     });
     const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
     const parsed = JSON.parse(text);
     assert.equal(parsed.status, "green");
     assert.equal(parsed.vector_size, 1024);
+    await client.close();
+    fetchMocker.restore();
+  }, results);
+
+  await testFunction("tools/call deka_connection_info reports reachability", async () => {
+    fetchMocker.mock(async (url) => {
+      if (url.toString().includes("deka.supremecourt.or.th")) {
+        return createMockFetch({
+          body: "พบ 20 รายการ จากทั้งหมด 133,162 รายการ",
+        })(url);
+      }
+      return createMockFetch({ status: 404, ok: false, statusText: "Not Found" })(url);
+    });
+    searchCache.clear();
+    const { client } = await connect();
+    const result = await client.callTool({
+      name: "deka_connection_info",
+      arguments: { refresh: true },
+    });
+    const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
+    const parsed = JSON.parse(text);
+    assert.equal(parsed.reachable, true);
+    assert.equal(parsed.catalog_count, 133162);
+    assert.ok(String(parsed.search_url).includes("deka.supremecourt.or.th"));
     await client.close();
     fetchMocker.restore();
   }, results);
@@ -140,7 +196,7 @@ async function runTests() {
   await testFunction("invalid search args throw", async () => {
     const { client } = await connect();
     await assert.rejects(
-      () => client.callTool({ name: "search_thai_law", arguments: { query: "" } }),
+      () => client.callTool({ name: "search_krisdika", arguments: { query: "" } }),
       /Invalid arguments/,
     );
     await client.close();
@@ -154,7 +210,7 @@ async function runTests() {
     const parsed = JSON.parse(config.contents[0].text as string);
     assert.equal(parsed.serverInfo.name, "phattja/mcp-thailaw");
     const help = await client.readResource({ uri: "help://usage-guide" });
-    assert.ok((help.contents[0].text as string).includes("search_thai_law"));
+    assert.ok((help.contents[0].text as string).includes("search_krisdika"));
     await client.close();
   }, results);
 

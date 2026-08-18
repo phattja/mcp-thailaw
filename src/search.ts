@@ -19,7 +19,7 @@ import {
   thaiDigitsToArabic,
 } from "./statute.js";
 import { timelineCodeForUrl } from "./timeline.js";
-import type { ResponseFormat, SearchThaiLawArgs } from "./types.js";
+import type { ResponseFormat, SearchKrisdikaArgs } from "./types.js";
 
 export interface ThaiLawResult {
   score: number;
@@ -489,9 +489,9 @@ function withTimeout(timeoutMs: number, signal?: AbortSignal): { signal: AbortSi
   };
 }
 
-export async function performThaiLawSearch(
+export async function performKrisdikaSearch(
   mcpServer: McpServer,
-  args: SearchThaiLawArgs,
+  args: SearchKrisdikaArgs,
   signal?: AbortSignal,
 ): Promise<string> {
   const configIssue = validateThaiLawConfig();
@@ -518,7 +518,7 @@ export async function performThaiLawSearch(
     collection: config.collectionName,
   };
 
-  const cached = searchCache.get("search_thai_law", cacheArgs);
+  const cached = searchCache.get("search_krisdika", cacheArgs);
   if (cached) {
     logMessage(mcpServer, "debug", "Returning cached Thai law search result");
     return cached;
@@ -572,14 +572,14 @@ export async function performThaiLawSearch(
       ? formatSearchJson(args.query, config.collectionName, results)
       : formatSearchText(args.query, results);
 
-    searchCache.set("search_thai_law", cacheArgs, output);
+    searchCache.set("search_krisdika", cacheArgs, output);
     return output;
   } finally {
     timeout.cleanup();
   }
 }
 
-export async function performCollectionInfo(
+export async function performKrisdikaCollectionInfo(
   mcpServer: McpServer,
   refresh = false,
   signal?: AbortSignal,
@@ -592,7 +592,7 @@ export async function performCollectionInfo(
   const config = getThaiLawConfig();
   const cacheArgs = { collection: config.collectionName };
   if (!refresh) {
-    const cached = searchCache.get("thailaw_collection_info", cacheArgs);
+    const cached = searchCache.get("krisdika_collection_info", cacheArgs);
     if (cached) {
       return cached;
     }
@@ -608,7 +608,7 @@ export async function performCollectionInfo(
       rerankEnabled: config.rerankEnabled,
       embeddingDimensions: config.embeddingDimensions,
     });
-    searchCache.set("thailaw_collection_info", cacheArgs, output);
+    searchCache.set("krisdika_collection_info", cacheArgs, output);
     return output;
   } finally {
     timeout.cleanup();
