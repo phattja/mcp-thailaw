@@ -1,5 +1,10 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { getThaiLawConfig, validateThaiLawConfig } from "./config.js";
+import {
+  DEFAULT_DEKA_MAX_RESULTS,
+  DEFAULT_DEKA_TOP_K,
+  getThaiLawConfig,
+  validateThaiLawConfig,
+} from "./config.js";
 import { createConfigurationError, createNetworkError, createNoResultsMessage, createServerError } from "./error-handler.js";
 import { getFetch } from "./http-client.js";
 import { logMessage } from "./logging.js";
@@ -17,6 +22,28 @@ export interface DekaCase {
   laws: string[];
   summary: string;
   url: string;
+}
+
+export function dekaTopK(requested?: number): number {
+  return Math.min(requested ?? DEFAULT_DEKA_TOP_K, DEFAULT_DEKA_MAX_RESULTS);
+}
+
+export function limitDekaResultHtml(html: string, topK: number): string {
+  const starts: number[] = [];
+  const marker = /<li class="clear result">/gi;
+  let match: RegExpExecArray | null = marker.exec(html);
+  while (match) {
+    starts.push(match.index);
+    match = marker.exec(html);
+  }
+  if (starts.length === 0 || starts.length <= topK) {
+    return html;
+  }
+  const prefix = html.slice(0, starts[0]);
+  const kept = html.slice(starts[0], starts[topK]);
+  const afterLast = html.slice(starts[starts.length - 1]);
+  const trailer = afterLast.match(/<\/ul>\s*(<\/div>\s*)+$/i)?.[0] ?? "</div>";
+  return `${prefix}${kept}${trailer}`;
 }
 
 export function resolveDekaDetail(raw?: string): "summary" | "full" {
@@ -503,9 +530,10 @@ export async function performDekaSearch(
 
   const config = getThaiLawConfig();
   const responseFormat: ResponseFormat = args.response_format ?? "text";
+  const topK = dekaTopK(args.top_k);
   const cacheArgs = {
     query: args.query ?? "",
-    top_k: args.top_k ?? "",
+    top_k: topK,
     mode: resolveDekaMode(args),
     doc_type: args.doc_type ?? "all",
     text_scope: args.text_scope ?? "full",
@@ -532,6 +560,7 @@ export async function performDekaSearch(
 
   const label = args.query?.trim() || args.case_no?.trim() || "ฎีกา";
   logMessage(mcpServer, "info", `Searching Supreme Court Deka: ${label}`, {
+    topK,
     year: args.year,
     case_no: args.case_no,
     text_scope: args.text_scope ?? "full",
@@ -546,17 +575,19 @@ export async function performDekaSearch(
 
   try {
     const { resultHtml } = await searchDekaCases(args, controller.signal);
+    const limitedHtml = limitDekaResultHtml(resultHtml, topK);
     const detail = resolveDekaDetail(args.detail);
     let output: string;
     if (detail === "full") {
       output = responseFormat === "json"
-        ? formatDekaJson(label, resultHtml)
-        : formatDekaText(label, resultHtml);
+        ? formatDekaJson(label, limitedHtml)
+        : formatDekaText(label, limitedHtml);
     } else {
-      const parsed = parseDekaSearchHtml(resultHtml);
+      const parsed = parseDekaSearchHtml(limitedHtml);
+      const cases = parsed.cases.slice(0, topK);
       output = responseFormat === "json"
-        ? formatDekaSummaryJson(label, resultHtml, parsed.cases)
-        : formatDekaSummaryText(label, resultHtml, parsed.cases);
+        ? formatDekaSummaryJson(label, resultHtml, cases)
+        : formatDekaSummaryText(label, resultHtml, cases);
     }
     searchCache.set("search_deka", cacheArgs, output);
     return output;

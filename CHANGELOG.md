@@ -8,6 +8,12 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.10] - 2026-08-18
+
+### Fixed
+
+- `search_deka` now honors `top_k` (default 5). It no longer returns the whole first page (~20 cases).
+
 ## [0.1.0-dev.9] - 2026-08-18
 
 ### Changed

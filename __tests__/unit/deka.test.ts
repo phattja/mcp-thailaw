@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import { strict as assert } from "node:assert";
-import { buildSearchBody, extractDekaLaws, extractDekaResultInfo, formatDekaJson, formatDekaSummaryText, formatDekaText, parseDekaCatalogCount, parseDekaSearchHtml, resolveDekaDetail, resolveDekaMode } from "../../src/deka.js";
+import { buildSearchBody, dekaTopK, extractDekaLaws, extractDekaResultInfo, formatDekaJson, formatDekaSummaryText, formatDekaText, limitDekaResultHtml, parseDekaCatalogCount, parseDekaSearchHtml, resolveDekaDetail, resolveDekaMode } from "../../src/deka.js";
 import { createNoResultsMessage } from "../../src/error-handler.js";
 import { testFunction, createTestResults, printTestSummary } from "../helpers/test-utils.js";
 
@@ -102,6 +102,20 @@ async function runTests() {
   await testFunction("parseDekaCatalogCount reads the full catalog size", () => {
     const html = "พบรายการ 20 รายการ จากทั้งหมด 133,162 รายการ (0.4400 วินาที)";
     assert.equal(parseDekaCatalogCount(html), 133162);
+  }, results);
+
+  await testFunction("top_k limits returned cases", () => {
+    assert.equal(dekaTopK(2), 2);
+    assert.equal(dekaTopK(undefined), 5);
+    const parsed = parseDekaSearchHtml(FIXTURE);
+    const limited = parsed.cases.slice(0, dekaTopK(1));
+    const text = formatDekaSummaryText("ลักทรัพย์", extractDekaResultInfo(FIXTURE), limited);
+    assert.equal(limited.length, 1);
+    assert.ok(text.includes("664/2569"));
+    assert.equal(text.includes("8829/2568"), false);
+    const html = limitDekaResultHtml(extractDekaResultInfo(FIXTURE), 1);
+    assert.ok(html.includes("664/2569"));
+    assert.equal(html.includes("8829/2568"), false);
   }, results);
 
   await testFunction("formatDekaSummaryText shows case number, parties, laws, short digest", () => {
