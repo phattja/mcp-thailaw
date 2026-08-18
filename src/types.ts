@@ -51,6 +51,7 @@ export interface SearchDekaArgs {
   black_no?: string;
   department?: string;
   remark?: string;
+  detail?: "summary" | "full" | string;
   response_format?: ResponseFormat;
 }
 
@@ -141,6 +142,7 @@ const DEKA_OPTIONAL_STRINGS = [
   "black_no",
   "department",
   "remark",
+  "detail",
 ] as const;
 
 const DEKA_OPTIONAL_YEARS = ["year", "year_from", "year_to"] as const;
@@ -288,7 +290,7 @@ export const SEARCH_DEKA_TOOL: Tool = {
   name: "search_deka",
   description:
     "ค้นหาคำพิพากษา คำสั่งคำร้อง และคำวินิจฉัยศาลฎีกาจาก https://deka.supremecourt.or.th/ "
-    + "ค่าเริ่มต้นค้นจากข้อมูลทั้งหมดและฉบับเต็ม. คืนทั้งบล็อกผลลัพธ์ #deka_result_info เป็น text (ค่าเริ่มต้น) หรือ json. "
+    + "ค่าเริ่มต้นค้นจากข้อมูลทั้งหมดและฉบับเต็ม. ผลลัพธ์ค่าเริ่มต้นมีเฉพาะเลขที่คำพิพากษา ชื่อคู่ความ ชื่อกฎหมาย และย่อสั้น. "
     + "รองรับค้นหาปกติและขั้นสูง. ไม่ใช่ตัวบทกฎหมาย — ใช้คู่กับ search_krisdika เมื่อต้องการมาตรา.",
   inputSchema: {
     type: "object",
@@ -385,6 +387,11 @@ export const SEARCH_DEKA_TOOL: Tool = {
       remark: {
         type: "string",
         description: "หมายเหตุ (ค้นหาขั้นสูง)",
+      },
+      detail: {
+        type: "string",
+        enum: ["summary", "full"],
+        description: "summary (ค่าเริ่มต้น) = เลขฎีกา ชื่อคู่ความ ชื่อกฎหมาย ย่อสั้น. full = รายละเอียดทั้งหมดใน #deka_result_info",
       },
       response_format: {
         type: "string",

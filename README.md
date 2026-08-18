@@ -83,7 +83,8 @@ The local defaults match the prototype in `thai_law_mcp.py`:
 * **search_deka** — search Supreme Court judgments on https://deka.supremecourt.or.th/
   * `query` (string, optional if `case_no` or year is set)
   * `text_scope` — `short` (ฉบับย่อ) or `full` (ฉบับเต็ม, default)
-  * default document set is ทั้งหมด; returns the full `#deka_result_info` block
+  * default result: เลขที่คำพิพากษา, ชื่อคู่ความ, ชื่อกฎหมาย, ย่อสั้น
+  * `detail=full` returns the entire `#deka_result_info` block
   * `doc_type` — all / judgment / order / decision
   * `case_no`, `case_prefix` — หมายเลขคำพิพากษา / คำสั่งคำร้อง
   * `year`, `year_from`, `year_to` — ช่วงปี พ.ศ.

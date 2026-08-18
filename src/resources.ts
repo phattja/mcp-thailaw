@@ -120,7 +120,7 @@ Search Supreme Court judgments on https://deka.supremecourt.or.th/. Use this for
 **Parameters:**
 - \`query\`: Search text, for example "ลักทรัพย์" or "มาตรา ๓๓๕"
 - \`text_scope\`: \`short\` (ฉบับย่อ) or \`full\` (ฉบับเต็ม, default)
-- Default document set is ทั้งหมด. Results are the full \`#deka_result_info\` block as text (default) or json.
+- Default document set is ทั้งหมด and ฉบับเต็ม. Default result is เลขที่คำพิพากษา, ชื่อคู่ความ, ชื่อกฎหมาย, ย่อสั้น. Use \`detail=full\` for the full \`#deka_result_info\` block.
 - \`doc_type\`: all / judgment / order / decision
 - \`case_no\`, \`case_prefix\`: หมายเลขคำพิพากษา / คำสั่งคำร้อง
 - \`year\`, \`year_from\`, \`year_to\`: ช่วงเวลา ปี พ.ศ.

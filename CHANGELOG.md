@@ -8,6 +8,12 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.9] - 2026-08-18
+
+### Changed
+
+- `search_deka` default output is เลขที่คำพิพากษาศาลฎีกา, ชื่อคู่ความ, ชื่อกฎหมาย, and ย่อสั้น. Full `#deka_result_info` is returned only when `detail=full`.
+
 ## [0.1.0-dev.8] - 2026-08-18
 
 ### Changed

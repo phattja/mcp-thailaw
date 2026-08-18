@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import { strict as assert } from "node:assert";
-import { buildSearchBody, extractDekaLaws, extractDekaResultInfo, formatDekaJson, formatDekaText, parseDekaCatalogCount, parseDekaSearchHtml, resolveDekaMode } from "../../src/deka.js";
+import { buildSearchBody, extractDekaLaws, extractDekaResultInfo, formatDekaJson, formatDekaSummaryText, formatDekaText, parseDekaCatalogCount, parseDekaSearchHtml, resolveDekaDetail, resolveDekaMode } from "../../src/deka.js";
 import { createNoResultsMessage } from "../../src/error-handler.js";
 import { testFunction, createTestResults, printTestSummary } from "../helpers/test-utils.js";
 
@@ -18,6 +18,10 @@ const FIXTURE = `
 <li id="short_text_docid_724864" class="item_short_text content-detail">
 <p class="content-detail">การที่จำเลยลักบัตร เป็นความผิดตามประมวลกฎหมายอาญา มาตรา 334 และ มาตรา 335 (1)</p>
 </li>
+<li class="item_litigant content-option"><label class="content-option">ชื่อคู่ความ</label>
+<ul><li>โจทก์ - พนักงานอัยการ</li><li>จำเลย - นางสาว ก.</li></ul></li>
+<li class="item_law content-detail"><label class="content-option">ฎีกาอื่นที่เกี่ยวข้องแยกตามกฎหมายและมาตรา</label>
+<ul><li>ป.อ. ม. 334, ม. 335 (1)</li></ul></li>
 </ul></li>
 <li class="clear result"><ul>
 <li class="item_deka_no content-title">
@@ -41,6 +45,8 @@ async function runTests() {
     assert.equal(parsed.cases[0]?.case_no, "664/2569");
     assert.equal(parsed.cases[0]?.docid, "724864");
     assert.ok(parsed.cases[0]?.summary.includes("ลักบัตร"));
+    assert.deepEqual(parsed.cases[0]?.parties, ["โจทก์ - พนักงานอัยการ", "จำเลย - นางสาว ก."]);
+    assert.ok(parsed.cases[0]?.laws.some((item) => item.includes("334")));
     assert.equal(parsed.cases[1]?.case_no, "8829/2568");
     assert.equal(parsed.cases[0]?.url, "https://deka.supremecourt.or.th/");
   }, results);
@@ -96,6 +102,19 @@ async function runTests() {
   await testFunction("parseDekaCatalogCount reads the full catalog size", () => {
     const html = "พบรายการ 20 รายการ จากทั้งหมด 133,162 รายการ (0.4400 วินาที)";
     assert.equal(parseDekaCatalogCount(html), 133162);
+  }, results);
+
+  await testFunction("formatDekaSummaryText shows case number, parties, laws, short digest", () => {
+    assert.equal(resolveDekaDetail(undefined), "summary");
+    assert.equal(resolveDekaDetail("รายละเอียดทั้งหมด"), "full");
+    const parsed = parseDekaSearchHtml(FIXTURE);
+    const text = formatDekaSummaryText("ลักทรัพย์", extractDekaResultInfo(FIXTURE), parsed.cases);
+    assert.ok(text.includes("เลขที่คำพิพากษาศาลฎีกา: 664/2569"));
+    assert.ok(text.includes("ชื่อคู่ความ:"));
+    assert.ok(text.includes("โจทก์ - พนักงานอัยการ"));
+    assert.ok(text.includes("ชื่อกฎหมาย:"));
+    assert.ok(text.includes("ย่อสั้น:"));
+    assert.ok(text.includes("ลักบัตร"));
   }, results);
 
   await testFunction("formatDekaText returns the deka_result_info block as text", () => {

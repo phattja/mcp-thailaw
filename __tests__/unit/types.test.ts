@@ -47,6 +47,7 @@ async function runTests() {
     assert.equal(isSearchDekaArgs({ case_no: "664/2569" }), true);
     assert.equal(isSearchDekaArgs({ year_from: "2560", year_to: "2568" }), true);
     assert.equal(isSearchDekaArgs({ query: "test", response_format: "json" }), true);
+    assert.equal(isSearchDekaArgs({ query: "ลักทรัพย์", detail: "full" }), true);
   }, results);
 
   await testFunction("isSearchDekaArgs rejects invalid cases", () => {

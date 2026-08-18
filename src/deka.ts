@@ -13,9 +13,51 @@ export interface DekaCase {
   case_no: string;
   docid: string;
   title: string;
-  summary: string;
+  parties: string[];
   laws: string[];
+  summary: string;
   url: string;
+}
+
+export function resolveDekaDetail(raw?: string): "summary" | "full" {
+  const key = (raw ?? "summary").trim().toLowerCase();
+  if (
+    key === "full"
+    || key === "ทั้งหมด"
+    || key === "รายละเอียดทั้งหมด"
+    || key === "complete"
+  ) {
+    return "full";
+  }
+  return "summary";
+}
+
+function extractLabeledList(block: string, label: string): string[] {
+  const pattern = new RegExp(
+    `<label[^>]*>\\s*${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*</label>\\s*<ul>([\\s\\S]*?)</ul>`,
+    "i",
+  );
+  const match = pattern.exec(block);
+  if (!match) {
+    return [];
+  }
+  return htmlToReadableText(match[1])
+    .split("\n")
+    .map((line) => line.replace(/^[-•]\s*/, "").trim())
+    .filter((line) => line.length > 0);
+}
+
+function extractLawNames(block: string): string[] {
+  const labeled = extractLabeledList(block, "ฎีกาอื่นที่เกี่ยวข้องแยกตามกฎหมายและมาตรา");
+  if (labeled.length > 0) {
+    return labeled;
+  }
+  const lawMatch = /<li[^>]*class="[^"]*item_law content-detail[^"]*"[^>]*>([\s\S]*?)<\/li>\s*<li class="content-detail-option"/i.exec(block);
+  if (lawMatch) {
+    const text = htmlToReadableText(lawMatch[1]).replace(/^ฎีกาอื่นที่เกี่ยวข้องแยกตามกฎหมายและมาตรา\s*/, "");
+    return text ? [text] : [];
+  }
+  return [];
 }
 
 function dekaBaseUrl(): string {
@@ -190,11 +232,17 @@ export function parseDekaSearchHtml(html: string, baseUrl = DEFAULT_DEKA_URL): {
   const blocks = html.split(/<li class="clear result">/i).slice(1);
 
   for (const block of blocks) {
-    const caseMatch = /คำพิพากษาศาลฎีกาที่\s+([0-9]+\/[0-9]+)/.exec(block);
-    if (!caseMatch) {
+    const titleMatch = /(?:คำพิพากษาศาลฎีกาที่|คำสั่งคำร้องที่|คำวินิจฉัยที่)\s*([^\s<]+)/.exec(block)
+      ?? /text_bookmark_name_\d+"\s+value="([^"]+)"/.exec(block);
+    if (!titleMatch) {
       continue;
     }
-    const caseNo = caseMatch[1];
+    const titleRaw = htmlToReadableText(titleMatch[1] ?? titleMatch[0]).replace(/^\d+\.\s*/, "");
+    const caseNoMatch = /(\d+\/\d+)/.exec(titleRaw);
+    const caseNo = caseNoMatch?.[1] ?? titleRaw;
+    const title = titleRaw.includes("คำพิพากษา") || titleRaw.includes("คำสั่ง") || titleRaw.includes("คำวินิจฉัย")
+      ? titleRaw
+      : `คำพิพากษาศาลฎีกาที่ ${caseNo}`;
     const idMatch = /short_text_docid_(\d+)/.exec(block)
       ?? /id="(?:btn_print_|text_bookmark_name_)(\d+)"/.exec(block)
       ?? /class="[^"]*deka-result[^"]*"[^>]*value="(\d+)"/.exec(block);
@@ -204,13 +252,14 @@ export function parseDekaSearchHtml(html: string, baseUrl = DEFAULT_DEKA_URL): {
       "i",
     ).exec(block);
     const summary = htmlToReadableText(shortMatch?.[1] ?? "");
-    const title = `คำพิพากษาศาลฎีกาที่ ${caseNo}`;
+    const laws = extractLawNames(block);
     cases.push({
       case_no: caseNo,
       docid,
       title,
+      parties: extractLabeledList(block, "ชื่อคู่ความ"),
+      laws: laws.length > 0 ? laws : extractDekaLaws(summary),
       summary,
-      laws: extractDekaLaws(summary),
       url: `${baseUrl.replace(/\/+$/, "")}/`,
     });
   }
@@ -263,6 +312,46 @@ export function buildSearchBody(args: SearchDekaArgs): URLSearchParams {
   setIf(body, "search_deka_start_year", startYear);
   setIf(body, "search_deka_end_year", endYear);
   return body;
+}
+
+export function formatDekaSummaryText(query: string, resultHtml: string, cases: DekaCase[]): string {
+  if (cases.length === 0) {
+    return createNoResultsMessage(query);
+  }
+  const total = parseDekaCatalogCount(resultHtml);
+  const header = total !== undefined
+    ? `พบ ${total.toLocaleString("en-US")} คดีจากศาลฎีกา แสดง ${cases.length} รายการ`
+    : `ผลค้นหาศาลฎีกา ${cases.length} รายการ`;
+  const blocks = cases.map((item, index) => {
+    const lines = [
+      `[${index + 1}] เลขที่คำพิพากษาศาลฎีกา: ${item.case_no}`,
+      `ชื่อคู่ความ: ${item.parties.length > 0 ? item.parties.join("; ") : "-"}`,
+      `ชื่อกฎหมาย: ${item.laws.length > 0 ? item.laws.join("; ") : "-"}`,
+      "",
+      "ย่อสั้น:",
+      item.summary || "-",
+      "-".repeat(60),
+    ];
+    return lines.join("\n");
+  });
+  return [header, "", ...blocks].join("\n");
+}
+
+export function formatDekaSummaryJson(query: string, resultHtml: string, cases: DekaCase[]): string {
+  return JSON.stringify({
+    query,
+    source: "deka.supremecourt.or.th",
+    url: dekaHomeUrl(),
+    total: parseDekaCatalogCount(resultHtml) ?? null,
+    results: cases.map((item) => ({
+      case_no: item.case_no,
+      title: item.title,
+      parties: item.parties,
+      laws: item.laws,
+      summary: item.summary,
+      url: item.url,
+    })),
+  }, null, 2);
 }
 
 export function formatDekaText(query: string, resultHtml: string): string {
@@ -431,6 +520,7 @@ export async function performDekaSearch(
     law_name: args.law_name ?? "",
     law_section: args.law_section ?? "",
     black_no: args.black_no ?? "",
+    detail: resolveDekaDetail(args.detail),
     response_format: responseFormat,
   };
 
@@ -456,9 +546,18 @@ export async function performDekaSearch(
 
   try {
     const { resultHtml } = await searchDekaCases(args, controller.signal);
-    const output = responseFormat === "json"
-      ? formatDekaJson(label, resultHtml)
-      : formatDekaText(label, resultHtml);
+    const detail = resolveDekaDetail(args.detail);
+    let output: string;
+    if (detail === "full") {
+      output = responseFormat === "json"
+        ? formatDekaJson(label, resultHtml)
+        : formatDekaText(label, resultHtml);
+    } else {
+      const parsed = parseDekaSearchHtml(resultHtml);
+      output = responseFormat === "json"
+        ? formatDekaSummaryJson(label, resultHtml, parsed.cases)
+        : formatDekaSummaryText(label, resultHtml, parsed.cases);
+    }
     searchCache.set("search_deka", cacheArgs, output);
     return output;
   } finally {

@@ -109,7 +109,8 @@ async function runTests() {
       arguments: { query: "ลักทรัพย์" },
     });
     const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
-    assert.ok(text.includes("คำพิพากษาศาลฎีกาที่ 664/2569"));
+    assert.ok(text.includes("เลขที่คำพิพากษาศาลฎีกา: 664/2569"));
+    assert.ok(text.includes("ย่อสั้น:"));
     assert.ok(text.includes("ลักบัตร"));
     await client.close();
     fetchMocker.restore();
