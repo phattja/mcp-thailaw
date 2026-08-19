@@ -30,6 +30,7 @@ async function runTests() {
     assert.equal(isSearchKrisdikaArgs({ query: "test", group_by_law: false }), true);
     assert.equal(isSearchKrisdikaArgs({ query: "test", source: "auto" }), true);
     assert.equal(isSearchKrisdikaArgs({ query: "test", exclude: "วิ่งราว,ชิงทรัพย์" }), true);
+    assert.equal(isSearchKrisdikaArgs({ query: "test", include: "cancel" }), true);
   }, results);
 
   await testFunction("isSearchKrisdikaArgs rejects invalid cases", () => {
@@ -51,6 +52,7 @@ async function runTests() {
     assert.equal(isSearchOcsArgs({ query: "มาตรา 335", top_k: 3, category: "1D" }), true);
     assert.equal(isSearchOcsArgs({ query: "test", topic: true, content: false }), true);
     assert.equal(isSearchOcsArgs({ query: "test", exclude: "วิ่งราว" }), true);
+    assert.equal(isSearchOcsArgs({ query: "test", include: "(ยกเลิก)" }), true);
     assert.equal(isSearchOcsArgs({ query: "" }), false);
     assert.equal(isSearchOcsArgs({ query: "test", top_k: 21 }), false);
     assert.equal(isSearchOcsArgs({ query: "test", topic: "yes" }), false);

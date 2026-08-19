@@ -26,7 +26,7 @@ import {
   performOcsSearch,
   resolveKrisdikaSource,
 } from "./ocs.js";
-import { filterExcluded, parseExcludeWords } from "./exclude.js";
+import { filterCancelledTitles, filterExcluded, includeCancelledTitles, parseExcludeWords } from "./exclude.js";
 import type { ResponseFormat, SearchKrisdikaArgs } from "./types.js";
 
 export interface ThaiLawResult {
@@ -526,6 +526,7 @@ async function performQdrantKrisdikaSearch(
     collection: config.collectionName,
     source: "qdrant",
     exclude: args.exclude ?? "",
+    include: args.include ?? "",
   };
 
   const cached = searchCache.get("search_krisdika", cacheArgs);
@@ -546,7 +547,8 @@ async function performQdrantKrisdikaSearch(
     });
 
     const excluded = parseExcludeWords(args.exclude);
-    const fetchLimit = excluded.length > 0
+    const dropCancelled = !includeCancelledTitles(args.include);
+    const fetchLimit = excluded.length > 0 || dropCancelled
       ? Math.min(config.maxResults, Math.max(topK * 4, 20))
       : topK;
     const vector = await getEmbedding(searchQuery, timeout.signal);
@@ -587,8 +589,9 @@ async function performQdrantKrisdikaSearch(
         results,
         excluded,
         (item) => [item.title, item.text, item.matra ?? "", item.law_code].join("\n"),
-      ).slice(0, topK);
+      );
     }
+    results = filterCancelledTitles(results, args.include, (item) => item.title).slice(0, topK);
     const output = responseFormat === "json"
       ? formatSearchJson(args.query, config.collectionName, results)
       : formatSearchText(args.query, results);

@@ -25,3 +25,41 @@ export function filterExcluded<T>(
   }
   return items.filter((item) => !textHasExcludedWord(textOf(item), words));
 }
+
+const CANCELLED_TITLE_MARKERS = ["(ยกเลิก)", "（ยกเลิก）"];
+
+const INCLUDE_CANCELLED_TOKENS = new Set([
+  "(ยกเลิก)",
+  "（ยกเลิก）",
+  "ยกเลิก",
+  "cancel",
+  "cancelled",
+  "canceled",
+]);
+
+export function parseIncludeWords(raw?: string): string[] {
+  return parseExcludeWords(raw);
+}
+
+export function titleLooksCancelled(title: string): boolean {
+  const normalized = title.replace(/\s+/g, "");
+  return CANCELLED_TITLE_MARKERS.some((marker) => normalized.includes(marker));
+}
+
+export function includeCancelledTitles(raw?: string): boolean {
+  return parseIncludeWords(raw).some((word) => {
+    const key = word.trim().toLocaleLowerCase();
+    return INCLUDE_CANCELLED_TOKENS.has(key) || INCLUDE_CANCELLED_TOKENS.has(word.trim());
+  });
+}
+
+export function filterCancelledTitles<T>(
+  items: T[],
+  include: string | undefined,
+  titleOf: (item: T) => string,
+): T[] {
+  if (includeCancelledTitles(include)) {
+    return items;
+  }
+  return items.filter((item) => !titleLooksCancelled(titleOf(item)));
+}

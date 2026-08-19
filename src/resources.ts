@@ -116,6 +116,7 @@ Semantic search over Thai statutes, sections, and related legal text.
 - \`group_by_law\` (optional): Reconstruct each มาตรา from its fragments and return official statute layout. Defaults to \`true\`.
 - \`source\` (optional): \`qdrant\` (default), \`online\` (เว็บ https://www.ocs.go.th/searchlaw-law), \`both\`, or \`auto\` (Qdrant first, then the website if nothing is found).
 - \`exclude\` (optional): comma-separated words to drop, for example \`วิ่งราว,ชิงทรัพย์\`
+- \`include\` (optional): titles containing \`(ยกเลิก)\` are dropped by default. Set \`include=(ยกเลิก)\` or \`include=cancel\` to keep them.
 - \`response_format\` (optional): \`text\` (default) or \`json\`
 
 ### 2. search_krisdika_online
@@ -129,7 +130,7 @@ Search the live สำนักงานคณะกรรมการกฤษ�
 - \`detail\`: \`sections\` (default) opens the latest version of each law and returns matching มาตรา. \`list\` returns titles and snippets only.
 - \`category\`: law type such as \`1D\` / ประมวลกฎหมาย
 - \`state\`: \`current\` / \`pending\` / \`repealed\` (default current + pending)
-- \`year\`, \`acting\`, \`subject\`, \`letter\`, \`exclude\`, \`response_format\`
+- \`year\`, \`acting\`, \`subject\`, \`letter\`, \`exclude\`, \`include\`, \`response_format\`
 
 ### 3. search_deka_online
 Search Supreme Court judgments on https://deka.supremecourt.or.th/. Use this for case law (คำพิพากษาฎีกา), not the statute text.

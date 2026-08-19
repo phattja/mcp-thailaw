@@ -81,6 +81,7 @@ The local defaults match the prototype in `thai_law_mcp.py`:
   * `group_by_law` (boolean, optional, default `true`) — reconstruct each มาตรา from its fragments and return official statute layout
   * `source` — `qdrant` (default), `online` (https://www.ocs.go.th/searchlaw-law), `both`, or `auto` (Qdrant first, website if empty)
   * `exclude` — comma-separated words to drop, for example `วิ่งราว,ชิงทรัพย์`
+  * `include` — titles with `(ยกเลิก)` are dropped unless `include=(ยกเลิก)` or `include=cancel`
   * `response_format` (`text` or `json`, optional)
 * **search_krisdika_online** — live catalog search on https://www.ocs.go.th/searchlaw-law
   * `query` (string, required)
@@ -90,6 +91,7 @@ The local defaults match the prototype in `thai_law_mcp.py`:
   * `sublaw` — related subordinate laws
   * `category`, `state`, `year`, `acting`, `subject`, `letter`
   * `exclude` — comma-separated words to drop
+  * `include` — titles with `(ยกเลิก)` are dropped unless `include=(ยกเลิก)` or `include=cancel`
   * `response_format` (`text` or `json`, optional)
 * **search_deka_online** — search Supreme Court judgments on https://deka.supremecourt.or.th/
   * `query` (string, optional if `case_no` or year is set)

@@ -8,6 +8,12 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.13] - 2026-08-19
+
+### Changed
+
+- `search_krisdika` and `search_krisdika_online` drop titles containing `(ยกเลิก)` by default. Pass `include=(ยกเลิก)` or `include=cancel` to keep them.
+
 ## [0.1.0-dev.12] - 2026-08-19
 
 ### Changed

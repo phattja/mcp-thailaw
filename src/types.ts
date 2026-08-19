@@ -23,6 +23,7 @@ export interface SearchKrisdikaArgs {
   group_by_law?: boolean;
   source?: KrisdikaSourceArg | string;
   exclude?: string;
+  include?: string;
   response_format?: ResponseFormat;
 }
 
@@ -40,6 +41,7 @@ export interface SearchOcsArgs {
   letter?: string;
   detail?: "list" | "sections" | string;
   exclude?: string;
+  include?: string;
   response_format?: ResponseFormat;
 }
 
@@ -142,6 +144,10 @@ export function isSearchKrisdikaArgs(args: unknown): args is SearchKrisdikaArgs 
     return false;
   }
 
+  if (searchArgs.include !== undefined && typeof searchArgs.include !== "string") {
+    return false;
+  }
+
   if (
     searchArgs.response_format !== undefined
     && (
@@ -186,7 +192,7 @@ export function isSearchOcsArgs(args: unknown): args is SearchOcsArgs {
     }
   }
 
-  for (const key of ["category", "state", "acting", "subject", "letter", "detail", "exclude"] as const) {
+  for (const key of ["category", "state", "acting", "subject", "letter", "detail", "exclude", "include"] as const) {
     if (searchArgs[key] !== undefined && typeof searchArgs[key] !== "string") {
       return false;
     }
@@ -330,7 +336,8 @@ export const SEARCH_KRISDIKA_TOOL: Tool = {
     + "ค่าเริ่มต้นคืนเฉพาะฉบับล่าสุดที่มีผลบังคับใช้ (is_latest=true) "
     + "และรวมชิ้นส่วนของมาตราเดียวกันแล้วจัดรูปแบบเหมือนราชกิจจานุเบกษา (group_by_law=true). "
     + "source=qdrant (ค่าเริ่มต้น) / online (เว็บ https://www.ocs.go.th/searchlaw-law) / both / auto "
-    + "(ถ้าไม่พบใน Qdrant จะค้นเว็บต่อ). ใช้ search_krisdika_online เมื่อต้องการเว็บอย่างเดียว.",
+    + "(ถ้าไม่พบใน Qdrant จะค้นเว็บต่อ). ใช้ search_krisdika_online เมื่อต้องการเว็บอย่างเดียว. "
+    + "ค่าเริ่มต้นตัดชื่อที่มี (ยกเลิก) เว้นแต่ include=(ยกเลิก) หรือ include=cancel.",
   inputSchema: {
     type: "object",
     properties: {
@@ -378,6 +385,11 @@ export const SEARCH_KRISDIKA_TOOL: Tool = {
       exclude: {
         type: "string",
         description: "คำที่ต้องตัดออก คั่นด้วยจุลภาค เช่น วิ่งราว,ชิงทรัพย์",
+      },
+      include: {
+        type: "string",
+        description:
+          "ค่าเริ่มต้นตัดชื่อที่มี (ยกเลิก). ใส่ include=(ยกเลิก) หรือ include=cancel เพื่อคงฉบับที่ยกเลิกไว้",
       },
       response_format: {
         type: "string",
@@ -458,6 +470,11 @@ export const SEARCH_KRISDIKA_ONLINE_TOOL: Tool = {
       exclude: {
         type: "string",
         description: "คำที่ต้องตัดออก คั่นด้วยจุลภาค เช่น วิ่งราว,ชิงทรัพย์",
+      },
+      include: {
+        type: "string",
+        description:
+          "ค่าเริ่มต้นตัดชื่อที่มี (ยกเลิก). ใส่ include=(ยกเลิก) หรือ include=cancel เพื่อคงฉบับที่ยกเลิกไว้",
       },
       response_format: {
         type: "string",

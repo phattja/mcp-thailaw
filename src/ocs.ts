@@ -7,7 +7,13 @@ import {
   getThaiLawConfig,
 } from "./config.js";
 import { htmlToReadableText } from "./deka.js";
-import { filterExcluded, parseExcludeWords, textHasExcludedWord } from "./exclude.js";
+import {
+  filterCancelledTitles,
+  filterExcluded,
+  includeCancelledTitles,
+  parseExcludeWords,
+  textHasExcludedWord,
+} from "./exclude.js";
 import { createNetworkError, createNoResultsMessage, createServerError } from "./error-handler.js";
 import { getFetch } from "./http-client.js";
 import { logMessage } from "./logging.js";
@@ -180,6 +186,7 @@ export function krisdikaToOcsArgs(args: SearchKrisdikaArgs): SearchOcsArgs {
     content: true,
     category: args.category ?? args.law_code,
     exclude: args.exclude,
+    include: args.include,
     response_format: args.response_format,
   };
 }
@@ -740,6 +747,7 @@ export async function performOcsSearch(
     letter: args.letter ?? "",
     detail,
     exclude: args.exclude ?? "",
+    include: args.include ?? "",
     response_format: responseFormat,
   };
 
@@ -765,7 +773,8 @@ export async function performOcsSearch(
   signal?.addEventListener("abort", onAbort);
 
   try {
-    const fetchArgs = excluded.length > 0
+    const dropCancelled = !includeCancelledTitles(args.include);
+    const fetchArgs = excluded.length > 0 || dropCancelled
       ? { ...args, top_k: Math.min(DEFAULT_OCS_MAX_RESULTS, Math.max(topK * 4, 10)) }
       : args;
     let { total, laws } = await searchOcsLaws(fetchArgs, controller.signal);
@@ -773,8 +782,9 @@ export async function performOcsSearch(
       laws = await enrichOcsLawsWithSections(laws, args.query, controller.signal);
     }
     if (excluded.length > 0) {
-      laws = applyOcsExclude(laws, excluded, detail).slice(0, topK);
+      laws = applyOcsExclude(laws, excluded, detail);
     }
+    laws = filterCancelledTitles(laws, args.include, (item) => item.title).slice(0, topK);
     const output = responseFormat === "json"
       ? formatOcsJson(args.query, laws, total)
       : formatOcsText(args.query, laws, total);
