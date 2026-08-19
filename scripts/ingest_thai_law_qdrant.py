@@ -14,14 +14,14 @@ Environment (same names as mcp-thailaw):
   QDRANT_COLLECTION       default krisdika
   QDRANT_API_KEY          optional
   EMBEDDING_URL           default http://127.0.0.1:3003/v1
-  EMBEDDING_MODEL         default Qwen3-VL-Embedding-2B
+  EMBEDDING_MODEL         default bge-m3
   EMBEDDING_API_KEY       optional bearer token
   THAILAW_JSONL_ROOT      default /home/jupyter/ocs-krisdika-data
                           (/ai/jupyter/home/... is remapped to /home/jupyter/...)
   THAILAW_JSONL_FILE      optional single .jsonl (overrides ROOT)
   THAILAW_ONLY_LATEST     default true  (ingest only is_latest documents)
   THAILAW_MAX_DOCS        optional int  (limit for a test run)
-  THAILAW_VECTOR_SIZE     default 2048  (Qwen3-VL-Embedding-2B native)
+  THAILAW_VECTOR_SIZE     default 1024  (bge-m3 native)
   THAILAW_BATCH_SIZE      default 32
 """
 
@@ -42,10 +42,10 @@ QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY") or None
 EMBEDDING_URL = os.environ.get("EMBEDDING_URL", "http://127.0.0.1:3003/v1").rstrip("/")
 if not EMBEDDING_URL.endswith("/embeddings"):
     EMBEDDING_URL = f"{EMBEDDING_URL}/embeddings"
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "Qwen3-VL-Embedding-2B")
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "bge-m3")
 EMBEDDING_API_KEY = os.environ.get("EMBEDDING_API_KEY") or None
 
-VECTOR_SIZE = int(os.environ.get("THAILAW_VECTOR_SIZE", "2048"))
+VECTOR_SIZE = int(os.environ.get("THAILAW_VECTOR_SIZE", "1024"))
 BATCH_SIZE = int(os.environ.get("THAILAW_BATCH_SIZE", "32"))
 ONLY_LATEST = os.environ.get("THAILAW_ONLY_LATEST", "true").strip().lower() not in {"0", "false", "no"}
 MAX_DOCS_RAW = os.environ.get("THAILAW_MAX_DOCS", "").strip()
@@ -189,7 +189,7 @@ def main() -> None:
         if len(test_emb[0]) != VECTOR_SIZE:
             print(
                 f"❌ Embedding dim {len(test_emb[0])} != THAILAW_VECTOR_SIZE={VECTOR_SIZE}. "
-                "Qwen3-VL-Embedding-2B must be 2048 (or set THAILAW_VECTOR_SIZE to the live dim).",
+                "bge-m3 must be 1024 (or set THAILAW_VECTOR_SIZE to the live dim).",
             )
             return
     except Exception as exc:

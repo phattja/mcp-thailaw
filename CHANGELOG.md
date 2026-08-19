@@ -8,6 +8,12 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.14] - 2026-08-19
+
+### Changed
+
+- Default embedding model is `bge-m3` (1024-d). Default rerank model is `bge-reranker-v2-m3`. Collection `krisdika` must be rebuilt at 1024-d.
+
 ## [0.1.0-dev.13] - 2026-08-19
 
 ### Changed

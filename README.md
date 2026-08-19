@@ -11,8 +11,8 @@ AI Assistant / Open WebUI
   mcp-thailaw  (this project — Node.js)
         │  OpenAI-compatible /v1/embeddings
         ▼
-  Embedding server (Qwen3-VL-Embedding-2B, 2048-d)
-        │  optional rerank (Qwen3-VL-Reranker-2B :3003)
+  Embedding server (bge-m3, 1024-d)
+        │  optional rerank (bge-reranker-v2-m3 :3003)
         │  Qdrant query_points
         ▼
   Qdrant collection `krisdika`
@@ -32,9 +32,9 @@ AI Assistant / Open WebUI
         "QDRANT_URL": "http://localhost:6333",
         "QDRANT_COLLECTION": "krisdika",
         "EMBEDDING_URL": "http://127.0.0.1:3003/v1",
-        "EMBEDDING_MODEL": "Qwen3-VL-Embedding-2B",
+        "EMBEDDING_MODEL": "bge-m3",
         "RERANK_URL": "http://127.0.0.1:3003/v1",
-        "RERANK_MODEL": "Qwen3-VL-Reranker-2B"
+        "RERANK_MODEL": "bge-reranker-v2-m3"
       }
     }
   }
@@ -50,9 +50,9 @@ node dist/cli.js \
   --qdrant-url http://127.0.0.1:6333 \
   --qdrant-collection krisdika \
   --embedding-url http://127.0.0.1:3003/v1 \
-  --embedding-model Qwen3-VL-Embedding-2B \
+  --embedding-model bge-m3 \
   --rerank-url http://127.0.0.1:3003/v1 \
-  --rerank-model Qwen3-VL-Reranker-2B
+  --rerank-model bge-reranker-v2-m3
 ```
 
 CLI flags override the matching environment variables (`QDRANT_URL`, `EMBEDDING_URL`, `THAILAW_HTTP_PORT`, ...).
@@ -64,8 +64,8 @@ The local defaults match the prototype in `thai_law_mcp.py`:
 | Setting | Default |
 | --- | --- |
 | Qdrant | `http://localhost:6333` / collection `krisdika` |
-| Embeddings | `http://127.0.0.1:3003/v1` / `Qwen3-VL-Embedding-2B` (2048-d) |
-| Rerank | `http://127.0.0.1:3003/v1` / `Qwen3-VL-Reranker-2B` |
+| Embeddings | `http://127.0.0.1:3003/v1` / `bge-m3` (1024-d) |
+| Rerank | `http://127.0.0.1:3003/v1` / `bge-reranker-v2-m3` |
 | Top K | `5` |
 | Score threshold | `0.30` |
 

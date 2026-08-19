@@ -1,6 +1,6 @@
 {
     "name": "mcp-thailaw",
-    "version": "0.1.0-dev.13",
+    "version": "0.1.0-dev.14",
     "mcpName": "io.github.phattja/mcp-thailaw",
     "description": "MCP server for Thai law search over OCS Krisdika in Qdrant",
     "license": "MIT",

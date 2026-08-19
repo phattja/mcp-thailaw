@@ -30,10 +30,10 @@ JSONL_FILE = os.environ.get(
 EMBEDDING_URL = os.environ.get("EMBEDDING_URL", "http://127.0.0.1:3003/v1").rstrip("/")
 if not EMBEDDING_URL.endswith("/embeddings"):
     EMBEDDING_URL = f"{EMBEDDING_URL}/embeddings"
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "Qwen3-VL-Embedding-2B")
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "bge-m3")
 EMBEDDING_API_KEY = os.environ.get("EMBEDDING_API_KEY") or None
 
-VECTOR_SIZE = int(os.environ.get("THAILAW_VECTOR_SIZE", "2048"))
+VECTOR_SIZE = int(os.environ.get("THAILAW_VECTOR_SIZE", "1024"))
 BATCH_SIZE = int(os.environ.get("THAILAW_BATCH_SIZE", "32"))
 ONLY_LATEST = os.environ.get("THAILAW_ONLY_LATEST", "true").strip().lower() not in {"0", "false", "no"}
 
