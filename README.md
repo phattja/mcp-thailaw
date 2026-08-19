@@ -80,6 +80,7 @@ The local defaults match the prototype in `thai_law_mcp.py`:
   * `is_latest` (boolean, optional, default `true`)
   * `group_by_law` (boolean, optional, default `true`) — reconstruct each มาตรา from its fragments and return official statute layout
   * `source` — `qdrant` (default), `online` (https://www.ocs.go.th/searchlaw-law), `both`, or `auto` (Qdrant first, website if empty)
+  * `exclude` — comma-separated words to drop, for example `วิ่งราว,ชิงทรัพย์`
   * `response_format` (`text` or `json`, optional)
 * **search_krisdika_online** — live catalog search on https://www.ocs.go.th/searchlaw-law
   * `query` (string, required)
@@ -88,8 +89,9 @@ The local defaults match the prototype in `thai_law_mcp.py`:
   * `detail` — `sections` (default) follows each law and returns matching latest มาตรา; `list` is titles only
   * `sublaw` — related subordinate laws
   * `category`, `state`, `year`, `acting`, `subject`, `letter`
+  * `exclude` — comma-separated words to drop
   * `response_format` (`text` or `json`, optional)
-* **search_deka** — search Supreme Court judgments on https://deka.supremecourt.or.th/
+* **search_deka_online** — search Supreme Court judgments on https://deka.supremecourt.or.th/
   * `query` (string, optional if `case_no` or year is set)
   * `text_scope` — `short` (ฉบับย่อ) or `full` (ฉบับเต็ม, default)
   * default result: เลขที่คำพิพากษา, ชื่อคู่ความ, ชื่อกฎหมาย, ย่อสั้น
@@ -99,7 +101,7 @@ The local defaults match the prototype in `thai_law_mcp.py`:
   * `year`, `year_from`, `year_to` — ช่วงปี พ.ศ.
   * `mode` — `basic` or `advanced`
   * advanced: `litigant`, `judge`, `law_name`, `law_section`, `black_no`, …
-  * `top_k`, `response_format`
+  * `top_k`, `exclude`, `response_format`
 * **krisdika_collection_info** — Qdrant กฤษฎีกา collection status, point count, vector size
   * `refresh` (boolean, optional)
 * **krisdeka_connection_info** — reachability of https://www.ocs.go.th/searchlaw-law

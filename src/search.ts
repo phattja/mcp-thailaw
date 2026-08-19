@@ -26,6 +26,7 @@ import {
   performOcsSearch,
   resolveKrisdikaSource,
 } from "./ocs.js";
+import { filterExcluded, parseExcludeWords } from "./exclude.js";
 import type { ResponseFormat, SearchKrisdikaArgs } from "./types.js";
 
 export interface ThaiLawResult {
@@ -524,6 +525,7 @@ async function performQdrantKrisdikaSearch(
     response_format: responseFormat,
     collection: config.collectionName,
     source: "qdrant",
+    exclude: args.exclude ?? "",
   };
 
   const cached = searchCache.get("search_krisdika", cacheArgs);
@@ -543,9 +545,13 @@ async function performQdrantKrisdikaSearch(
       matra: wantedMatra,
     });
 
+    const excluded = parseExcludeWords(args.exclude);
+    const fetchLimit = excluded.length > 0
+      ? Math.min(config.maxResults, Math.max(topK * 4, 20))
+      : topK;
     const vector = await getEmbedding(searchQuery, timeout.signal);
     const hits = await queryPoints(vector, {
-      limit: topK,
+      limit: fetchLimit,
       scoreThreshold,
       filter: {
         lawCode: args.law_code?.trim() || undefined,
@@ -575,6 +581,13 @@ async function performQdrantKrisdikaSearch(
           error: error instanceof Error ? error.message : String(error),
         });
       }
+    }
+    if (excluded.length > 0) {
+      results = filterExcluded(
+        results,
+        excluded,
+        (item) => [item.title, item.text, item.matra ?? "", item.law_code].join("\n"),
+      ).slice(0, topK);
     }
     const output = responseFormat === "json"
       ? formatSearchJson(args.query, config.collectionName, results)

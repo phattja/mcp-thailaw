@@ -7,6 +7,7 @@ import {
   getThaiLawConfig,
 } from "./config.js";
 import { htmlToReadableText } from "./deka.js";
+import { filterExcluded, parseExcludeWords, textHasExcludedWord } from "./exclude.js";
 import { createNetworkError, createNoResultsMessage, createServerError } from "./error-handler.js";
 import { getFetch } from "./http-client.js";
 import { logMessage } from "./logging.js";
@@ -178,6 +179,7 @@ export function krisdikaToOcsArgs(args: SearchKrisdikaArgs): SearchOcsArgs {
     topic: true,
     content: true,
     category: args.category ?? args.law_code,
+    exclude: args.exclude,
     response_format: args.response_format,
   };
 }
@@ -484,6 +486,36 @@ export async function fetchOcsLawDoc(
   return parseOcsLawDoc(payload);
 }
 
+export function applyOcsExclude(
+  laws: OcsLaw[],
+  words: string[],
+  detail: "list" | "sections",
+): OcsLaw[] {
+  if (words.length === 0) {
+    return laws;
+  }
+  const kept: OcsLaw[] = [];
+  for (const law of laws) {
+    if (detail === "sections" && law.sections && law.sections.length > 0) {
+      const sections = filterExcluded(
+        law.sections,
+        words,
+        (section) => `${section.label}\n${section.text}`,
+      );
+      if (sections.length === 0) {
+        continue;
+      }
+      kept.push({ ...law, sections });
+      continue;
+    }
+    const haystack = [law.title, law.snippet, law.law_code].join("\n");
+    if (!textHasExcludedWord(haystack, words)) {
+      kept.push(law);
+    }
+  }
+  return kept;
+}
+
 export async function enrichOcsLawsWithSections(
   laws: OcsLaw[],
   query: string,
@@ -693,6 +725,7 @@ export async function performOcsSearch(
   const responseFormat: ResponseFormat = args.response_format ?? "text";
   const topK = ocsTopK(args.top_k);
   const detail = resolveOcsDetail(args.detail);
+  const excluded = parseExcludeWords(args.exclude);
   const cacheArgs = {
     query: args.query,
     top_k: topK,
@@ -706,6 +739,7 @@ export async function performOcsSearch(
     subject: args.subject ?? "",
     letter: args.letter ?? "",
     detail,
+    exclude: args.exclude ?? "",
     response_format: responseFormat,
   };
 
@@ -731,9 +765,15 @@ export async function performOcsSearch(
   signal?.addEventListener("abort", onAbort);
 
   try {
-    let { total, laws } = await searchOcsLaws(args, controller.signal);
+    const fetchArgs = excluded.length > 0
+      ? { ...args, top_k: Math.min(DEFAULT_OCS_MAX_RESULTS, Math.max(topK * 4, 10)) }
+      : args;
+    let { total, laws } = await searchOcsLaws(fetchArgs, controller.signal);
     if (detail === "sections") {
       laws = await enrichOcsLawsWithSections(laws, args.query, controller.signal);
+    }
+    if (excluded.length > 0) {
+      laws = applyOcsExclude(laws, excluded, detail).slice(0, topK);
     }
     const output = responseFormat === "json"
       ? formatOcsJson(args.query, laws, total)

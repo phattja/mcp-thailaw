@@ -5,6 +5,7 @@ import {
   getThaiLawConfig,
   validateThaiLawConfig,
 } from "./config.js";
+import { filterExcluded, parseExcludeWords, textHasExcludedWord } from "./exclude.js";
 import { createConfigurationError, createNetworkError, createNoResultsMessage, createServerError } from "./error-handler.js";
 import { getFetch } from "./http-client.js";
 import { logMessage } from "./logging.js";
@@ -26,6 +27,22 @@ export interface DekaCase {
 
 export function dekaTopK(requested?: number): number {
   return Math.min(requested ?? DEFAULT_DEKA_TOP_K, DEFAULT_DEKA_MAX_RESULTS);
+}
+
+export function filterDekaResultHtml(html: string, words: string[]): string {
+  if (words.length === 0) {
+    return html;
+  }
+  const marker = /<li class="clear result">/i;
+  const parts = html.split(marker);
+  if (parts.length <= 1) {
+    return textHasExcludedWord(htmlToReadableText(html), words) ? "" : html;
+  }
+  const kept = parts.slice(1).filter((block) => !textHasExcludedWord(htmlToReadableText(block), words));
+  if (kept.length === 0) {
+    return parts[0] ?? "";
+  }
+  return `${parts[0] ?? ""}<li class="clear result">${kept.join('<li class="clear result">')}`;
 }
 
 export function limitDekaResultHtml(html: string, topK: number): string {
@@ -549,10 +566,11 @@ export async function performDekaSearch(
     law_section: args.law_section ?? "",
     black_no: args.black_no ?? "",
     detail: resolveDekaDetail(args.detail),
+    exclude: args.exclude ?? "",
     response_format: responseFormat,
   };
 
-  const cached = searchCache.get("search_deka", cacheArgs);
+  const cached = searchCache.get("search_deka_online", cacheArgs);
   if (cached) {
     logMessage(mcpServer, "debug", "Returning cached Deka search result");
     return cached;
@@ -575,7 +593,9 @@ export async function performDekaSearch(
 
   try {
     const { resultHtml } = await searchDekaCases(args, controller.signal);
-    const limitedHtml = limitDekaResultHtml(resultHtml, topK);
+    const excluded = parseExcludeWords(args.exclude);
+    const filteredHtml = filterDekaResultHtml(resultHtml, excluded);
+    const limitedHtml = limitDekaResultHtml(filteredHtml, topK);
     const detail = resolveDekaDetail(args.detail);
     let output: string;
     if (detail === "full") {
@@ -584,12 +604,16 @@ export async function performDekaSearch(
         : formatDekaText(label, limitedHtml);
     } else {
       const parsed = parseDekaSearchHtml(limitedHtml);
-      const cases = parsed.cases.slice(0, topK);
+      const cases = filterExcluded(
+        parsed.cases,
+        excluded,
+        (item) => [item.title, item.case_no, item.summary, item.laws.join(" "), item.parties.join(" ")].join("\n"),
+      ).slice(0, topK);
       output = responseFormat === "json"
         ? formatDekaSummaryJson(label, resultHtml, cases)
         : formatDekaSummaryText(label, resultHtml, cases);
     }
-    searchCache.set("search_deka", cacheArgs, output);
+    searchCache.set("search_deka_online", cacheArgs, output);
     return output;
   } finally {
     clearTimeout(timer);

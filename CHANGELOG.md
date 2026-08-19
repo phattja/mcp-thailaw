@@ -8,6 +8,16 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.12] - 2026-08-19
+
+### Changed
+
+- Renamed `search_deka` to `search_deka_online` (`search_deka` still works as an alias).
+
+### Added
+
+- All search tools accept `exclude=word1,word2,word3` and drop results that contain any of those words.
+
 ## [0.1.0-dev.11] - 2026-08-18
 
 ### Added

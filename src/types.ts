@@ -22,6 +22,7 @@ export interface SearchKrisdikaArgs {
   is_latest?: boolean;
   group_by_law?: boolean;
   source?: KrisdikaSourceArg | string;
+  exclude?: string;
   response_format?: ResponseFormat;
 }
 
@@ -38,6 +39,7 @@ export interface SearchOcsArgs {
   subject?: string;
   letter?: string;
   detail?: "list" | "sections" | string;
+  exclude?: string;
   response_format?: ResponseFormat;
 }
 
@@ -73,6 +75,7 @@ export interface SearchDekaArgs {
   department?: string;
   remark?: string;
   detail?: "summary" | "full" | string;
+  exclude?: string;
   response_format?: ResponseFormat;
 }
 
@@ -135,6 +138,10 @@ export function isSearchKrisdikaArgs(args: unknown): args is SearchKrisdikaArgs 
     return false;
   }
 
+  if (searchArgs.exclude !== undefined && typeof searchArgs.exclude !== "string") {
+    return false;
+  }
+
   if (
     searchArgs.response_format !== undefined
     && (
@@ -179,7 +186,7 @@ export function isSearchOcsArgs(args: unknown): args is SearchOcsArgs {
     }
   }
 
-  for (const key of ["category", "state", "acting", "subject", "letter", "detail"] as const) {
+  for (const key of ["category", "state", "acting", "subject", "letter", "detail", "exclude"] as const) {
     if (searchArgs[key] !== undefined && typeof searchArgs[key] !== "string") {
       return false;
     }
@@ -226,6 +233,7 @@ const DEKA_OPTIONAL_STRINGS = [
   "department",
   "remark",
   "detail",
+  "exclude",
 ] as const;
 
 const DEKA_OPTIONAL_YEARS = ["year", "year_from", "year_to"] as const;
@@ -367,6 +375,10 @@ export const SEARCH_KRISDIKA_TOOL: Tool = {
           "qdrant = ฐานเวกเตอร์ (ค่าเริ่มต้น), online = เว็บกฤษฎีกา, both = ทั้งสอง, "
           + "auto = Qdrant ก่อน ถ้าไม่พบจึงค้นเว็บ",
       },
+      exclude: {
+        type: "string",
+        description: "คำที่ต้องตัดออก คั่นด้วยจุลภาค เช่น วิ่งราว,ชิงทรัพย์",
+      },
       response_format: {
         type: "string",
         enum: ["text", "json"],
@@ -443,6 +455,10 @@ export const SEARCH_KRISDIKA_ONLINE_TOOL: Tool = {
         description:
           "sections (ค่าเริ่มต้น) = เปิดฉบับล่าสุดแล้วคืนมาตราที่ตรงคำค้น. list = รายชื่อฉบับและข้อความที่พบเท่านั้น",
       },
+      exclude: {
+        type: "string",
+        description: "คำที่ต้องตัดออก คั่นด้วยจุลภาค เช่น วิ่งราว,ชิงทรัพย์",
+      },
       response_format: {
         type: "string",
         enum: ["text", "json"],
@@ -453,8 +469,8 @@ export const SEARCH_KRISDIKA_ONLINE_TOOL: Tool = {
   },
 };
 
-export const SEARCH_DEKA_TOOL: Tool = {
-  name: "search_deka",
+export const SEARCH_DEKA_ONLINE_TOOL: Tool = {
+  name: "search_deka_online",
   description:
     "ค้นหาคำพิพากษา คำสั่งคำร้อง และคำวินิจฉัยศาลฎีกาจาก https://deka.supremecourt.or.th/ "
     + "ค่าเริ่มต้นค้นจากข้อมูลทั้งหมดและฉบับเต็ม. ผลลัพธ์ค่าเริ่มต้นมีเฉพาะเลขที่คำพิพากษา ชื่อคู่ความ ชื่อกฎหมาย และย่อสั้น. "
@@ -559,6 +575,10 @@ export const SEARCH_DEKA_TOOL: Tool = {
         type: "string",
         enum: ["summary", "full"],
         description: "summary (ค่าเริ่มต้น) = เลขฎีกา ชื่อคู่ความ ชื่อกฎหมาย ย่อสั้น. full = รายละเอียดทั้งหมดใน #deka_result_info",
+      },
+      exclude: {
+        type: "string",
+        description: "คำที่ต้องตัดออก คั่นด้วยจุลภาค เช่น วิ่งราว,ชิงทรัพย์",
       },
       response_format: {
         type: "string",

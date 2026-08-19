@@ -21,6 +21,7 @@ import { runTests as runRerankTests } from "./unit/rerank.test.js";
 import { runTests as runQdrantTests } from "./unit/qdrant.test.js";
 import { runTests as runDekaTests } from "./unit/deka.test.js";
 import { runTests as runOcsTests } from "./unit/ocs.test.js";
+import { runTests as runExcludeTests } from "./unit/exclude.test.js";
 import { runTests as runHttpServerUnitTests } from "./unit/http-server.test.js";
 import { runTests as runVersionTests } from "./unit/version.test.js";
 import { runTests as runHttpSecurityTests } from "./unit/http-security.test.js";
@@ -55,6 +56,7 @@ const testSuites: TestSuite[] = [
   { name: "Qdrant", category: "unit", run: runQdrantTests },
   { name: "Deka", category: "unit", run: runDekaTests },
   { name: "OCS", category: "unit", run: runOcsTests },
+  { name: "Exclude", category: "unit", run: runExcludeTests },
   { name: "HTTP Server", category: "unit", run: runHttpServerUnitTests },
   { name: "Version", category: "unit", run: runVersionTests },
   { name: "HTTP Security", category: "unit", run: runHttpSecurityTests },

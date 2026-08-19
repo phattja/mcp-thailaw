@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import { strict as assert } from "node:assert";
-import { buildSearchBody, dekaTopK, extractDekaLaws, extractDekaResultInfo, formatDekaJson, formatDekaSummaryText, formatDekaText, limitDekaResultHtml, parseDekaCatalogCount, parseDekaSearchHtml, resolveDekaDetail, resolveDekaMode } from "../../src/deka.js";
+import { buildSearchBody, dekaTopK, extractDekaLaws, extractDekaResultInfo, filterDekaResultHtml, formatDekaJson, formatDekaSummaryText, formatDekaText, limitDekaResultHtml, parseDekaCatalogCount, parseDekaSearchHtml, resolveDekaDetail, resolveDekaMode } from "../../src/deka.js";
 import { createNoResultsMessage } from "../../src/error-handler.js";
 import { testFunction, createTestResults, printTestSummary } from "../helpers/test-utils.js";
 
@@ -49,6 +49,13 @@ async function runTests() {
     assert.ok(parsed.cases[0]?.laws.some((item) => item.includes("334")));
     assert.equal(parsed.cases[1]?.case_no, "8829/2568");
     assert.equal(parsed.cases[0]?.url, "https://deka.supremecourt.or.th/");
+  }, results);
+
+  await testFunction("filterDekaResultHtml drops cases with excluded wording", () => {
+    const filtered = filterDekaResultHtml(FIXTURE, ["ลักบัตร"]);
+    const parsed = parseDekaSearchHtml(filtered);
+    assert.equal(parsed.cases.length, 1);
+    assert.equal(parsed.cases[0]?.case_no, "8829/2568");
   }, results);
 
   await testFunction("extractDekaLaws finds statute citations", () => {

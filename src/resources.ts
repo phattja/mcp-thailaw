@@ -81,7 +81,7 @@ export function createConfigResource(mcpServer?: McpServer) {
       tools: [
         "search_krisdika",
         "search_krisdika_online",
-        "search_deka",
+        "search_deka_online",
         "krisdika_collection_info",
         "krisdeka_connection_info",
         "deka_connection_info",
@@ -115,6 +115,7 @@ Semantic search over Thai statutes, sections, and related legal text.
 - \`is_latest\` (optional): Keep only the latest in-force version. Defaults to \`true\`. Set \`false\` to search historical versions.
 - \`group_by_law\` (optional): Reconstruct each มาตรา from its fragments and return official statute layout. Defaults to \`true\`.
 - \`source\` (optional): \`qdrant\` (default), \`online\` (เว็บ https://www.ocs.go.th/searchlaw-law), \`both\`, or \`auto\` (Qdrant first, then the website if nothing is found).
+- \`exclude\` (optional): comma-separated words to drop, for example \`วิ่งราว,ชิงทรัพย์\`
 - \`response_format\` (optional): \`text\` (default) or \`json\`
 
 ### 2. search_krisdika_online
@@ -128,9 +129,9 @@ Search the live สำนักงานคณะกรรมการกฤษ�
 - \`detail\`: \`sections\` (default) opens the latest version of each law and returns matching มาตรา. \`list\` returns titles and snippets only.
 - \`category\`: law type such as \`1D\` / ประมวลกฎหมาย
 - \`state\`: \`current\` / \`pending\` / \`repealed\` (default current + pending)
-- \`year\`, \`acting\`, \`subject\`, \`letter\`, \`response_format\`
+- \`year\`, \`acting\`, \`subject\`, \`letter\`, \`exclude\`, \`response_format\`
 
-### 3. search_deka
+### 3. search_deka_online
 Search Supreme Court judgments on https://deka.supremecourt.or.th/. Use this for case law (คำพิพากษาฎีกา), not the statute text.
 
 **Parameters:**
@@ -142,7 +143,7 @@ Search Supreme Court judgments on https://deka.supremecourt.or.th/. Use this for
 - \`year\`, \`year_from\`, \`year_to\`: ช่วงเวลา ปี พ.ศ.
 - \`mode\`: \`basic\` (ค้นหาปกติ) or \`advanced\` (ค้นหาขั้นสูง)
 - Advanced: \`litigant\`, \`judge\`, \`panel_judge\`, \`law_name\`, \`law_section\`, \`black_no\`, \`department\`, \`remark\`
-- \`top_k\`, \`response_format\`
+- \`top_k\`, \`exclude\`, \`response_format\`
 
 ### 4. krisdika_collection_info
 Inspect the configured Qdrant กฤษฎีกา collection: point count, vector size, and embedding settings.

@@ -78,14 +78,14 @@ async function runTests() {
     const result = await client.listTools();
     assert.ok(result.tools.find((tool) => tool.name === "search_krisdika"));
     assert.ok(result.tools.find((tool) => tool.name === "search_krisdika_online"));
-    assert.ok(result.tools.find((tool) => tool.name === "search_deka"));
+    assert.ok(result.tools.find((tool) => tool.name === "search_deka_online"));
     assert.ok(result.tools.find((tool) => tool.name === "krisdika_collection_info"));
     assert.ok(result.tools.find((tool) => tool.name === "krisdeka_connection_info"));
     assert.ok(result.tools.find((tool) => tool.name === "deka_connection_info"));
     await client.close();
   }, results);
 
-  await testFunction("tools/call search_deka returns a short digest", async () => {
+  await testFunction("tools/call search_deka_online returns a short digest", async () => {
     fetchMocker.mock(async (url) => {
       const target = url.toString();
       if (target.includes("deka.supremecourt.or.th")) {
@@ -107,7 +107,7 @@ async function runTests() {
     searchCache.clear();
     const { client } = await connect();
     const result = await client.callTool({
-      name: "search_deka",
+      name: "search_deka_online",
       arguments: { query: "ลักทรัพย์" },
     });
     const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";

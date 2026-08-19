@@ -12,7 +12,7 @@ import {
 import {
   SEARCH_KRISDIKA_TOOL,
   SEARCH_KRISDIKA_ONLINE_TOOL,
-  SEARCH_DEKA_TOOL,
+  SEARCH_DEKA_ONLINE_TOOL,
   KRISDIKA_COLLECTION_INFO_TOOL,
   KRISDEKA_CONNECTION_INFO_TOOL,
   DEKA_CONNECTION_INFO_TOOL,
@@ -62,7 +62,7 @@ export function createMcpServer(): McpServer {
       tools: [
         SEARCH_KRISDIKA_TOOL,
         SEARCH_KRISDIKA_ONLINE_TOOL,
-        SEARCH_DEKA_TOOL,
+        SEARCH_DEKA_ONLINE_TOOL,
         KRISDIKA_COLLECTION_INFO_TOOL,
         KRISDEKA_CONNECTION_INFO_TOOL,
         DEKA_CONNECTION_INFO_TOOL,
@@ -97,7 +97,7 @@ export function createMcpServer(): McpServer {
         };
       }
 
-      if (name === "search_deka") {
+      if (name === "search_deka_online" || name === "search_deka") {
         if (!isSearchDekaArgs(args)) {
           throw new Error("Invalid arguments for Supreme Court Deka search");
         }

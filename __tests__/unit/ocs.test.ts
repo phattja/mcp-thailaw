@@ -6,6 +6,7 @@ import {
   combineKrisdikaSources,
   formatOcsText,
   ocsTopK,
+  applyOcsExclude,
   parseOcsLawDoc,
   parseOcsSearchPayload,
   resolveKrisdikaSource,
@@ -149,6 +150,26 @@ async function runTests() {
     assert.ok(text.includes("มาตราล่าสุด"));
     assert.ok(text.includes("ผู้ใดเอาทรัพย์ของผู้อื่นไปโดยทุจริต"));
     assert.ok(!text.includes("ข้อความที่พบ:"));
+  }, results);
+
+  await testFunction("applyOcsExclude drops sections and laws with excluded wording", () => {
+    const laws = applyOcsExclude([
+      {
+        law_code: "A",
+        title: "ประมวลกฎหมายอาญา",
+        snippet: "ลักทรัพย์",
+        publish_date: "",
+        state: "01",
+        url: "https://example.com",
+        sections: [
+          { section_no: "334", label: "มาตรา 334", text: "ความผิดฐานลักทรัพย์" },
+          { section_no: "336", label: "มาตรา 336", text: "ความผิดฐานวิ่งราวทรัพย์" },
+        ],
+      },
+    ], ["วิ่งราว"], "sections");
+    assert.equal(laws.length, 1);
+    assert.equal(laws[0]?.sections?.length, 1);
+    assert.equal(laws[0]?.sections?.[0]?.section_no, "334");
   }, results);
 
   await testFunction("combineKrisdikaSources wraps both text blocks", () => {
