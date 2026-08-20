@@ -7,12 +7,12 @@
     "url": "https://github.com/phattja/mcp-thailaw",
     "source": "github"
   },
-  "version": "0.1.0-dev.14",
+  "version": "0.1.0-dev.16",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "mcp-thailaw",
-      "version": "0.1.0-dev.14",
+      "version": "0.1.0-dev.16",
       "transport": {
         "type": "stdio"
       },
@@ -40,14 +40,28 @@
         },
         {
           "name": "EMBEDDING_URL",
-          "description": "OpenAI-compatible embeddings endpoint",
+          "description": "TEI dense embeddings base URL (default http://127.0.0.1:3004)",
           "isRequired": false,
           "isSecret": false,
           "format": "string"
         },
         {
           "name": "EMBEDDING_MODEL",
-          "description": "Embedding model name",
+          "description": "Embedding model name (default BAAI/bge-m3)",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "COLBERT_URL",
+          "description": "ColBERT multi-vector endpoint (default http://127.0.0.1:3004)",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "THAILAW_VECTOR_MODE",
+          "description": "colbert (default) or dense",
           "isRequired": false,
           "isSecret": false,
           "format": "string"

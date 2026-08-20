@@ -6,6 +6,10 @@ export interface CliOverrides {
   embeddingModel?: string;
   embeddingApiKey?: string;
   embeddingDimensions?: number;
+  colbertUrl?: string;
+  vectorMode?: "colbert" | "dense";
+  vectorName?: string;
+  colbertMaxTokens?: number;
   rerankUrl?: string;
   rerankModel?: string;
   rerankApiKey?: string;
@@ -38,6 +42,8 @@ type StringFlag =
   | "embeddingUrl"
   | "embeddingModel"
   | "embeddingApiKey"
+  | "colbertUrl"
+  | "vectorName"
   | "rerankUrl"
   | "rerankModel"
   | "rerankApiKey"
@@ -51,6 +57,8 @@ const STRING_FLAGS: Record<string, StringFlag> = {
   "--embedding-url": "embeddingUrl",
   "--embedding-model": "embeddingModel",
   "--embedding-api-key": "embeddingApiKey",
+  "--colbert-url": "colbertUrl",
+  "--vector-name": "vectorName",
   "--rerank-url": "rerankUrl",
   "--rerank-model": "rerankModel",
   "--rerank-api-key": "rerankApiKey",
@@ -63,10 +71,12 @@ type NumberFlag =
   | "maxResults"
   | "fetchTimeoutMs"
   | "httpPort"
-  | "embeddingDimensions";
+  | "embeddingDimensions"
+  | "colbertMaxTokens";
 
 const NUMBER_FLAGS: Record<string, { key: NumberFlag; min: number; max: number; integer: boolean }> = {
   "--vector-size": { key: "embeddingDimensions", min: 32, max: 8192, integer: true },
+  "--colbert-max-tokens": { key: "colbertMaxTokens", min: 4, max: 512, integer: true },
   "--top-k": { key: "defaultTopK", min: 1, max: 100, integer: true },
   "--score-threshold": { key: "defaultScoreThreshold", min: 0, max: 1, integer: false },
   "--max-results": { key: "maxResults", min: 1, max: 100, integer: true },
@@ -137,6 +147,17 @@ export function parseCliArgs(argv: string[]): ParsedCli {
       parsed.overrides.rerankEnabled = false;
       continue;
     }
+    if (flag === "--vector-mode") {
+      const raw = takeValue(flag, inline, rest).trim().toLowerCase();
+      if (["colbert", "multi", "multi-vector", "multivector", "late"].includes(raw)) {
+        parsed.overrides.vectorMode = "colbert";
+      } else if (["dense", "single", "cls"].includes(raw)) {
+        parsed.overrides.vectorMode = "dense";
+      } else {
+        throw new CliParseError(`Invalid value for ${flag}: ${raw}`);
+      }
+      continue;
+    }
 
     const stringKey = STRING_FLAGS[flag];
     if (stringKey) {
@@ -158,6 +179,8 @@ export function parseCliArgs(argv: string[]): ParsedCli {
         parsed.overrides.maxResults = value;
       } else if (numberSpec.key === "embeddingDimensions") {
         parsed.overrides.embeddingDimensions = value;
+      } else if (numberSpec.key === "colbertMaxTokens") {
+        parsed.overrides.colbertMaxTokens = value;
       } else {
         parsed.overrides.fetchTimeoutMs = value;
       }

@@ -19,11 +19,15 @@ Options:
   --qdrant-collection <name>     Qdrant collection name
   --collection <name>            Alias for --qdrant-collection
   --qdrant-api-key <key>         Qdrant API key
-  --embedding-url <url>          OpenAI-compatible embeddings endpoint
+  --embedding-url <url>          TEI /embed or OpenAI /v1/embeddings endpoint
   --embedding-model <name>       Embedding model name
   --embedding-api-key <key>      Embedding server bearer token
+  --colbert-url <url>            ColBERT /embed_all endpoint
+  --vector-mode <colbert|dense>  Default retrieval vectors (colbert)
+  --vector-name <name>           Qdrant named vector for ColBERT (colbert)
+  --colbert-max-tokens <n>       Max ColBERT token vectors (default 64)
   --vector-size <n>              Embedding dimensions (default 1024)
-  --rerank-url <url>             llama-server /v1/rerank endpoint
+  --rerank-url <url>             TEI /rerank or llama-server /v1/rerank
   --rerank-model <name>          Rerank model name
   --rerank-api-key <key>         Rerank server bearer token
   --rerank <true|false>          Enable rerank after retrieve
@@ -63,6 +67,8 @@ export function createConfigResource(mcpServer?: McpServer) {
             collectionName: config.collectionName,
             embeddingUrl: config.embeddingUrl,
             embeddingModel: config.embeddingModel,
+            colbertUrl: config.colbertUrl,
+            vectorMode: config.vectorMode,
             rerankUrl: config.rerankUrl,
             rerankModel: config.rerankModel,
           }
@@ -81,6 +87,7 @@ export function createConfigResource(mcpServer?: McpServer) {
       tools: [
         "search_krisdika",
         "search_krisdika_online",
+        "search_deka",
         "search_deka_online",
         "krisdika_collection_info",
         "krisdeka_connection_info",
@@ -99,7 +106,7 @@ export function createHelpResource() {
   return `# Thai Law MCP Server Help
 
 ## Overview
-This is a Model Context Protocol (MCP) server that searches Thai law from the สำนักงานคณะกรรมการกฤษฎีกา dataset stored in Qdrant. Queries are embedded with bge-m3 (1024-d) and optionally reranked with bge-reranker-v2-m3.
+This is a Model Context Protocol (MCP) server that searches Thai law from the สำนักงานคณะกรรมการกฤษฎีกา dataset stored in Qdrant. Queries default to BGE-M3 ColBERT 64x1024 + dense 1024 from llama.cpp at :3003 (pooling=none), then rerank with gpustack-bge-reranker-v2-m3 on the same port.
 
 ## Available Tools
 
@@ -132,7 +139,14 @@ Search the live สำนักงานคณะกรรมการกฤษ�
 - \`state\`: \`current\` / \`pending\` / \`repealed\` (default current + pending)
 - \`year\`, \`acting\`, \`subject\`, \`letter\`, \`exclude\`, \`include\`, \`response_format\`
 
-### 3. search_deka_online
+### 3. search_deka
+Semantic search over Supreme Court judgments in Qdrant collection \`deka\` (dense 1024-d + ColBERT 64×1024).
+
+**Parameters:**
+- \`query\` (required)
+- \`top_k\`, \`score_threshold\`, \`year\`, \`exclude\`, \`response_format\`
+
+### 4. search_deka_online
 Search Supreme Court judgments on https://deka.supremecourt.or.th/. Use this for case law (คำพิพากษาฎีกา), not the statute text.
 
 **Parameters:**
@@ -175,11 +189,13 @@ Common settings:
 - \`--qdrant-url\` / \`QDRANT_URL\`: Qdrant base URL (default http://localhost:6333)
 - \`--qdrant-collection\` / \`QDRANT_COLLECTION\`: Collection name (default krisdika)
 - \`--qdrant-api-key\` / \`QDRANT_API_KEY\`: Optional Qdrant API key
-- \`--embedding-url\` / \`EMBEDDING_URL\`: OpenAI-compatible embeddings endpoint
-- \`--embedding-model\` / \`EMBEDDING_MODEL\`: Embedding model name (default bge-m3)
+- \`--embedding-url\` / \`EMBEDDING_URL\`: TEI dense embeddings (default http://127.0.0.1:3004/embed)
+- \`--embedding-model\` / \`EMBEDDING_MODEL\`: Embedding model name (default BAAI/bge-m3)
+- \`--colbert-url\` / \`COLBERT_URL\`: ColBERT token vectors (default http://127.0.0.1:3004/embed_all)
+- \`--vector-mode\` / \`THAILAW_VECTOR_MODE\`: \`colbert\` (default) or \`dense\`
 - \`--embedding-api-key\` / \`EMBEDDING_API_KEY\`: Optional bearer token
-- \`--rerank-url\` / \`RERANK_URL\`: llama-server rerank endpoint (default http://127.0.0.1:3003/v1/rerank)
-- \`--rerank-model\` / \`RERANK_MODEL\`: Rerank model name (default bge-reranker-v2-m3)
+- \`--rerank-url\` / \`RERANK_URL\`: TEI rerank (default http://127.0.0.1:3006/rerank)
+- \`--rerank-model\` / \`RERANK_MODEL\`: Rerank model name (default BAAI/bge-reranker-v2-m3)
 - \`--top-k\`, \`--score-threshold\`, \`--max-results\`
 - \`--http-port\` / \`THAILAW_HTTP_PORT\`: Enable HTTP transport on the specified port
 

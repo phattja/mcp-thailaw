@@ -1,6 +1,6 @@
 # Self-hosted Qdrant vector database
 
-`mcp-thailaw` does not ship the law index. For a self-hosted build you run **Qdrant**, an **OpenAI-compatible embedding server**, and the ingest script that loads [open-law-data-thailand/ocs-krisdika](https://huggingface.co/datasets/open-law-data-thailand/ocs-krisdika) from Hugging Face.
+`mcp-thailaw` does not ship the law index. For a self-hosted build you run **Qdrant**, **TEI BGE-M3** (dense + ColBERT token vectors), and the ingest script that loads [open-law-data-thailand/ocs-krisdika](https://huggingface.co/datasets/open-law-data-thailand/ocs-krisdika) from Hugging Face.
 
 The ingest script in this repository is `scripts/ingest_thai_law_qdrant.py`. It prefers a local JSONL tree (`THAILAW_JSONL_ROOT`, default `/ai/jupyter/home/ocs-krisdika-data`). If that tree is missing it downloads raw JSONL from Hugging Face. Each JSONL **section** becomes one Qdrant point. Document fields stay at the payload root; section fields live under `section`.
 
@@ -9,10 +9,10 @@ Hugging Face  ocs-krisdika JSONL
         │  snapshot_download
         ▼
   ingest_thai_law_qdrant.py
-        │  POST /v1/embeddings  (bge-m3, 1024-dim)
+        │  TEI /embed + ColBERT /embed_all  (BGE-M3, 1024-dim)
         ▼
-  Embedding server
-        │  Qdrant upsert  (cosine)
+  embeddings :3004 (ColBERT)
+        │  Qdrant upsert  (named colbert MaxSim only)
         ▼
   Qdrant collection `krisdika`
         │  query_points
@@ -23,7 +23,7 @@ Hugging Face  ocs-krisdika JSONL
 ## Prerequisites
 
 1. **Qdrant** listening on HTTP, typically `http://localhost:6333`.
-2. **Embedding server** with an OpenAI-compatible `POST /v1/embeddings` API. The index was built with **bge-m3** at **1024 dimensions**, cosine distance. Query-time embeddings must use the same model and size.
+2. **Embedding stack** from `/ai/embeddings`: container `embeddings` on `:3004` (ColBERT `/embed_all`), reranker `BAAI/bge-reranker-v2-m3` on `:3006`. Collection vector is named `colbert` (MaxSim) only.
 3. Python 3.10+ and network access to Hugging Face for the first download.
 
 Example Qdrant (Docker):
@@ -45,8 +45,9 @@ A full ingest **deletes and recreates** the collection, then embeds every select
 ```bash
 export QDRANT_URL=http://localhost:6333
 export QDRANT_COLLECTION=krisdika
-export EMBEDDING_URL=http://127.0.0.1:3003/v1
-export EMBEDDING_MODEL=bge-m3
+export EMBEDDING_URL=http://127.0.0.1:3004
+export EMBEDDING_MODEL=BAAI/bge-m3
+export COLBERT_URL=http://127.0.0.1:3004
 export THAILAW_VECTOR_SIZE=1024
 export THAILAW_JSONL_ROOT=/home/jupyter/ocs-krisdika-data
 export THAILAW_MAX_DOCS=50
@@ -61,15 +62,17 @@ Then run again without `THAILAW_MAX_DOCS` for the full index. `THAILAW_ONLY_LATE
 | `QDRANT_URL` | `http://localhost:6333` | Qdrant HTTP base URL |
 | `QDRANT_COLLECTION` | `krisdika` | Collection name |
 | `QDRANT_API_KEY` | _(unset)_ | Optional Qdrant API key |
-| `EMBEDDING_URL` | `http://127.0.0.1:3003/v1` | OpenAI-compatible embeddings endpoint |
-| `EMBEDDING_MODEL` | `bge-m3` | Model name sent to the embedding server (alias on llama-server `:3003`) |
+| `EMBEDDING_URL` | `http://127.0.0.1:3004` | TEI dense `/embed` |
+| `EMBEDDING_MODEL` | `BAAI/bge-m3` | Model name sent to the embedding server |
+| `COLBERT_URL` | `http://127.0.0.1:3004` | ColBERT `POST /embed_all` on container `embeddings` |
 | `EMBEDDING_API_KEY` | _(unset)_ | Optional bearer token |
 | `THAILAW_JSONL_ROOT` | `/home/jupyter/ocs-krisdika-data` | Local dataset tree. Host path `/ai/jupyter/home/...` is remapped to `/home/jupyter/...` inside the Jupyter container |
 | `THAILAW_JSONL_FILE` | _(unset)_ | Ingest only this one `.jsonl` file (same path remap) |
 | `THAILAW_ONLY_LATEST` | `true` | Ingest only documents with `is_latest=true` |
 | `THAILAW_MAX_DOCS` | _(unset)_ | Limit the number of laws (for a test run) |
 | `THAILAW_VECTOR_SIZE` | `1024` | Must match bge-m3 (native 1024) |
-| `THAILAW_BATCH_SIZE` | `32` | Embedding / upsert batch size |
+| `THAILAW_BATCH_SIZE` | `4` | Embedding / upsert batch size (ColBERT is heavier) |
+| `THAILAW_COLBERT_MAX_TOKENS` | `64` | Token vectors stored per section |
 
 These `QDRANT_*` and `EMBEDDING_*` names are the same ones `mcp-thailaw` uses at search time.
 
@@ -85,7 +88,7 @@ Also at root: `source` (`ocs-krisdika`), `chunk_index` (section order), `jsonl_f
 
 The embed string is sent to the embedding server only. It is **not** stored as `text`.
 
-Vectors: **1024-dim**, **cosine** (`bge-m3`). Query-time MCP embeddings must use the same model and size. After ingest, `mcp-thailaw` searches with `is_latest=true` by default.
+Vectors: named **`colbert`** only (1024-d token multi-vectors, MaxSim, float16 on disk). Query-time MCP defaults to ColBERT. After ingest, `mcp-thailaw` searches with `is_latest=true` by default.
 
 ## Point mcp-thailaw at the collection
 
@@ -94,10 +97,12 @@ node dist/cli.js \
   --http-port 8005 \
   --qdrant-url http://127.0.0.1:6333 \
   --qdrant-collection krisdika \
-  --embedding-url http://127.0.0.1:3003/v1 \
-  --embedding-model bge-m3 \
-  --rerank-url http://127.0.0.1:3003/v1 \
-  --rerank-model bge-reranker-v2-m3
+  --embedding-url http://127.0.0.1:3004 \
+  --embedding-model BAAI/bge-m3 \
+  --colbert-url http://127.0.0.1:3004 \
+  --vector-mode colbert \
+  --rerank-url http://127.0.0.1:3006 \
+  --rerank-model BAAI/bge-reranker-v2-m3
 ```
 
 Use `krisdika_collection_info` to confirm point count and vector size.

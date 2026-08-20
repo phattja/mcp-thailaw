@@ -5,11 +5,19 @@ export const SERVER_NAME = "phattja/mcp-thailaw";
 
 export const DEFAULT_QDRANT_URL = "http://localhost:6333";
 export const DEFAULT_COLLECTION_NAME = "krisdika";
-export const DEFAULT_EMBEDDING_URL = "http://127.0.0.1:3003/v1";
-export const DEFAULT_EMBEDDING_MODEL = "bge-m3";
+export const DEFAULT_EMBEDDING_URL = "http://127.0.0.1:3003";
+export const DEFAULT_EMBEDDING_MODEL = "gpustack-bge-m3";
 export const DEFAULT_EMBEDDING_DIMENSIONS = 1024;
-export const DEFAULT_RERANK_URL = "http://127.0.0.1:3003/v1";
-export const DEFAULT_RERANK_MODEL = "bge-reranker-v2-m3";
+export const DEFAULT_COLBERT_URL = "http://127.0.0.1:3003";
+export const DEFAULT_RERANK_URL = "http://127.0.0.1:3003";
+export const DEFAULT_RERANK_MODEL = "gpustack-bge-reranker-v2-m3";
+export const DEFAULT_VECTOR_MODE = "colbert";
+export const DEFAULT_VECTOR_NAME = "colbert";
+export const DEFAULT_DENSE_VECTOR_NAME = "dense";
+export const DEFAULT_COLBERT_MAX_TOKENS = 64;
+export const DEFAULT_DEKA_COLLECTION = "deka";
+
+export type VectorMode = "colbert" | "dense";
 export const DEFAULT_TOP_K = 5;
 export const DEFAULT_SCORE_THRESHOLD = 0.3;
 export const DEFAULT_MAX_RESULTS = 100;
@@ -28,6 +36,12 @@ export interface ThaiLawConfig {
   embeddingModel: string;
   embeddingApiKey?: string;
   embeddingDimensions: number;
+  colbertUrl: string;
+  vectorMode: VectorMode;
+  vectorName: string;
+  denseVectorName: string;
+  colbertMaxTokens: number;
+  dekaCollectionName: string;
   rerankUrl: string;
   rerankModel: string;
   rerankApiKey?: string;
@@ -65,10 +79,31 @@ function trimOrUndefined(value: string | undefined): string | undefined {
 
 function resolveEmbeddingEndpoint(url: string): string {
   const trimmed = url.replace(/\/+$/, "");
-  if (trimmed.endsWith("/embeddings")) {
+  if (
+    trimmed.endsWith("/embeddings")
+    || trimmed.endsWith("/embedding")
+    || trimmed.endsWith("/embed")
+    || trimmed.endsWith("/embed_all")
+  ) {
     return trimmed;
   }
-  return `${trimmed}/embeddings`;
+  if (trimmed.endsWith("/v1")) {
+    return `${trimmed}/embeddings`;
+  }
+  return `${trimmed}/embedding`;
+}
+
+function resolveColbertEndpoint(url: string): string {
+  const trimmed = url.replace(/\/+$/, "");
+  if (
+    trimmed.endsWith("/embed_all")
+    || trimmed.endsWith("/colbert")
+    || trimmed.endsWith("/embed")
+    || trimmed.endsWith("/embedding")
+  ) {
+    return trimmed;
+  }
+  return `${trimmed}/embedding`;
 }
 
 function resolveRerankEndpoint(url: string): string {
@@ -77,6 +112,20 @@ function resolveRerankEndpoint(url: string): string {
     return trimmed;
   }
   return `${trimmed}/rerank`;
+}
+
+function parseVectorMode(raw: string | undefined, fallback: VectorMode): VectorMode {
+  if (raw === undefined || raw.trim() === "") {
+    return fallback;
+  }
+  const value = raw.trim().toLowerCase();
+  if (["colbert", "multi", "multi-vector", "multivector", "late"].includes(value)) {
+    return "colbert";
+  }
+  if (["dense", "single", "cls"].includes(value)) {
+    return "dense";
+  }
+  return fallback;
 }
 
 function parseBoolean(raw: string | undefined, fallback: boolean): boolean {
@@ -158,6 +207,19 @@ export function getThaiLawConfig(env: NodeJS.ProcessEnv = process.env): ThaiLawC
       DEFAULT_EMBEDDING_DIMENSIONS,
       (raw, fallback) => parseBoundedInteger(raw, fallback, 32, 8192),
     ),
+    colbertUrl: resolveColbertEndpoint(
+      firstString(cli.colbertUrl, env.COLBERT_URL) ?? DEFAULT_COLBERT_URL,
+    ),
+    vectorMode: cli.vectorMode ?? parseVectorMode(env.THAILAW_VECTOR_MODE, DEFAULT_VECTOR_MODE),
+    vectorName: firstString(cli.vectorName, env.THAILAW_VECTOR_NAME) ?? DEFAULT_VECTOR_NAME,
+    denseVectorName: firstString(env.THAILAW_DENSE_VECTOR_NAME) ?? DEFAULT_DENSE_VECTOR_NAME,
+    colbertMaxTokens: firstNumber(
+      cli.colbertMaxTokens,
+      env.THAILAW_COLBERT_MAX_TOKENS,
+      DEFAULT_COLBERT_MAX_TOKENS,
+      (raw, fallback) => parseBoundedInteger(raw, fallback, 4, 512),
+    ),
+    dekaCollectionName: firstString(env.THAILAW_DEKA_COLLECTION) ?? DEFAULT_DEKA_COLLECTION,
     rerankUrl: resolveRerankEndpoint(
       firstString(cli.rerankUrl, env.RERANK_URL) ?? DEFAULT_RERANK_URL,
     ),
@@ -214,6 +276,9 @@ export function envWithCliOverrides(env: NodeJS.ProcessEnv = process.env): NodeJ
   if (cli.embeddingUrl) merged.EMBEDDING_URL = cli.embeddingUrl;
   if (cli.embeddingModel) merged.EMBEDDING_MODEL = cli.embeddingModel;
   if (cli.embeddingApiKey) merged.EMBEDDING_API_KEY = cli.embeddingApiKey;
+  if (cli.colbertUrl) merged.COLBERT_URL = cli.colbertUrl;
+  if (cli.vectorMode) merged.THAILAW_VECTOR_MODE = cli.vectorMode;
+  if (cli.vectorName) merged.THAILAW_VECTOR_NAME = cli.vectorName;
   if (cli.rerankUrl) merged.RERANK_URL = cli.rerankUrl;
   if (cli.rerankModel) merged.RERANK_MODEL = cli.rerankModel;
   if (cli.rerankApiKey) merged.RERANK_API_KEY = cli.rerankApiKey;
@@ -249,6 +314,11 @@ export function validateThaiLawConfig(config: ThaiLawConfig = getThaiLawConfig()
 
   if (!config.embeddingModel) {
     issues.push("EMBEDDING_MODEL must not be empty");
+  }
+
+  if (config.vectorMode === "colbert") {
+    const colbertIssue = validateHttpUrl(config.colbertUrl, "COLBERT_URL");
+    if (colbertIssue) issues.push(colbertIssue);
   }
 
   if (config.rerankEnabled) {

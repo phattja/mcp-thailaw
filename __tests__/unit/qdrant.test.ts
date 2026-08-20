@@ -21,7 +21,11 @@ async function runTests() {
         },
       },
     }));
-    const hits = await queryPoints([0.1, 0.2], { limit: 5, scoreThreshold: 0.3 });
+    const hits = await queryPoints([[0.1, 0.2], [0.3, 0.4]], {
+      limit: 5,
+      scoreThreshold: 0.3,
+      using: "colbert",
+    });
     assert.equal(hits.length, 1);
     assert.equal(hits[0].score, 0.9);
     assert.equal(hits[0].payload.title, "ก");
@@ -142,6 +146,33 @@ async function runTests() {
     assert.equal(info.status, "green");
     assert.equal(info.pointsCount, 12);
     assert.equal(info.vectorSize, 1024);
+    fetchMocker.restore();
+  }, results);
+
+  await testFunction("fetchCollectionInfo maps named ColBERT vectors", async () => {
+    fetchMocker.mock(createMockFetch({
+      json: {
+        result: {
+          status: "green",
+          points_count: 4,
+          config: {
+            params: {
+              vectors: {
+                dense: { size: 1024, distance: "Cosine" },
+                colbert: {
+                  size: 1024,
+                  distance: "Cosine",
+                  multivector_config: { comparator: "max_sim" },
+                },
+              },
+            },
+          },
+        },
+      },
+    }));
+    const info = await fetchCollectionInfo();
+    assert.equal(info.namedVectors?.length, 2);
+    assert.equal(info.namedVectors?.find((item) => item.name === "colbert")?.multivector, true);
     fetchMocker.restore();
   }, results);
 

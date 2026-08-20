@@ -14,10 +14,12 @@ mcp-thailaw \
   --http-host 0.0.0.0 \
   --qdrant-url http://127.0.0.1:6333 \
   --qdrant-collection krisdika \
-  --embedding-url http://127.0.0.1:3003/v1 \
-  --embedding-model bge-m3 \
-  --rerank-url http://127.0.0.1:3003/v1 \
-  --rerank-model bge-reranker-v2-m3
+  --embedding-url http://127.0.0.1:3004 \
+  --embedding-model BAAI/bge-m3 \
+  --colbert-url http://127.0.0.1:3004 \
+  --vector-mode colbert \
+  --rerank-url http://127.0.0.1:3006 \
+  --rerank-model BAAI/bge-reranker-v2-m3
 ```
 
 ## Search backend
@@ -27,12 +29,16 @@ mcp-thailaw \
 | `--qdrant-url` | `QDRANT_URL` | `http://localhost:6333` | Qdrant base URL |
 | `--qdrant-collection`, `--collection` | `QDRANT_COLLECTION` | `krisdika` | Collection name |
 | `--qdrant-api-key` | `QDRANT_API_KEY` | _(unset)_ | Sent as the `api-key` header |
-| `--embedding-url` | `EMBEDDING_URL` | `http://127.0.0.1:3003/v1` | OpenAI-compatible embeddings endpoint |
-| `--embedding-model` | `EMBEDDING_MODEL` | `bge-m3` | Model name in the embeddings request |
+| `--embedding-url` | `EMBEDDING_URL` | `http://127.0.0.1:3004` | TEI dense `/embed` (or OpenAI `/v1/embeddings`) |
+| `--embedding-model` | `EMBEDDING_MODEL` | `BAAI/bge-m3` | Model name in the embeddings request |
 | `--embedding-api-key` | `EMBEDDING_API_KEY` | _(unset)_ | Sent as `Authorization: Bearer ...` |
-| `--vector-size` | `THAILAW_VECTOR_SIZE` | `1024` | Embedding dimensions sent as `dimensions` |
-| `--rerank-url` | `RERANK_URL` | `http://127.0.0.1:3003/v1` | llama-server rerank base (POST `/v1/rerank`) |
-| `--rerank-model` | `RERANK_MODEL` | `bge-reranker-v2-m3` | Model name in the rerank request |
+| `--colbert-url` | `COLBERT_URL` | `http://127.0.0.1:3004` | ColBERT token vectors (`POST /embed_all`) |
+| `--vector-mode` | `THAILAW_VECTOR_MODE` | `colbert` | `colbert` (Qdrant MaxSim) or `dense` |
+| `--vector-name` | `THAILAW_VECTOR_NAME` | `colbert` | Named multi-vector used for ColBERT search |
+| `--colbert-max-tokens` | `THAILAW_COLBERT_MAX_TOKENS` | `64` | Max token vectors per query/document |
+| `--vector-size` | `THAILAW_VECTOR_SIZE` | `1024` | Embedding dimensions |
+| `--rerank-url` | `RERANK_URL` | `http://127.0.0.1:3006` | TEI `POST /rerank` (or llama-server `/v1/rerank`) |
+| `--rerank-model` | `RERANK_MODEL` | `BAAI/bge-reranker-v2-m3` | Model name in the rerank request |
 | `--rerank-api-key` | `RERANK_API_KEY` | _(unset)_ | Optional bearer token |
 | `--rerank` / `--no-rerank` | `THAILAW_RERANK` | `true` | Rerank retrieved มาตรา after vector search |
 | `--top-k` | `THAILAW_TOP_K` | `5` | Default number of vector hits when the tool omits `top_k`. Combined มาตรา output needs fewer raw chunks. |
@@ -71,7 +77,7 @@ node dist/cli.js \
   --http-port 8005 \
   --http-host 0.0.0.0 \
   --qdrant-url http://localhost:6333 \
-  --embedding-url http://127.0.0.1:3003/v1
+  --embedding-url http://127.0.0.1:3004
 ```
 
 Then add an MCP server of type **streamable-http** at `http://localhost:8005/mcp`.

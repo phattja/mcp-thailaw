@@ -13,21 +13,32 @@ Environment (same names as mcp-thailaw):
   QDRANT_URL              default http://localhost:6333
   QDRANT_COLLECTION       default krisdika
   QDRANT_API_KEY          optional
-  EMBEDDING_URL           default http://127.0.0.1:3003/v1
-  EMBEDDING_MODEL         default bge-m3
+  EMBEDDING_URL           default http://127.0.0.1:3003
+  EMBEDDING_MODEL         default gpustack-bge-m3
+  COLBERT_URL             default same as EMBEDDING_URL (llama.cpp /embedding)
   EMBEDDING_API_KEY       optional bearer token
+  THAILAW_COLBERT_MAX_TOKENS  default 64
   THAILAW_JSONL_ROOT      default /home/jupyter/ocs-krisdika-data
                           (/ai/jupyter/home/... is remapped to /home/jupyter/...)
   THAILAW_JSONL_FILE      optional single .jsonl (overrides ROOT)
   THAILAW_ONLY_LATEST     default true  (ingest only is_latest documents)
   THAILAW_MAX_DOCS        optional int  (limit for a test run)
   THAILAW_VECTOR_SIZE     default 1024  (bge-m3 native)
-  THAILAW_BATCH_SIZE      default 32
+  THAILAW_BATCH_SIZE      default 4
 """
 
 from huggingface_hub import snapshot_download
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PayloadSchemaType, PointStruct, VectorParams
+from qdrant_client.models import (
+    Datatype,
+    Distance,
+    HnswConfigDiff,
+    MultiVectorComparator,
+    MultiVectorConfig,
+    PayloadSchemaType,
+    PointStruct,
+    VectorParams,
+)
 from tqdm import tqdm
 import uuid
 import os
@@ -39,14 +50,17 @@ QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333").rstrip("/")
 COLLECTION_NAME = os.environ.get("QDRANT_COLLECTION", "krisdika")
 QDRANT_API_KEY = os.environ.get("QDRANT_API_KEY") or None
 
-EMBEDDING_URL = os.environ.get("EMBEDDING_URL", "http://127.0.0.1:3003/v1").rstrip("/")
-if not EMBEDDING_URL.endswith("/embeddings"):
-    EMBEDDING_URL = f"{EMBEDDING_URL}/embeddings"
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "bge-m3")
+EMBEDDING_URL = os.environ.get(
+    "EMBEDDING_URL",
+    os.environ.get("COLBERT_URL", "http://127.0.0.1:3003"),
+).rstrip("/")
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "gpustack-bge-m3")
+COLBERT_URL = os.environ.get("COLBERT_URL", EMBEDDING_URL).rstrip("/")
 EMBEDDING_API_KEY = os.environ.get("EMBEDDING_API_KEY") or None
+COLBERT_MAX_TOKENS = int(os.environ.get("THAILAW_COLBERT_MAX_TOKENS", "64"))
 
 VECTOR_SIZE = int(os.environ.get("THAILAW_VECTOR_SIZE", "1024"))
-BATCH_SIZE = int(os.environ.get("THAILAW_BATCH_SIZE", "32"))
+BATCH_SIZE = int(os.environ.get("THAILAW_BATCH_SIZE", "4"))
 ONLY_LATEST = os.environ.get("THAILAW_ONLY_LATEST", "true").strip().lower() not in {"0", "false", "no"}
 MAX_DOCS_RAW = os.environ.get("THAILAW_MAX_DOCS", "").strip()
 MAX_DOCS = int(MAX_DOCS_RAW) if MAX_DOCS_RAW else None
@@ -109,21 +123,95 @@ def payload_value(value):
     return str(value)
 
 
-def get_embeddings(texts: list[str]) -> list[list[float]]:
+def _headers() -> dict:
     headers = {"Content-Type": "application/json"}
     if EMBEDDING_API_KEY:
         headers["Authorization"] = f"Bearer {EMBEDDING_API_KEY}"
-    payload = {"model": EMBEDDING_MODEL, "input": texts}
-    response = requests.post(EMBEDDING_URL, json=payload, headers=headers, timeout=120)
+    return headers
+
+
+def _join(url: str, suffix: str) -> str:
+    if url.endswith(("/embed", "/embed_all", "/embeddings", "/colbert", "/embedding")):
+        return url
+    if url.endswith("/v1"):
+        return f"{url}/embeddings" if suffix == "/embed" else f"{url}{suffix}"
+    return f"{url}{suffix}"
+
+
+LLAMA_ENDPOINT = _join(EMBEDDING_URL, "/embedding")
+
+
+def _l2_vec(vector: list[float]) -> list[float]:
+    norm = sum(value * value for value in vector) ** 0.5
+    scale = max(norm, 1e-12)
+    return [value / scale for value in vector]
+
+
+def _l2_rows(rows: list[list[float]]) -> list[list[float]]:
+    out = []
+    for row in rows:
+        unit = _l2_vec(row)
+        if any(abs(value) > 1e-6 for value in unit):
+            out.append(unit)
+    return out
+
+
+def _mean_dense(rows: list[list[float]]) -> list[float]:
+    width = len(rows[0])
+    acc = [0.0] * width
+    for row in rows:
+        for index, value in enumerate(row):
+            acc[index] += value
+    count = float(len(rows))
+    return _l2_vec([value / count for value in acc])
+
+
+def _parse_llama_rows(payload, expected: int) -> list[list[list[float]]]:
+    if not isinstance(payload, list) or not payload:
+        raise RuntimeError(f"Unexpected embedding payload from {LLAMA_ENDPOINT}")
+    if isinstance(payload[0], dict) and "embedding" in payload[0]:
+        items = sorted(payload, key=lambda item: item.get("index", 0))
+        matrices = [item["embedding"] for item in items]
+    elif payload and isinstance(payload[0], list) and payload[0] and isinstance(payload[0][0], (int, float)):
+        matrices = [payload]
+    else:
+        matrices = payload
+    if len(matrices) != expected:
+        raise RuntimeError(f"Embedding batch size {len(matrices)} != {expected}")
+    return matrices
+
+
+def get_dual_embeddings(texts: list[str]) -> tuple[list[list[float]], list[list[list[float]]]]:
+    payload = _post_json(
+        LLAMA_ENDPOINT,
+        {"model": EMBEDDING_MODEL, "content": texts if len(texts) > 1 else texts[0]},
+    )
+    matrices = _parse_llama_rows(payload, len(texts))
+    dense = []
+    colbert = []
+    for matrix in matrices:
+        dense.append(_mean_dense(matrix))
+        tokens = _l2_rows(matrix)[:COLBERT_MAX_TOKENS]
+        if not tokens:
+            raise RuntimeError("empty ColBERT matrix")
+        colbert.append(tokens)
+    return dense, colbert
+
+
+def get_colbert_embeddings(texts: list[str]) -> list[list[list[float]]]:
+    _dense, colbert = get_dual_embeddings(texts)
+    return colbert
+
+
+def _post_json(url: str, payload: dict, timeout: int = 180):
+    response = requests.post(url, json=payload, headers=_headers(), timeout=timeout)
     if not response.ok:
         detail = response.text[:800]
         raise requests.HTTPError(
             f"{response.status_code} {response.reason} for url: {response.url}\n{detail}",
             response=response,
         )
-    data = response.json()
-    embeddings = sorted(data["data"], key=lambda item: item["index"])
-    return [item["embedding"] for item in embeddings]
+    return response.json()
 
 
 def search_text(item: dict, section: dict) -> str:
@@ -182,15 +270,19 @@ def main() -> None:
     print("1. Connecting to Qdrant...")
     client = QdrantClient(url=QDRANT_URL, api_key=QDRANT_API_KEY)
 
-    print("2. Testing embedding server...")
+    print("2. Testing ColBERT server...")
     try:
-        test_emb = get_embeddings(["ทดสอบ"])
-        print(f"   → Embedding server OK (model={EMBEDDING_MODEL} dim={len(test_emb[0])})")
-        if len(test_emb[0]) != VECTOR_SIZE:
-            print(
-                f"❌ Embedding dim {len(test_emb[0])} != THAILAW_VECTOR_SIZE={VECTOR_SIZE}. "
-                "bge-m3 must be 1024 (or set THAILAW_VECTOR_SIZE to the live dim).",
-            )
+        test_dense, test_colbert = get_dual_embeddings(["ทดสอบ"])
+        print(
+            f"   → llama.cpp OK ({LLAMA_ENDPOINT} model={EMBEDDING_MODEL} "
+            f"dense={len(test_dense[0])} tokens={len(test_colbert[0])} "
+            f"dim={len(test_colbert[0][0])} max_tokens={COLBERT_MAX_TOKENS})",
+        )
+        if test_colbert[0] and len(test_colbert[0][0]) != VECTOR_SIZE:
+            print(f"❌ ColBERT dim {len(test_colbert[0][0])} != {VECTOR_SIZE}")
+            return
+        if len(test_dense[0]) != VECTOR_SIZE:
+            print(f"❌ dense dim {len(test_dense[0])} != {VECTOR_SIZE}")
             return
     except Exception as exc:
         print(f"❌ Cannot connect to embedding server: {exc}")
@@ -202,9 +294,26 @@ def main() -> None:
 
     client.create_collection(
         collection_name=COLLECTION_NAME,
-        vectors_config=VectorParams(size=VECTOR_SIZE, distance=Distance.COSINE),
+        vectors_config={
+            "dense": VectorParams(
+                size=VECTOR_SIZE,
+                distance=Distance.COSINE,
+                on_disk=True,
+                datatype=Datatype.FLOAT16,
+            ),
+            "colbert": VectorParams(
+                size=VECTOR_SIZE,
+                distance=Distance.COSINE,
+                on_disk=True,
+                datatype=Datatype.FLOAT16,
+                hnsw_config=HnswConfigDiff(on_disk=True),
+                multivector_config=MultiVectorConfig(
+                    comparator=MultiVectorComparator.MAX_SIM,
+                ),
+            ),
+        },
     )
-    print(f"   → Collection '{COLLECTION_NAME}' created")
+    print(f"   → Collection '{COLLECTION_NAME}' created (dense 1024 + colbert {COLBERT_MAX_TOKENS}x{VECTOR_SIZE})")
 
     print("4. Resolving JSONL files...")
     try:
@@ -285,14 +394,18 @@ def main() -> None:
         batch = points[index : index + BATCH_SIZE]
         texts = [point["embed_text"] for point in batch]
         try:
-            embeddings = get_embeddings(texts)
+            dense_vecs, colbert_vecs = get_dual_embeddings(texts)
         except Exception as exc:
             print(f"\n❌ Embedding error at batch {index}: {exc}")
             continue
 
         qdrant_points = [
-            PointStruct(id=point["id"], vector=embedding, payload=point["payload"])
-            for point, embedding in zip(batch, embeddings)
+            PointStruct(
+                id=point["id"],
+                vector={"dense": dense, "colbert": colbert},
+                payload=point["payload"],
+            )
+            for point, dense, colbert in zip(batch, dense_vecs, colbert_vecs)
         ]
         client.upsert(collection_name=COLLECTION_NAME, points=qdrant_points)
 

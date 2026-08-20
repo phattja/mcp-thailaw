@@ -56,6 +56,7 @@ export type DekaDocType = "all" | "judgment" | "order" | "decision" | "sc_order"
 export interface SearchDekaArgs {
   query?: string;
   top_k?: number;
+  score_threshold?: number;
   mode?: DekaSearchMode;
   doc_type?: DekaDocType | string;
   text_scope?: DekaTextScope | string;
@@ -480,6 +481,49 @@ export const SEARCH_KRISDIKA_ONLINE_TOOL: Tool = {
         type: "string",
         enum: ["text", "json"],
         description: "รูปแบบผลลัพธ์: text (อ่านง่าย) หรือ json",
+      },
+    },
+    required: ["query"],
+  },
+};
+
+export const SEARCH_DEKA_TOOL: Tool = {
+  name: "search_deka",
+  description:
+    "ค้นหาคำพิพากษาศาลฎีกาจาก Qdrant collection deka (dense 1024-d + ColBERT 64×1024 จาก llama.cpp :3003). "
+    + "ค่าเริ่มต้นใช้ MaxSim แล้ว rerank. ไม่ใช่ตัวบทกฎหมาย — ใช้คู่กับ search_krisdika เมื่อต้องการมาตรา. "
+    + "ใช้ search_deka_online เมื่อต้องการค้นจากเว็บ deka.supremecourt.or.th โดยตรง.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      query: {
+        type: "string",
+        description: "คำค้น เช่น ลักทรัพย์ มะม่วง สวน",
+      },
+      top_k: {
+        type: "integer",
+        minimum: 1,
+        maximum: DEFAULT_DEKA_MAX_RESULTS,
+        description: `จำนวนคดีสูงสุด (ค่าเริ่มต้น ${DEFAULT_DEKA_TOP_K})`,
+      },
+      score_threshold: {
+        type: "number",
+        minimum: 0,
+        maximum: 1,
+        description: `คะแนนเวกเตอร์ขั้นต่ำ (ค่าเริ่มต้น ${DEFAULT_SCORE_THRESHOLD})`,
+      },
+      year: {
+        type: "string",
+        description: "กรองปี พ.ศ. เช่น 2544",
+      },
+      exclude: {
+        type: "string",
+        description: "คำที่ต้องตัดออก คั่นด้วยจุลภาค",
+      },
+      response_format: {
+        type: "string",
+        enum: ["text", "json"],
+        description: "รูปแบบผลลัพธ์: text หรือ json",
       },
     },
     required: ["query"],

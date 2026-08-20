@@ -32,6 +32,19 @@ async function runTests() {
     fetchMocker.restore();
   }, results);
 
+  await testFunction("rerankDocuments maps TEI score array", async () => {
+    fetchMocker.mock(createMockFetch({
+      json: [
+        { index: 1, score: 0.77 },
+        { index: 0, score: 0.11 },
+      ],
+    }));
+    const scores = await rerankDocuments("query", ["a", "b"]);
+    assert.equal(scores[0], 0.11);
+    assert.equal(scores[1], 0.77);
+    fetchMocker.restore();
+  }, results);
+
   await testFunction("rerankResults sorts by relevance_score", async () => {
     fetchMocker.mock(createMockFetch({
       json: {

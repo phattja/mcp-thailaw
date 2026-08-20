@@ -4,6 +4,7 @@ import { getFetch } from "./http-client.js";
 
 interface RerankHit {
   index?: number;
+  score?: number;
   relevance_score?: number;
   relevanceScore?: number;
 }
@@ -14,7 +15,7 @@ interface RerankResponse {
 }
 
 function relevance(hit: RerankHit): number | undefined {
-  const value = hit.relevance_score ?? hit.relevanceScore;
+  const value = hit.relevance_score ?? hit.relevanceScore ?? hit.score;
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
@@ -44,6 +45,7 @@ export async function rerankDocuments(
         model: config.rerankModel,
         query,
         documents,
+        texts: documents,
       }),
       signal,
     });
@@ -62,14 +64,14 @@ export async function rerankDocuments(
     });
   }
 
-  let payload: RerankResponse;
+  let payload: RerankResponse | RerankHit[];
   try {
-    payload = await response.json() as RerankResponse;
+    payload = await response.json() as RerankResponse | RerankHit[];
   } catch {
     throw new MCPThaiLawError("Rerank server returned a non-JSON response.");
   }
 
-  const hits = payload.results ?? payload.data ?? [];
+  const hits = Array.isArray(payload) ? payload : payload.results ?? payload.data ?? [];
   const scores = documents.map(() => Number.NEGATIVE_INFINITY);
   for (const hit of hits) {
     if (typeof hit.index !== "number" || hit.index < 0 || hit.index >= documents.length) {

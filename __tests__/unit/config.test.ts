@@ -32,10 +32,12 @@ async function runTests() {
     assert.equal(config.qdrantUrl, DEFAULT_QDRANT_URL);
     assert.equal(config.collectionName, DEFAULT_COLLECTION_NAME);
     assert.equal(config.embeddingModel, DEFAULT_EMBEDDING_MODEL);
-    assert.equal(config.embeddingUrl, "http://127.0.0.1:3003/v1/embeddings");
+    assert.equal(config.embeddingUrl, "http://127.0.0.1:3003/embedding");
     assert.equal(config.embeddingDimensions, 1024);
-    assert.equal(config.rerankModel, "bge-reranker-v2-m3");
-    assert.equal(config.rerankUrl, "http://127.0.0.1:3003/v1/rerank");
+    assert.equal(config.colbertUrl, "http://127.0.0.1:3003/embedding");
+    assert.equal(config.vectorMode, "colbert");
+    assert.equal(config.rerankModel, "gpustack-bge-reranker-v2-m3");
+    assert.equal(config.rerankUrl, "http://127.0.0.1:3003/rerank");
     assert.equal(config.rerankEnabled, true);
     assert.equal(config.defaultTopK, 5);
     assert.equal(config.defaultScoreThreshold, 0.3);

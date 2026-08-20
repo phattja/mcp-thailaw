@@ -9,11 +9,11 @@ AI Assistant / Open WebUI
         │  MCP protocol
         ▼
   mcp-thailaw  (this project — Node.js)
-        │  OpenAI-compatible /v1/embeddings
+        │  TEI /embed + ColBERT /embed_all
         ▼
-  Embedding server (bge-m3, 1024-d)
-        │  optional rerank (bge-reranker-v2-m3 :3003)
-        │  Qdrant query_points
+  BGE-M3 ColBERT :3004
+        │  optional rerank (bge-reranker-v2-m3 :3006)
+        │  Qdrant MaxSim on named vector `colbert`
         ▼
   Qdrant collection `krisdika`
 ```
@@ -31,10 +31,12 @@ AI Assistant / Open WebUI
       "env": {
         "QDRANT_URL": "http://localhost:6333",
         "QDRANT_COLLECTION": "krisdika",
-        "EMBEDDING_URL": "http://127.0.0.1:3003/v1",
-        "EMBEDDING_MODEL": "bge-m3",
-        "RERANK_URL": "http://127.0.0.1:3003/v1",
-        "RERANK_MODEL": "bge-reranker-v2-m3"
+        "EMBEDDING_URL": "http://127.0.0.1:3003",
+        "EMBEDDING_MODEL": "gpustack-bge-m3",
+        "COLBERT_URL": "http://127.0.0.1:3003",
+        "THAILAW_VECTOR_MODE": "colbert",
+        "RERANK_URL": "http://127.0.0.1:3003",
+        "RERANK_MODEL": "gpustack-bge-reranker-v2-m3"
       }
     }
   }
@@ -49,10 +51,12 @@ node dist/cli.js \
   --http-host 0.0.0.0 \
   --qdrant-url http://127.0.0.1:6333 \
   --qdrant-collection krisdika \
-  --embedding-url http://127.0.0.1:3003/v1 \
-  --embedding-model bge-m3 \
-  --rerank-url http://127.0.0.1:3003/v1 \
-  --rerank-model bge-reranker-v2-m3
+  --embedding-url http://127.0.0.1:3003 \
+  --embedding-model gpustack-bge-m3 \
+  --colbert-url http://127.0.0.1:3003 \
+  --vector-mode colbert \
+  --rerank-url http://127.0.0.1:3003 \
+  --rerank-model gpustack-bge-reranker-v2-m3
 ```
 
 CLI flags override the matching environment variables (`QDRANT_URL`, `EMBEDDING_URL`, `THAILAW_HTTP_PORT`, ...).
@@ -64,8 +68,8 @@ The local defaults match the prototype in `thai_law_mcp.py`:
 | Setting | Default |
 | --- | --- |
 | Qdrant | `http://localhost:6333` / collection `krisdika` |
-| Embeddings | `http://127.0.0.1:3003/v1` / `bge-m3` (1024-d) |
-| Rerank | `http://127.0.0.1:3003/v1` / `bge-reranker-v2-m3` |
+| Embeddings | `http://127.0.0.1:3003` / `gpustack-bge-m3` dense 1024-d + ColBERT 64×1024 (`pooling=none`) |
+| Rerank | `http://127.0.0.1:3003` / `gpustack-bge-reranker-v2-m3` |
 | Top K | `5` |
 | Score threshold | `0.30` |
 
@@ -151,7 +155,9 @@ docker run --rm -p 8005:8005 \
   -e THAILAW_HTTP_PORT=8005 \
   -e THAILAW_HTTP_HOST=0.0.0.0 \
   -e QDRANT_URL=http://host.docker.internal:6333 \
-  -e EMBEDDING_URL=http://host.docker.internal:3003/v1 \
+  -e EMBEDDING_URL=http://host.docker.internal:3004 \
+  -e COLBERT_URL=http://host.docker.internal:3004 \
+  -e RERANK_URL=http://host.docker.internal:3006 \
   mcp-thailaw:latest
 ```
 
@@ -162,7 +168,7 @@ See **[CONFIGURATION.md](CONFIGURATION.md)** for every environment variable.
 This MCP server searches an existing Qdrant collection. To build that collection yourself:
 
 1. Run [Qdrant](https://qdrant.tech/) (default `http://localhost:6333`).
-2. Run an OpenAI-compatible embedding server with **bge-m3** (1024-dim).
+2. Run the `/ai/embeddings` stack: ColBERT container `embeddings` on `:3004`, reranker on `:3006`.
 3. Ingest [open-law-data-thailand/ocs-krisdika](https://huggingface.co/datasets/open-law-data-thailand/ocs-krisdika) from Hugging Face:
 
 ```bash
@@ -170,7 +176,7 @@ pip install -r scripts/requirements-ingest.txt
 python3 scripts/ingest_thai_law_qdrant.py
 ```
 
-The script downloads raw JSONL, chunks each law, embeds it, and upserts into collection `krisdika`. Use the same `QDRANT_URL`, `QDRANT_COLLECTION`, `EMBEDDING_URL`, and `EMBEDDING_MODEL` values you pass to `mcp-thailaw`.
+The script downloads raw JSONL, embeds each section as named `colbert` multi-vectors (MaxSim), and upserts into collection `krisdika`. Use the same `QDRANT_URL`, `QDRANT_COLLECTION`, and `COLBERT_URL` values you pass to `mcp-thailaw`.
 
 Full steps, payload fields, and test-run limits: **[docs/self-hosted-qdrant.md](docs/self-hosted-qdrant.md)**.
 

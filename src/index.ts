@@ -12,6 +12,7 @@ import {
 import {
   SEARCH_KRISDIKA_TOOL,
   SEARCH_KRISDIKA_ONLINE_TOOL,
+  SEARCH_DEKA_TOOL,
   SEARCH_DEKA_ONLINE_TOOL,
   KRISDIKA_COLLECTION_INFO_TOOL,
   KRISDEKA_CONNECTION_INFO_TOOL,
@@ -22,7 +23,7 @@ import {
   isCollectionInfoArgs,
 } from "./types.js";
 import { logMessage, setLogLevel, getCurrentLogLevel } from "./logging.js";
-import { performKrisdikaSearch, performKrisdikaCollectionInfo } from "./search.js";
+import { performDekaCollectionSearch, performKrisdikaSearch, performKrisdikaCollectionInfo } from "./search.js";
 import { performDekaConnectionInfo, performDekaSearch } from "./deka.js";
 import { performOcsConnectionInfo, performOcsSearch } from "./ocs.js";
 import { createConfigResource, createHelpResource } from "./resources.js";
@@ -62,6 +63,7 @@ export function createMcpServer(): McpServer {
       tools: [
         SEARCH_KRISDIKA_TOOL,
         SEARCH_KRISDIKA_ONLINE_TOOL,
+        SEARCH_DEKA_TOOL,
         SEARCH_DEKA_ONLINE_TOOL,
         KRISDIKA_COLLECTION_INFO_TOOL,
         KRISDEKA_CONNECTION_INFO_TOOL,
@@ -97,7 +99,18 @@ export function createMcpServer(): McpServer {
         };
       }
 
-      if (name === "search_deka_online" || name === "search_deka") {
+      if (name === "search_deka") {
+        if (!isSearchDekaArgs(args) || typeof args.query !== "string" || args.query.trim() === "") {
+          throw new Error("Invalid arguments for Supreme Court Deka Qdrant search");
+        }
+
+        const result = await performDekaCollectionSearch(mcpServer, args, extra.signal);
+        return {
+          content: [{ type: "text", text: result }],
+        };
+      }
+
+      if (name === "search_deka_online") {
         if (!isSearchDekaArgs(args)) {
           throw new Error("Invalid arguments for Supreme Court Deka search");
         }

@@ -33,6 +33,20 @@ async function runTests() {
     assert.equal(parseCliArgs(["--no-rerank"]).overrides.rerankEnabled, false);
   }, results);
 
+  await testFunction("parses --vector-mode and --colbert-url", () => {
+    const parsed = parseCliArgs([
+      "--vector-mode",
+      "colbert",
+      "--colbert-url",
+      "http://127.0.0.1:3005",
+      "--colbert-max-tokens",
+      "32",
+    ]);
+    assert.equal(parsed.overrides.vectorMode, "colbert");
+    assert.equal(parsed.overrides.colbertUrl, "http://127.0.0.1:3005");
+    assert.equal(parsed.overrides.colbertMaxTokens, 32);
+  }, results);
+
   await testFunction("accepts help and version flags", () => {
     assert.equal(parseCliArgs(["-h"]).help, true);
     assert.equal(parseCliArgs(["--version"]).version, true);

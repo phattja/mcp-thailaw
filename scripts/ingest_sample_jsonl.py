@@ -27,14 +27,12 @@ JSONL_FILE = os.environ.get(
     "/ai/jupyter/home/ocs-krisdika-data/data/2022/2022-04.jsonl",
 )
 
-EMBEDDING_URL = os.environ.get("EMBEDDING_URL", "http://127.0.0.1:3003/v1").rstrip("/")
-if not EMBEDDING_URL.endswith("/embeddings"):
-    EMBEDDING_URL = f"{EMBEDDING_URL}/embeddings"
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "bge-m3")
+COLBERT_URL = os.environ.get("COLBERT_URL", "http://127.0.0.1:3004").rstrip("/")
 EMBEDDING_API_KEY = os.environ.get("EMBEDDING_API_KEY") or None
+COLBERT_MAX_TOKENS = int(os.environ.get("THAILAW_COLBERT_MAX_TOKENS", "64"))
 
 VECTOR_SIZE = int(os.environ.get("THAILAW_VECTOR_SIZE", "1024"))
-BATCH_SIZE = int(os.environ.get("THAILAW_BATCH_SIZE", "32"))
+BATCH_SIZE = int(os.environ.get("THAILAW_BATCH_SIZE", "4"))
 ONLY_LATEST = os.environ.get("THAILAW_ONLY_LATEST", "true").strip().lower() not in {"0", "false", "no"}
 
 DOC_FIELDS = (
@@ -92,20 +90,41 @@ def qdrant(method: str, path: str, body=None, timeout: int = 120):
     return {}
 
 
-def get_embeddings(texts: list[str]) -> list[list[float]]:
+def _headers() -> dict[str, str]:
     headers = {"Content-Type": "application/json"}
     if EMBEDDING_API_KEY:
         headers["Authorization"] = f"Bearer {EMBEDDING_API_KEY}"
+    return headers
+
+
+def _join(url: str, suffix: str) -> str:
+    if url.endswith(("/embed", "/embed_all", "/embeddings", "/colbert")):
+        return url
+    if url.endswith("/v1"):
+        return f"{url}/embeddings" if suffix == "/embed" else f"{url}{suffix}"
+    return f"{url}{suffix}"
+
+
+COLBERT_ENDPOINT = _join(COLBERT_URL, "/embed_all")
+
+
+def get_colbert_embeddings(texts: list[str]) -> list[list[list[float]]]:
     response = requests.post(
-        EMBEDDING_URL,
-        json={"model": EMBEDDING_MODEL, "input": texts},
-        headers=headers,
-        timeout=120,
+        COLBERT_ENDPOINT,
+        json={"inputs": texts, "normalize": True},
+        headers=_headers(),
+        timeout=180,
     )
     response.raise_for_status()
-    data = response.json()
-    embeddings = sorted(data["data"], key=lambda item: item["index"])
-    return [item["embedding"] for item in embeddings]
+    payload = response.json()
+    if not isinstance(payload, list) or not payload:
+        raise RuntimeError(f"Unexpected ColBERT payload from {COLBERT_ENDPOINT}")
+    first = payload[0]
+    if first and isinstance(first[0], (int, float)):
+        matrices = [payload]
+    else:
+        matrices = payload
+    return [matrix[:COLBERT_MAX_TOKENS] for matrix in matrices]
 
 
 def search_text(item: dict, section: dict) -> str:
@@ -161,18 +180,27 @@ def main() -> int:
     if collection_exists(MASTER_COLLECTION):
         print(f"   master '{MASTER_COLLECTION}' points={points_count(MASTER_COLLECTION)} — will not modify it")
 
-    print("2. Testing embedding server...")
-    test_emb = get_embeddings(["ทดสอบ"])
-    print(f"   → dim={len(test_emb[0])}")
+    print("2. Testing ColBERT server...")
+    test_colbert = get_colbert_embeddings(["ทดสอบ"])
+    print(f"   → colbert tokens={len(test_colbert[0])} dim={len(test_colbert[0][0])}")
 
     if collection_exists(COLLECTION_NAME):
         print(f"3. Test collection '{COLLECTION_NAME}' exists → deleting that test collection only")
         qdrant("DELETE", f"/collections/{COLLECTION_NAME}")
 
     qdrant("PUT", f"/collections/{COLLECTION_NAME}", {
-        "vectors": {"size": VECTOR_SIZE, "distance": "Cosine"},
+        "vectors": {
+            "colbert": {
+                "size": VECTOR_SIZE,
+                "distance": "Cosine",
+                "on_disk": True,
+                "datatype": "float16",
+                "hnsw_config": {"on_disk": True},
+                "multivector_config": {"comparator": "max_sim"},
+            },
+        },
     })
-    print(f"   → created '{COLLECTION_NAME}'")
+    print(f"   → created '{COLLECTION_NAME}' (colbert MaxSim only)")
 
     points: list[dict] = []
     doc_count = 0
@@ -223,11 +251,16 @@ def main() -> int:
     for index in range(0, len(points), BATCH_SIZE):
         batch = points[index : index + BATCH_SIZE]
         print(f"   batch {index // BATCH_SIZE + 1}/{(len(points) + BATCH_SIZE - 1) // BATCH_SIZE} ({len(batch)} pts)")
-        embeddings = get_embeddings([point["embed_text"] for point in batch])
+        texts = [point["embed_text"] for point in batch]
+        colbert_vecs = get_colbert_embeddings(texts)
         qdrant("PUT", f"/collections/{COLLECTION_NAME}/points?wait=true", {
             "points": [
-                {"id": point["id"], "vector": embedding, "payload": point["payload"]}
-                for point, embedding in zip(batch, embeddings)
+                {
+                    "id": point["id"],
+                    "vector": {"colbert": colbert},
+                    "payload": point["payload"],
+                }
+                for point, colbert in zip(batch, colbert_vecs)
             ],
         })
 

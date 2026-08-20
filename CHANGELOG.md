@@ -8,6 +8,21 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.16] - 2026-08-20
+
+### Changed
+
+- Default embed and rerank is llama.cpp router `:3003` (`gpustack-bge-m3` pooling=none, `gpustack-bge-reranker-v2-m3`).
+- Ingest writes **dense 1024-d + ColBERT 64×1024** from one `/embedding` call (L2 mean + L2 token rows).
+- New tool `search_deka` searches Qdrant collection `deka`. `search_deka_online` remains the web search.
+
+## [0.1.0-dev.15] - 2026-08-20
+
+### Changed
+
+- Default retrieval is BGE-M3 **ColBERT multi-vector** (Qdrant MaxSim) from container `embeddings` at `:3004`. Default rerank is TEI `BAAI/bge-reranker-v2-m3` at `:3006`.
+- Collection `krisdika` is ColBERT-only (`colbert` MaxSim). Ingest no longer stores dense vectors. Existing unnamed dense collections still search with dense fallback.
+
 ## [0.1.0-dev.14] - 2026-08-19
 
 ### Changed

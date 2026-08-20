@@ -26,9 +26,29 @@ async function connect() {
 function mockSearchStack() {
   fetchMocker.mock(async (url) => {
     const target = url.toString();
-    if (target.includes("/v1/embeddings") || target.includes("3003")) {
+    if (target.includes("/embed_all") || target.includes("3005")) {
+      return createMockFetch({
+        json: [[0.1, 0.2, 0.3], [0.2, 0.1, 0.0]],
+      })(url);
+    }
+    if (target.includes("/embedding") && !target.includes("/embeddings")) {
+      return createMockFetch({
+        json: [{ index: 0, embedding: [[1, 0, 0], [0, 1, 0]] }],
+      })(url);
+    }
+    if (
+      target.includes("/embed")
+      || target.includes("/embeddings")
+      || target.includes("3004")
+      || target.includes("3003")
+    ) {
       return createMockFetch({
         json: { data: [{ index: 0, embedding: [0.1, 0.2, 0.3] }] },
+      })(url);
+    }
+    if (target.includes("/rerank")) {
+      return createMockFetch({
+        json: [{ index: 0, score: 0.88 }],
       })(url);
     }
     if (target.includes("/points/scroll")) {

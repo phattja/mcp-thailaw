@@ -21,10 +21,12 @@ Add an MCP server:
       "args": ["/absolute/path/to/mcp-thailaw/dist/cli.js"],
       "env": {
         "QDRANT_URL": "http://localhost:6333",
-        "EMBEDDING_URL": "http://127.0.0.1:3003/v1",
-        "EMBEDDING_MODEL": "bge-m3",
-        "RERANK_URL": "http://127.0.0.1:3003/v1",
-        "RERANK_MODEL": "bge-reranker-v2-m3"
+        "EMBEDDING_URL": "http://127.0.0.1:3004",
+        "EMBEDDING_MODEL": "BAAI/bge-m3",
+        "COLBERT_URL": "http://127.0.0.1:3004",
+        "THAILAW_VECTOR_MODE": "colbert",
+        "RERANK_URL": "http://127.0.0.1:3006",
+        "RERANK_MODEL": "BAAI/bge-reranker-v2-m3"
       }
     }
   }

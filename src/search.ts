@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { getThaiLawConfig, validateThaiLawConfig } from "./config.js";
-import { getEmbedding } from "./embedding.js";
+import { DEFAULT_DEKA_TOP_K, getThaiLawConfig, validateThaiLawConfig } from "./config.js";
+import { getDualEmbedding, getEmbedding } from "./embedding.js";
 import { rerankResults } from "./rerank.js";
 import { createConfigurationError, createNoResultsMessage } from "./error-handler.js";
 import { logMessage } from "./logging.js";
@@ -27,7 +27,7 @@ import {
   resolveKrisdikaSource,
 } from "./ocs.js";
 import { filterCancelledTitles, filterExcluded, includeCancelledTitles, parseExcludeWords } from "./exclude.js";
-import type { ResponseFormat, SearchKrisdikaArgs } from "./types.js";
+import type { ResponseFormat, SearchDekaArgs, SearchKrisdikaArgs } from "./types.js";
 
 export interface ThaiLawResult {
   score: number;
@@ -551,10 +551,12 @@ async function performQdrantKrisdikaSearch(
     const fetchLimit = excluded.length > 0 || dropCancelled
       ? Math.min(config.maxResults, Math.max(topK * 4, 20))
       : topK;
-    const vector = await getEmbedding(searchQuery, timeout.signal);
-    const hits = await queryPoints(vector, {
+    const collection = await fetchCollectionInfo(timeout.signal);
+    const query = await buildQueryVector(searchQuery, collection, timeout.signal);
+    const hits = await queryPoints(query.vector, {
       limit: fetchLimit,
       scoreThreshold,
+      using: query.using,
       filter: {
         lawCode: args.law_code?.trim() || undefined,
         category: args.category?.trim() || undefined,
@@ -687,12 +689,178 @@ export async function performKrisdikaCollectionInfo(
       rerankUrl: config.rerankUrl,
       rerankEnabled: config.rerankEnabled,
       embeddingDimensions: config.embeddingDimensions,
+      vectorMode: config.vectorMode,
+      vectorName: config.vectorName,
+      colbertUrl: config.colbertUrl,
     });
     searchCache.set("krisdika_collection_info", cacheArgs, output);
     return output;
   } finally {
     timeout.cleanup();
   }
+}
+
+export interface DekaQdrantResult {
+  score: number;
+  doc_id: string;
+  case_no: string;
+  year?: number;
+  title: string;
+  summary: string;
+  text: string;
+}
+
+function hitToDekaResult(hit: QdrantHit): DekaQdrantResult {
+  const payload = hit.payload;
+  const summary = payloadString(payload, "summary") || payloadString(payload, "text");
+  const year = payloadNumber(payload, "year");
+  return {
+    score: hit.score,
+    doc_id: payloadString(payload, "doc_id"),
+    case_no: payloadString(payload, "case_no"),
+    year,
+    title: payloadString(payload, "title", payloadString(payload, "doc_id", "ไม่มีชื่อ")),
+    summary,
+    text: summary,
+  };
+}
+
+function formatDekaQdrantText(query: string, collection: string, results: DekaQdrantResult[]): string {
+  if (results.length === 0) {
+    return createNoResultsMessage(query);
+  }
+  const lines = [
+    `ค้นหาฎีกาใน Qdrant (${collection}): ${query}`,
+    `พบ ${results.length} รายการ`,
+    "",
+  ];
+  for (const [index, item] of results.entries()) {
+    const year = item.year ? ` พ.ศ. ${item.year}` : "";
+    lines.push(`${index + 1}. ${item.title || item.doc_id}${year}`);
+    if (item.case_no) {
+      lines.push(`   เลขที่: ${item.case_no}`);
+    }
+    if (item.summary) {
+      lines.push(`   ${item.summary.slice(0, 500)}`);
+    }
+    lines.push(`   คะแนน: ${item.score.toFixed(4)}`);
+    lines.push("");
+  }
+  return lines.join("\n").trim();
+}
+
+export async function performDekaCollectionSearch(
+  mcpServer: McpServer,
+  args: SearchDekaArgs,
+  signal?: AbortSignal,
+): Promise<string> {
+  const query = (args.query ?? "").trim();
+  if (!query) {
+    throw new Error("search_deka requires query");
+  }
+  const configIssue = validateThaiLawConfig();
+  if (configIssue) {
+    throw createConfigurationError(configIssue);
+  }
+  const config = getThaiLawConfig();
+  const collectionName = config.dekaCollectionName;
+  const topK = Math.min(args.top_k ?? DEFAULT_DEKA_TOP_K, config.maxResults);
+  const scoreThreshold = args.score_threshold ?? config.defaultScoreThreshold;
+  const responseFormat: ResponseFormat = args.response_format ?? "text";
+  const yearRaw = args.year ?? args.year_from;
+  const year = typeof yearRaw === "number"
+    ? yearRaw
+    : (typeof yearRaw === "string" && /^\d+$/.test(yearRaw.trim()) ? Number(yearRaw.trim()) : undefined);
+  const cacheArgs = {
+    query,
+    top_k: topK,
+    score_threshold: scoreThreshold,
+    year: year ?? "",
+    exclude: args.exclude ?? "",
+    response_format: responseFormat,
+    collection: collectionName,
+  };
+  const cached = searchCache.get("search_deka", cacheArgs);
+  if (cached) {
+    return cached;
+  }
+
+  const timeout = withTimeout(config.fetchTimeoutMs, signal);
+  try {
+    logMessage(mcpServer, "info", `Searching Deka Qdrant: ${query}`, {
+      topK,
+      collection: collectionName,
+    });
+    const excluded = parseExcludeWords(args.exclude);
+    const fetchLimit = excluded.length > 0
+      ? Math.min(config.maxResults, Math.max(topK * 4, 20))
+      : topK;
+    const collection = await fetchCollectionInfo(timeout.signal, collectionName);
+    const queryVector = await buildQueryVector(query, collection, timeout.signal);
+    const hits = await queryPoints(queryVector.vector, {
+      limit: fetchLimit,
+      scoreThreshold,
+      using: queryVector.using,
+      collection: collectionName,
+      filter: {
+        applyLatest: false,
+        year,
+      },
+      signal: timeout.signal,
+    });
+    let results = hits.map(hitToDekaResult);
+    if (config.rerankEnabled && results.length > 1) {
+      try {
+        results = await rerankResults(query, results, timeout.signal);
+      } catch (error) {
+        logMessage(mcpServer, "warning", "Deka rerank failed; using vector ranking", {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+    if (excluded.length > 0) {
+      results = filterExcluded(
+        results,
+        excluded,
+        (item) => [item.title, item.summary, item.doc_id].join("\n"),
+      );
+    }
+    results = results.slice(0, topK);
+    const output = responseFormat === "json"
+      ? JSON.stringify({ query, collection: collectionName, count: results.length, results }, null, 2)
+      : formatDekaQdrantText(query, collectionName, results);
+    searchCache.set("search_deka", cacheArgs, output);
+    return output;
+  } finally {
+    timeout.cleanup();
+  }
+}
+
+export async function buildQueryVector(
+  text: string,
+  collection: QdrantCollectionInfo,
+  signal?: AbortSignal,
+): Promise<{ vector: number[] | number[][]; using?: string }> {
+  const config = getThaiLawConfig();
+  const named = new Set((collection.namedVectors ?? []).map((item) => item.name));
+  const hasColbert = named.has(config.vectorName);
+  const hasDense = named.has(config.denseVectorName);
+
+  if (config.vectorMode === "colbert" && hasColbert) {
+    const dual = await getDualEmbedding(text, signal);
+    return {
+      vector: dual.colbert,
+      using: config.vectorName,
+    };
+  }
+  if (hasDense) {
+    const dual = await getDualEmbedding(text, signal);
+    return {
+      vector: dual.dense,
+      using: config.denseVectorName,
+    };
+  }
+  return { vector: await getEmbedding(text, signal) };
 }
 
 export function formatCollectionInfo(
@@ -704,6 +872,9 @@ export function formatCollectionInfo(
     rerankUrl?: string;
     rerankEnabled?: boolean;
     embeddingDimensions?: number;
+    vectorMode?: string;
+    vectorName?: string;
+    colbertUrl?: string;
   },
 ): string {
   return JSON.stringify({
@@ -713,9 +884,13 @@ export function formatCollectionInfo(
     indexed_vectors_count: info.indexedVectorsCount ?? null,
     vector_size: info.vectorSize ?? extras?.embeddingDimensions ?? null,
     distance: info.distance ?? null,
+    named_vectors: info.namedVectors ?? [],
+    vector_mode: extras?.vectorMode ?? null,
+    vector_name: extras?.vectorName ?? null,
     embedding_model: embeddingModel,
     embedding_url: embeddingUrl,
     embedding_dimensions: extras?.embeddingDimensions ?? null,
+    colbert_url: extras?.colbertUrl ?? null,
     rerank_model: extras?.rerankModel ?? null,
     rerank_url: extras?.rerankUrl ?? null,
     rerank_enabled: extras?.rerankEnabled ?? null,
