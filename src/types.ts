@@ -665,6 +665,21 @@ export const KRISDIKA_COLLECTION_INFO_TOOL: Tool = {
   },
 };
 
+export const DEKA_COLLECTION_INFO_TOOL: Tool = {
+  name: "deka_collection_info",
+  description:
+    "แสดงสถานะคอลเลกชัน Qdrant ของคำพิพากษาศาลฎีกา (deka) รวมจำนวนเอกสารและขนาดเวกเตอร์ dense+ColBERT",
+  inputSchema: {
+    type: "object",
+    properties: {
+      refresh: {
+        type: "boolean",
+        description: "ข้ามแคชและดึงข้อมูลล่าสุดจาก Qdrant",
+      },
+    },
+  },
+};
+
 export const KRISDEKA_CONNECTION_INFO_TOOL: Tool = {
   name: "krisdeka_connection_info",
   description:

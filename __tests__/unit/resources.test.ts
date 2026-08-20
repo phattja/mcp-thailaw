@@ -14,8 +14,10 @@ async function runTests() {
     assert.equal(parsed.serverInfo.name, "phattja/mcp-thailaw");
     assert.ok(parsed.capabilities.tools.includes("search_krisdika"));
     assert.ok(parsed.capabilities.tools.includes("search_krisdika_online"));
+    assert.ok(parsed.capabilities.tools.includes("search_deka"));
     assert.ok(parsed.capabilities.tools.includes("search_deka_online"));
     assert.ok(parsed.capabilities.tools.includes("krisdika_collection_info"));
+    assert.ok(parsed.capabilities.tools.includes("deka_collection_info"));
     assert.ok(parsed.capabilities.tools.includes("krisdeka_connection_info"));
     assert.ok(parsed.capabilities.tools.includes("deka_connection_info"));
   }, results);
@@ -25,8 +27,10 @@ async function runTests() {
     assert.ok(help.includes("search_krisdika"));
     assert.ok(help.includes("search_krisdika_online"));
     assert.ok(help.includes("https://www.ocs.go.th/searchlaw-law"));
+    assert.ok(help.includes("search_deka"));
     assert.ok(help.includes("search_deka_online"));
     assert.ok(help.includes("krisdika_collection_info"));
+    assert.ok(help.includes("deka_collection_info"));
     assert.ok(help.includes("krisdeka_connection_info"));
     assert.ok(help.includes("deka_connection_info"));
     assert.ok(help.includes("กฤษฎีกา"));

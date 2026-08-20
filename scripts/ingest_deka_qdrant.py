@@ -15,7 +15,7 @@ Environment:
   QDRANT_COLLECTION       default deka
   QDRANT_API_KEY          optional
   EMBEDDING_URL           default http://127.0.0.1:3003
-  EMBEDDING_MODEL         default gpustack-bge-m3
+  EMBEDDING_MODEL         default bge-m3
   COLBERT_URL             default same as EMBEDDING_URL
   EMBEDDING_API_KEY       optional
   THAILAW_JSONL_FILE      default /home/jupyter/ai-data/supreme_court.jsonl
@@ -58,7 +58,7 @@ EMBEDDING_URL = os.environ.get(
     "EMBEDDING_URL",
     os.environ.get("COLBERT_URL", "http://127.0.0.1:3003"),
 ).rstrip("/")
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "gpustack-bge-m3")
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "bge-m3")
 COLBERT_URL = os.environ.get("COLBERT_URL", EMBEDDING_URL).rstrip("/")
 EMBEDDING_API_KEY = os.environ.get("EMBEDDING_API_KEY") or None
 COLBERT_MAX_TOKENS = int(os.environ.get("THAILAW_COLBERT_MAX_TOKENS", "64"))

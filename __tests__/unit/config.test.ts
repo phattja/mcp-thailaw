@@ -36,7 +36,7 @@ async function runTests() {
     assert.equal(config.embeddingDimensions, 1024);
     assert.equal(config.colbertUrl, "http://127.0.0.1:3003/embedding");
     assert.equal(config.vectorMode, "colbert");
-    assert.equal(config.rerankModel, "gpustack-bge-reranker-v2-m3");
+    assert.equal(config.rerankModel, "bge-reranker-v2-m3");
     assert.equal(config.rerankUrl, "http://127.0.0.1:3003/rerank");
     assert.equal(config.rerankEnabled, true);
     assert.equal(config.defaultTopK, 5);

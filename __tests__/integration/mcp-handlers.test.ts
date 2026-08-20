@@ -98,8 +98,10 @@ async function runTests() {
     const result = await client.listTools();
     assert.ok(result.tools.find((tool) => tool.name === "search_krisdika"));
     assert.ok(result.tools.find((tool) => tool.name === "search_krisdika_online"));
+    assert.ok(result.tools.find((tool) => tool.name === "search_deka"));
     assert.ok(result.tools.find((tool) => tool.name === "search_deka_online"));
     assert.ok(result.tools.find((tool) => tool.name === "krisdika_collection_info"));
+    assert.ok(result.tools.find((tool) => tool.name === "deka_collection_info"));
     assert.ok(result.tools.find((tool) => tool.name === "krisdeka_connection_info"));
     assert.ok(result.tools.find((tool) => tool.name === "deka_connection_info"));
     await client.close();
@@ -228,6 +230,22 @@ async function runTests() {
     const { client } = await connect();
     const result = await client.callTool({
       name: "krisdika_collection_info",
+      arguments: { refresh: true },
+    });
+    const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
+    const parsed = JSON.parse(text);
+    assert.equal(parsed.status, "green");
+    assert.equal(parsed.vector_size, 1024);
+    await client.close();
+    fetchMocker.restore();
+  }, results);
+
+  await testFunction("tools/call deka_collection_info returns stats", async () => {
+    mockSearchStack();
+    searchCache.clear();
+    const { client } = await connect();
+    const result = await client.callTool({
+      name: "deka_collection_info",
       arguments: { refresh: true },
     });
     const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";

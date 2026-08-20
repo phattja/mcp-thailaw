@@ -4,8 +4,10 @@ import { strict as assert } from "node:assert";
 import {
   SEARCH_KRISDIKA_TOOL,
   SEARCH_KRISDIKA_ONLINE_TOOL,
+  SEARCH_DEKA_TOOL,
   SEARCH_DEKA_ONLINE_TOOL,
   KRISDIKA_COLLECTION_INFO_TOOL,
+  DEKA_COLLECTION_INFO_TOOL,
   KRISDEKA_CONNECTION_INFO_TOOL,
   DEKA_CONNECTION_INFO_TOOL,
   isSearchKrisdikaArgs,
@@ -89,8 +91,10 @@ async function runTests() {
   await testFunction("tools expose expected names", () => {
     assert.equal(SEARCH_KRISDIKA_TOOL.name, "search_krisdika");
     assert.equal(SEARCH_KRISDIKA_ONLINE_TOOL.name, "search_krisdika_online");
+    assert.equal(SEARCH_DEKA_TOOL.name, "search_deka");
     assert.equal(SEARCH_DEKA_ONLINE_TOOL.name, "search_deka_online");
     assert.equal(KRISDIKA_COLLECTION_INFO_TOOL.name, "krisdika_collection_info");
+    assert.equal(DEKA_COLLECTION_INFO_TOOL.name, "deka_collection_info");
     assert.equal(KRISDEKA_CONNECTION_INFO_TOOL.name, "krisdeka_connection_info");
     assert.equal(DEKA_CONNECTION_INFO_TOOL.name, "deka_connection_info");
     assert.ok(SEARCH_KRISDIKA_TOOL.inputSchema);

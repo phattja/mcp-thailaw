@@ -8,6 +8,16 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.17] - 2026-08-20
+
+### Added
+
+- Tool `deka_collection_info` (alias `dika_collection_info`) for Qdrant collection `deka`.
+
+### Changed
+
+- Default llama.cpp model names are aliases `bge-m3` and `bge-reranker-v2-m3` (no `gpustack-` prefix).
+
 ## [0.1.0-dev.16] - 2026-08-20
 
 ### Changed

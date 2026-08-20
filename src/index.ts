@@ -15,6 +15,7 @@ import {
   SEARCH_DEKA_TOOL,
   SEARCH_DEKA_ONLINE_TOOL,
   KRISDIKA_COLLECTION_INFO_TOOL,
+  DEKA_COLLECTION_INFO_TOOL,
   KRISDEKA_CONNECTION_INFO_TOOL,
   DEKA_CONNECTION_INFO_TOOL,
   isSearchKrisdikaArgs,
@@ -23,7 +24,7 @@ import {
   isCollectionInfoArgs,
 } from "./types.js";
 import { logMessage, setLogLevel, getCurrentLogLevel } from "./logging.js";
-import { performDekaCollectionSearch, performKrisdikaSearch, performKrisdikaCollectionInfo } from "./search.js";
+import { performDekaCollectionInfo, performDekaCollectionSearch, performKrisdikaSearch, performKrisdikaCollectionInfo } from "./search.js";
 import { performDekaConnectionInfo, performDekaSearch } from "./deka.js";
 import { performOcsConnectionInfo, performOcsSearch } from "./ocs.js";
 import { createConfigResource, createHelpResource } from "./resources.js";
@@ -66,6 +67,7 @@ export function createMcpServer(): McpServer {
         SEARCH_DEKA_TOOL,
         SEARCH_DEKA_ONLINE_TOOL,
         KRISDIKA_COLLECTION_INFO_TOOL,
+        DEKA_COLLECTION_INFO_TOOL,
         KRISDEKA_CONNECTION_INFO_TOOL,
         DEKA_CONNECTION_INFO_TOOL,
       ],
@@ -127,6 +129,21 @@ export function createMcpServer(): McpServer {
         }
 
         const result = await performKrisdikaCollectionInfo(
+          mcpServer,
+          args?.refresh ?? false,
+          extra.signal,
+        );
+        return {
+          content: [{ type: "text", text: result }],
+        };
+      }
+
+      if (name === "deka_collection_info" || name === "dika_collection_info") {
+        if (!isCollectionInfoArgs(args)) {
+          throw new Error("Invalid arguments for Deka collection info");
+        }
+
+        const result = await performDekaCollectionInfo(
           mcpServer,
           args?.refresh ?? false,
           extra.signal,

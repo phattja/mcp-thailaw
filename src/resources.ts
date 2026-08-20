@@ -90,6 +90,7 @@ export function createConfigResource(mcpServer?: McpServer) {
         "search_deka",
         "search_deka_online",
         "krisdika_collection_info",
+        "deka_collection_info",
         "krisdeka_connection_info",
         "deka_connection_info",
       ],
@@ -106,7 +107,7 @@ export function createHelpResource() {
   return `# Thai Law MCP Server Help
 
 ## Overview
-This is a Model Context Protocol (MCP) server that searches Thai law from the สำนักงานคณะกรรมการกฤษฎีกา dataset stored in Qdrant. Queries default to BGE-M3 ColBERT 64x1024 + dense 1024 from llama.cpp at :3003 (pooling=none), then rerank with gpustack-bge-reranker-v2-m3 on the same port.
+This is a Model Context Protocol (MCP) server that searches Thai law from the สำนักงานคณะกรรมการกฤษฎีกา dataset stored in Qdrant. Queries default to BGE-M3 ColBERT 64x1024 + dense 1024 from llama.cpp at :3003 (pooling=none), then rerank with bge-reranker-v2-m3 on the same port.
 
 ## Available Tools
 
@@ -160,8 +161,14 @@ Search Supreme Court judgments on https://deka.supremecourt.or.th/. Use this for
 - Advanced: \`litigant\`, \`judge\`, \`panel_judge\`, \`law_name\`, \`law_section\`, \`black_no\`, \`department\`, \`remark\`
 - \`top_k\`, \`exclude\`, \`response_format\`
 
-### 4. krisdika_collection_info
+### 5. krisdika_collection_info
 Inspect the configured Qdrant กฤษฎีกา collection: point count, vector size, and embedding settings.
+
+**Parameters:**
+- \`refresh\` (optional): Bypass the process cache
+
+### 6. deka_collection_info
+Inspect the Qdrant ฎีกา collection (\`deka\`): point count, vector size, and embedding settings. Alias: \`dika_collection_info\`.
 
 **Parameters:**
 - \`refresh\` (optional): Bypass the process cache

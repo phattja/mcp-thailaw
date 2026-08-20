@@ -700,6 +700,46 @@ export async function performKrisdikaCollectionInfo(
   }
 }
 
+export async function performDekaCollectionInfo(
+  mcpServer: McpServer,
+  refresh = false,
+  signal?: AbortSignal,
+): Promise<string> {
+  const configIssue = validateThaiLawConfig();
+  if (configIssue) {
+    throw createConfigurationError(configIssue);
+  }
+
+  const config = getThaiLawConfig();
+  const collectionName = config.dekaCollectionName;
+  const cacheArgs = { collection: collectionName };
+  if (!refresh) {
+    const cached = searchCache.get("deka_collection_info", cacheArgs);
+    if (cached) {
+      return cached;
+    }
+  }
+
+  const timeout = withTimeout(config.fetchTimeoutMs, signal);
+  try {
+    logMessage(mcpServer, "info", `Fetching collection info: ${collectionName}`);
+    const info = await fetchCollectionInfo(timeout.signal, collectionName);
+    const output = formatCollectionInfo(info, config.embeddingModel, config.embeddingUrl, {
+      rerankModel: config.rerankModel,
+      rerankUrl: config.rerankUrl,
+      rerankEnabled: config.rerankEnabled,
+      embeddingDimensions: config.embeddingDimensions,
+      vectorMode: config.vectorMode,
+      vectorName: config.vectorName,
+      colbertUrl: config.colbertUrl,
+    });
+    searchCache.set("deka_collection_info", cacheArgs, output);
+    return output;
+  } finally {
+    timeout.cleanup();
+  }
+}
+
 export interface DekaQdrantResult {
   score: number;
   doc_id: string;

@@ -32,11 +32,11 @@ AI Assistant / Open WebUI
         "QDRANT_URL": "http://localhost:6333",
         "QDRANT_COLLECTION": "krisdika",
         "EMBEDDING_URL": "http://127.0.0.1:3003",
-        "EMBEDDING_MODEL": "gpustack-bge-m3",
+        "EMBEDDING_MODEL": "bge-m3",
         "COLBERT_URL": "http://127.0.0.1:3003",
         "THAILAW_VECTOR_MODE": "colbert",
         "RERANK_URL": "http://127.0.0.1:3003",
-        "RERANK_MODEL": "gpustack-bge-reranker-v2-m3"
+        "RERANK_MODEL": "bge-reranker-v2-m3"
       }
     }
   }
@@ -52,11 +52,11 @@ node dist/cli.js \
   --qdrant-url http://127.0.0.1:6333 \
   --qdrant-collection krisdika \
   --embedding-url http://127.0.0.1:3003 \
-  --embedding-model gpustack-bge-m3 \
+  --embedding-model bge-m3 \
   --colbert-url http://127.0.0.1:3003 \
   --vector-mode colbert \
   --rerank-url http://127.0.0.1:3003 \
-  --rerank-model gpustack-bge-reranker-v2-m3
+  --rerank-model bge-reranker-v2-m3
 ```
 
 CLI flags override the matching environment variables (`QDRANT_URL`, `EMBEDDING_URL`, `THAILAW_HTTP_PORT`, ...).
@@ -68,8 +68,8 @@ The local defaults match the prototype in `thai_law_mcp.py`:
 | Setting | Default |
 | --- | --- |
 | Qdrant | `http://localhost:6333` / collection `krisdika` |
-| Embeddings | `http://127.0.0.1:3003` / `gpustack-bge-m3` dense 1024-d + ColBERT 64×1024 (`pooling=none`) |
-| Rerank | `http://127.0.0.1:3003` / `gpustack-bge-reranker-v2-m3` |
+| Embeddings | `http://127.0.0.1:3003` / `bge-m3` dense 1024-d + ColBERT 64×1024 (`pooling=none`) |
+| Rerank | `http://127.0.0.1:3003` / `bge-reranker-v2-m3` |
 | Top K | `5` |
 | Score threshold | `0.30` |
 
