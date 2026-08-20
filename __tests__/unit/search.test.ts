@@ -259,10 +259,10 @@ async function runTests() {
       pointsCount: 10,
       vectorSize: 1024,
       distance: "Cosine",
-    }, "bge-m3", "http://127.0.0.1:3003/v1"));
+    }, "bge-m3-multi", "http://127.0.0.1:3003/v1"));
     assert.equal(parsed.collection, "krisdika");
     assert.equal(parsed.vector_size, 1024);
-    assert.equal(parsed.embedding_model, "bge-m3");
+    assert.equal(parsed.embedding_model, "bge-m3-multi");
   }, results);
 
   printTestSummary(results, "Search");

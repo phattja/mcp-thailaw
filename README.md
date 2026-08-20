@@ -32,7 +32,7 @@ AI Assistant / Open WebUI
         "QDRANT_URL": "http://localhost:6333",
         "QDRANT_COLLECTION": "krisdika",
         "EMBEDDING_URL": "http://127.0.0.1:3003",
-        "EMBEDDING_MODEL": "bge-m3",
+        "EMBEDDING_MODEL": "bge-m3-multi",
         "COLBERT_URL": "http://127.0.0.1:3003",
         "THAILAW_VECTOR_MODE": "colbert",
         "RERANK_URL": "http://127.0.0.1:3003",
@@ -52,7 +52,7 @@ node dist/cli.js \
   --qdrant-url http://127.0.0.1:6333 \
   --qdrant-collection krisdika \
   --embedding-url http://127.0.0.1:3003 \
-  --embedding-model bge-m3 \
+  --embedding-model bge-m3-multi \
   --colbert-url http://127.0.0.1:3003 \
   --vector-mode colbert \
   --rerank-url http://127.0.0.1:3003 \
@@ -68,7 +68,7 @@ The local defaults match the prototype in `thai_law_mcp.py`:
 | Setting | Default |
 | --- | --- |
 | Qdrant | `http://localhost:6333` / collection `krisdika` |
-| Embeddings | `http://127.0.0.1:3003` / `bge-m3` dense 1024-d + ColBERT 64×1024 (`pooling=none`) |
+| Embeddings | `http://127.0.0.1:3003` / `bge-m3-multi` dense 1024-d + ColBERT 64×1024 (`pooling=none`) |
 | Rerank | `http://127.0.0.1:3003` / `bge-reranker-v2-m3` |
 | Top K | `5` |
 | Score threshold | `0.30` |

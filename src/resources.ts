@@ -197,7 +197,7 @@ Common settings:
 - \`--qdrant-collection\` / \`QDRANT_COLLECTION\`: Collection name (default krisdika)
 - \`--qdrant-api-key\` / \`QDRANT_API_KEY\`: Optional Qdrant API key
 - \`--embedding-url\` / \`EMBEDDING_URL\`: TEI dense embeddings (default http://127.0.0.1:3004/embed)
-- \`--embedding-model\` / \`EMBEDDING_MODEL\`: Embedding model name (default BAAI/bge-m3)
+- \`--embedding-model\` / \`EMBEDDING_MODEL\`: Embedding model name (default bge-m3-multi)
 - \`--colbert-url\` / \`COLBERT_URL\`: ColBERT token vectors (default http://127.0.0.1:3004/embed_all)
 - \`--vector-mode\` / \`THAILAW_VECTOR_MODE\`: \`colbert\` (default) or \`dense\`
 - \`--embedding-api-key\` / \`EMBEDDING_API_KEY\`: Optional bearer token

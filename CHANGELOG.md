@@ -8,6 +8,12 @@ SearXNG history below 0.1.0 is retained for provenance.
 
 ## Unreleased
 
+## [0.1.0-dev.18] - 2026-08-20
+
+### Changed
+
+- Default embedding model alias is `bge-m3-multi` (llama.cpp `pooling=none` token rows). Dense `bge-m3` remains a separate mean-pool preset.
+
 ## [0.1.0-dev.17] - 2026-08-20
 
 ### Added

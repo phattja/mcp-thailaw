@@ -24,7 +24,7 @@ services:
       - QDRANT_URL=http://127.0.0.1:6333
       - QDRANT_COLLECTION=krisdika
       - EMBEDDING_URL=http://127.0.0.1:3003/v1
-      - EMBEDDING_MODEL=bge-m3
+      - EMBEDDING_MODEL=bge-m3-multi
     ipc: host
     entrypoint: ["/ai/thailaw/start.sh"]
     command:
@@ -33,7 +33,7 @@ services:
       - --qdrant-url=http://127.0.0.1:6333
       - --qdrant-collection=krisdika
       - --embedding-url=http://127.0.0.1:3003/v1
-      - --embedding-model=bge-m3
+      - --embedding-model=bge-m3-multi
     volumes:
       - /etc/sudoers.d:/etc/sudoers.d:ro
       - /etc/passwd:/etc/passwd:ro

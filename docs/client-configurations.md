@@ -22,7 +22,7 @@ Add an MCP server:
       "env": {
         "QDRANT_URL": "http://localhost:6333",
         "EMBEDDING_URL": "http://127.0.0.1:3004",
-        "EMBEDDING_MODEL": "bge-m3",
+        "EMBEDDING_MODEL": "bge-m3-multi",
         "COLBERT_URL": "http://127.0.0.1:3004",
         "THAILAW_VECTOR_MODE": "colbert",
         "RERANK_URL": "http://127.0.0.1:3006",

@@ -15,7 +15,7 @@ mcp-thailaw \
   --qdrant-url http://127.0.0.1:6333 \
   --qdrant-collection krisdika \
   --embedding-url http://127.0.0.1:3004 \
-  --embedding-model bge-m3 \
+  --embedding-model bge-m3-multi \
   --colbert-url http://127.0.0.1:3004 \
   --vector-mode colbert \
   --rerank-url http://127.0.0.1:3006 \
@@ -30,7 +30,7 @@ mcp-thailaw \
 | `--qdrant-collection`, `--collection` | `QDRANT_COLLECTION` | `krisdika` | Collection name |
 | `--qdrant-api-key` | `QDRANT_API_KEY` | _(unset)_ | Sent as the `api-key` header |
 | `--embedding-url` | `EMBEDDING_URL` | `http://127.0.0.1:3004` | TEI dense `/embed` (or OpenAI `/v1/embeddings`) |
-| `--embedding-model` | `EMBEDDING_MODEL` | `bge-m3` | llama.cpp alias (no gpustack- prefix) |
+| `--embedding-model` | `EMBEDDING_MODEL` | `bge-m3-multi` | llama.cpp alias (`pooling=none` token rows) |
 | `--embedding-api-key` | `EMBEDDING_API_KEY` | _(unset)_ | Sent as `Authorization: Bearer ...` |
 | `--colbert-url` | `COLBERT_URL` | `http://127.0.0.1:3004` | ColBERT token vectors (`POST /embed_all`) |
 | `--vector-mode` | `THAILAW_VECTOR_MODE` | `colbert` | `colbert` (Qdrant MaxSim) or `dense` |
