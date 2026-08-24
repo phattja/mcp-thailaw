@@ -9,6 +9,7 @@ export interface QdrantFilter {
   applyLatest?: boolean;
   year?: number;
   textContains?: string;
+  titleContains?: string;
   sectionId?: string | number;
   sectionNo?: string | string[];
 }
@@ -136,6 +137,9 @@ function buildFilter(filter?: QdrantFilter): Record<string, unknown> {
   }
   if (filter?.textContains) {
     must.push({ key: "text", match: { text: filter.textContains } });
+  }
+  if (filter?.titleContains) {
+    must.push({ key: "title", match: { text: filter.titleContains } });
   }
   if (filter?.sectionId !== undefined && filter.sectionId !== "") {
     const sectionId = numericIfPossible(filter.sectionId);

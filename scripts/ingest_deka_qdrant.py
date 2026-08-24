@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
-"""Stream-ingest supreme_court.jsonl into Qdrant collection `deka`.
+"""Stream-ingest ฎีกา JSONL shards into Qdrant collection `deka`.
 
-The source file is ~4.2 GiB / 114k rows. This script:
-  - never loads the whole file
+Source files are required on the command line (one or more). Example:
+  python3 ingest_deka_qdrant.py /home/jupyter/ai-data/deka.000 /home/jupyter/ai-data/deka.001
+If no files are passed, or any listed path is missing, the script stops.
+A mix of existing and missing files also stops (no partial ingest).
+
+The script:
+  - never loads a whole shard into memory
   - embeds and upserts in small batches
-  - skips duplicate doc_id (keep first)
+  - skips duplicate doc_id (keep first, across all listed files)
   - stores a short summary in payload, not the full judgment
-  - uses llama.cpp :3003 dense 1024-d + ColBERT 64×1024 from one /embedding call
+  - uses llama.cpp dense 1024-d + ColBERT from one /embedding call
 
 Do not point QDRANT_COLLECTION at krisdika.
 
@@ -18,8 +23,7 @@ Environment:
   EMBEDDING_MODEL         default bge-m3-multi
   COLBERT_URL             default same as EMBEDDING_URL
   EMBEDDING_API_KEY       optional
-  THAILAW_JSONL_FILE      default /home/jupyter/ai-data/supreme_court.jsonl
-  THAILAW_COLBERT_MAX_TOKENS  default 64
+  THAILAW_COLBERT_MAX_TOKENS  default 2
   THAILAW_VECTOR_SIZE     default 1024
   THAILAW_BATCH_SIZE      default 4
   THAILAW_MAX_DOCS        optional int (smoke test)
@@ -32,21 +36,11 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import uuid
 from pathlib import Path
 
 import requests
-from qdrant_client import QdrantClient
-from qdrant_client.models import (
-    Datatype,
-    Distance,
-    HnswConfigDiff,
-    MultiVectorComparator,
-    MultiVectorConfig,
-    PayloadSchemaType,
-    PointStruct,
-    VectorParams,
-)
 from tqdm import tqdm
 
 QDRANT_URL = os.environ.get("QDRANT_URL", "http://qdrant:6333").rstrip("/")
@@ -61,7 +55,7 @@ EMBEDDING_URL = os.environ.get(
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "bge-m3-multi")
 COLBERT_URL = os.environ.get("COLBERT_URL", EMBEDDING_URL).rstrip("/")
 EMBEDDING_API_KEY = os.environ.get("EMBEDDING_API_KEY") or None
-COLBERT_MAX_TOKENS = int(os.environ.get("THAILAW_COLBERT_MAX_TOKENS", "64"))
+COLBERT_MAX_TOKENS = int(os.environ.get("THAILAW_COLBERT_MAX_TOKENS", "2"))
 VECTOR_SIZE = int(os.environ.get("THAILAW_VECTOR_SIZE", "1024"))
 BATCH_SIZE = int(os.environ.get("THAILAW_BATCH_SIZE", "4"))
 MAX_DOCS_RAW = os.environ.get("THAILAW_MAX_DOCS", "").strip()
@@ -90,12 +84,34 @@ def map_jupyter_path(path: str) -> str:
     return path
 
 
-JSONL_FILE = map_jupyter_path(
-    os.environ.get(
-        "THAILAW_JSONL_FILE",
-        "/home/jupyter/ai-data/supreme_court.jsonl",
-    ).strip(),
-)
+def resolve_source_files(raw_paths: list[str]) -> list[Path] | None:
+    if not raw_paths:
+        print("❌ Stop: no source files on the command line.")
+        print("   Usage: ingest_deka_qdrant.py deka.000 [deka.001 ...]")
+        return None
+    found: list[Path] = []
+    missing: list[str] = []
+    for raw in raw_paths:
+        token = raw.strip()
+        if not token:
+            missing.append(raw)
+            continue
+        path = Path(map_jupyter_path(token))
+        if path.is_file():
+            found.append(path)
+        else:
+            missing.append(str(path))
+    if missing:
+        print("❌ Stop: every listed source file must exist (no partial set).")
+        if found:
+            print("   found:")
+            for path in found:
+                print(f"     {path}")
+        print("   missing:")
+        for item in missing:
+            print(f"     {item}")
+        return None
+    return found
 
 
 def _headers() -> dict:
@@ -199,7 +215,9 @@ def search_text(doc_id: str, year, case_no: str, text: str) -> str:
     ])
 
 
-def flush_batch(client: QdrantClient, batch: list[dict]) -> int:
+def flush_batch(client, batch: list[dict]) -> int:
+    from qdrant_client.models import PointStruct
+
     if not batch:
         return 0
     texts = [item["embed_text"] for item in batch]
@@ -217,18 +235,31 @@ def flush_batch(client: QdrantClient, batch: list[dict]) -> int:
 
 
 def main() -> int:
+    sources = resolve_source_files(sys.argv[1:])
+    if sources is None:
+        return 2
+
+    from qdrant_client import QdrantClient
+    from qdrant_client.models import (
+        Datatype,
+        Distance,
+        HnswConfigDiff,
+        MultiVectorComparator,
+        MultiVectorConfig,
+        PayloadSchemaType,
+        PointStruct,
+        VectorParams,
+    )
+
     if COLLECTION_NAME.strip() == MASTER_KRISDIKA:
         print(f"❌ Refusing to write Supreme Court cases into '{MASTER_KRISDIKA}'.")
         print("   Use QDRANT_COLLECTION=deka")
         return 2
 
-    jsonl = Path(JSONL_FILE)
-    if not jsonl.is_file():
-        print(f"❌ JSONL not found: {jsonl}")
-        return 2
-
-    size_gb = jsonl.stat().st_size / (1024 ** 3)
-    print(f"1. Source {jsonl} ({size_gb:.2f} GiB) — streaming, no full load")
+    total_gb = sum(path.stat().st_size for path in sources) / (1024 ** 3)
+    print(f"1. Source {len(sources)} file(s) ({total_gb:.2f} GiB) — streaming, no full load")
+    for path in sources:
+        print(f"   {path} ({path.stat().st_size / (1024 ** 3):.2f} GiB)")
 
     print("2. Testing llama.cpp embeddings...")
     test_dense, test = get_dual_embeddings(["คำพิพากษาศาลฎีกาที่ 1/2560 หลักกฎหมาย"])
@@ -276,51 +307,57 @@ def main() -> int:
     errors = 0
 
     print("4. Streaming JSONL → ColBERT → Qdrant...")
-    with jsonl.open("r", encoding="utf-8") as handle:
-        for line in tqdm(handle, desc="Rows"):
-            line = line.strip()
-            if not line:
-                continue
-            scanned += 1
-            try:
-                item = json.loads(line)
-            except json.JSONDecodeError:
-                errors += 1
-                continue
-            doc_id = str(item.get("doc_id") or "").strip()
-            text = str(item.get("text") or "").strip()
-            if not doc_id or not text:
-                continue
-            if doc_id in seen:
-                skipped_dup += 1
-                continue
-            seen.add(doc_id)
-            case_no = parse_case_no(text, doc_id)
-            year = item.get("year")
-            payload = {
-                "doc_id": doc_id,
-                "source": str(item.get("source") or "supreme_court"),
-                "case_no": case_no,
-                "title": f"คำพิพากษาศาลฎีกาที่ {case_no}",
-                "summary": text[:PAYLOAD_CHARS],
-                "text_chars": len(text),
-            }
-            if isinstance(year, int):
-                payload["year"] = year
-            batch.append({
-                "id": str(uuid.uuid5(UUID_NS, doc_id)),
-                "payload": payload,
-                "embed_text": search_text(doc_id, year, case_no, text),
-            })
-            if len(batch) >= BATCH_SIZE:
+    stop = False
+    for jsonl in sources:
+        if stop:
+            break
+        print(f"   file {jsonl.name}")
+        with jsonl.open("r", encoding="utf-8") as handle:
+            for line in tqdm(handle, desc=jsonl.name):
+                line = line.strip()
+                if not line:
+                    continue
+                scanned += 1
                 try:
-                    kept += flush_batch(client, batch)
-                except Exception as exc:
-                    print(f"\n❌ batch at row {scanned}: {exc}")
+                    item = json.loads(line)
+                except json.JSONDecodeError:
                     errors += 1
-                batch = []
-            if MAX_DOCS and kept >= MAX_DOCS:
-                break
+                    continue
+                doc_id = str(item.get("doc_id") or "").strip()
+                text = str(item.get("text") or "").strip()
+                if not doc_id or not text:
+                    continue
+                if doc_id in seen:
+                    skipped_dup += 1
+                    continue
+                seen.add(doc_id)
+                case_no = parse_case_no(text, doc_id)
+                year = item.get("year")
+                payload = {
+                    "doc_id": doc_id,
+                    "source": str(item.get("source") or "supreme_court"),
+                    "case_no": case_no,
+                    "title": f"คำพิพากษาศาลฎีกาที่ {case_no}",
+                    "summary": text[:PAYLOAD_CHARS],
+                    "text_chars": len(text),
+                }
+                if isinstance(year, int):
+                    payload["year"] = year
+                batch.append({
+                    "id": str(uuid.uuid5(UUID_NS, doc_id)),
+                    "payload": payload,
+                    "embed_text": search_text(doc_id, year, case_no, text),
+                })
+                if len(batch) >= BATCH_SIZE:
+                    try:
+                        kept += flush_batch(client, batch)
+                    except Exception as exc:
+                        print(f"\n❌ batch at row {scanned}: {exc}")
+                        errors += 1
+                    batch = []
+                if MAX_DOCS and kept >= MAX_DOCS:
+                    stop = True
+                    break
 
     if batch and (not MAX_DOCS or kept < MAX_DOCS):
         try:

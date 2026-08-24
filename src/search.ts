@@ -423,6 +423,31 @@ export async function completeSectionFragments(
   return [...pieces, ...extras.flat()];
 }
 
+export function mergeTitleAndVectorHits(titleHits: QdrantHit[], vectorHits: QdrantHit[]): QdrantHit[] {
+  const merged: QdrantHit[] = [];
+  const seen = new Set<string>();
+  for (const hit of titleHits) {
+    const key = String(hit.id);
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    merged.push({
+      ...hit,
+      score: hit.score > 0 ? hit.score : 1,
+    });
+  }
+  for (const hit of vectorHits) {
+    const key = String(hit.id);
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    merged.push(hit);
+  }
+  return merged;
+}
+
 export function preferQueryMatra(results: ThaiLawResult[], query: string): ThaiLawResult[] {
   const wanted = extractQueryMatra(query);
   if (!wanted) {
@@ -554,17 +579,26 @@ async function performQdrantKrisdikaSearch(
       : topK;
     const collection = await fetchCollectionInfo(timeout.signal);
     const query = await buildQueryVector(searchQuery, collection, timeout.signal);
-    const hits = await queryPoints(query.vector, {
-      limit: fetchLimit,
-      scoreThreshold,
-      using: query.using,
-      filter: {
-        lawCode: args.law_code?.trim() || undefined,
-        category: args.category?.trim() || undefined,
-        isLatest,
-      },
-      signal: timeout.signal,
-    });
+    const filter = {
+      lawCode: args.law_code?.trim() || undefined,
+      category: args.category?.trim() || undefined,
+      isLatest,
+    };
+    const [vectorHits, titleHits] = await Promise.all([
+      queryPoints(query.vector, {
+        limit: fetchLimit,
+        scoreThreshold,
+        using: query.using,
+        filter,
+        signal: timeout.signal,
+      }),
+      scrollPoints({
+        filter: { ...filter, titleContains: searchQuery },
+        maxPoints: fetchLimit,
+        signal: timeout.signal,
+      }).catch(() => [] as QdrantHit[]),
+    ]);
+    const hits = mergeTitleAndVectorHits(titleHits, vectorHits);
 
     const chunks = hits.map(hitToResult);
     let results: ThaiLawResult[];
@@ -838,7 +872,12 @@ export async function performDekaCollectionSearch(
       ? Math.min(config.maxResults, Math.max(topK * 4, 20))
       : topK;
     const collection = await fetchCollectionInfo(timeout.signal, collectionName);
-    const queryVector = await buildQueryVector(query, collection, timeout.signal);
+    const queryVector = await buildQueryVector(
+      query,
+      collection,
+      timeout.signal,
+      config.dekaColbertMaxTokens,
+    );
     const hits = await queryPoints(queryVector.vector, {
       limit: fetchLimit,
       scoreThreshold,
@@ -882,6 +921,7 @@ export async function buildQueryVector(
   text: string,
   collection: QdrantCollectionInfo,
   signal?: AbortSignal,
+  maxTokens?: number,
 ): Promise<{ vector: number[] | number[][]; using?: string }> {
   const config = getThaiLawConfig();
   const named = new Set((collection.namedVectors ?? []).map((item) => item.name));
@@ -889,14 +929,14 @@ export async function buildQueryVector(
   const hasDense = named.has(config.denseVectorName);
 
   if (config.vectorMode === "colbert" && hasColbert) {
-    const dual = await getDualEmbedding(text, signal);
+    const dual = await getDualEmbedding(text, signal, maxTokens);
     return {
       vector: dual.colbert,
       using: config.vectorName,
     };
   }
   if (hasDense) {
-    const dual = await getDualEmbedding(text, signal);
+    const dual = await getDualEmbedding(text, signal, maxTokens);
     return {
       vector: dual.dense,
       using: config.denseVectorName,

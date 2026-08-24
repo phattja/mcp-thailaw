@@ -10,6 +10,7 @@ import {
   hitToResult,
   mergeArticleText,
   mergeOverlappingText,
+  mergeTitleAndVectorHits,
   preferQueryMatra,
   sectionNoMatchValues,
   timelineRank,
@@ -250,6 +251,20 @@ async function runTests() {
     assert.equal(grouped.length, 1);
     assert.ok(grouped[0].text.includes("สองหมื่นบาทถึงหนึ่งแสนบาท"));
     assert.equal(grouped[0].timeline_code, "ป0006-1D-0003-63");
+  }, results);
+
+  await testFunction("mergeTitleAndVectorHits prefers title matches and dedupes", () => {
+    const merged = mergeTitleAndVectorHits(
+      [{ id: "a", score: 0, payload: { title: "ประมวลกฎหมายอาญา" } }],
+      [
+        { id: "a", score: 0.4, payload: { title: "ประมวลกฎหมายอาญา" } },
+        { id: "b", score: 0.9, payload: { title: "อื่น" } },
+      ],
+    );
+    assert.equal(merged.length, 2);
+    assert.equal(merged[0].id, "a");
+    assert.equal(merged[0].score, 1);
+    assert.equal(merged[1].id, "b");
   }, results);
 
   await testFunction("formatCollectionInfo is JSON", () => {

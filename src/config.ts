@@ -16,6 +16,7 @@ export const DEFAULT_VECTOR_NAME = "colbert";
 export const DEFAULT_DENSE_VECTOR_NAME = "dense";
 export const DEFAULT_COLBERT_MAX_TOKENS = 64;
 export const DEFAULT_DEKA_COLLECTION = "deka";
+export const DEFAULT_DEKA_COLBERT_MAX_TOKENS = 2;
 
 export type VectorMode = "colbert" | "dense";
 export const DEFAULT_TOP_K = 5;
@@ -42,6 +43,7 @@ export interface ThaiLawConfig {
   denseVectorName: string;
   colbertMaxTokens: number;
   dekaCollectionName: string;
+  dekaColbertMaxTokens: number;
   rerankUrl: string;
   rerankModel: string;
   rerankApiKey?: string;
@@ -220,6 +222,12 @@ export function getThaiLawConfig(env: NodeJS.ProcessEnv = process.env): ThaiLawC
       (raw, fallback) => parseBoundedInteger(raw, fallback, 4, 512),
     ),
     dekaCollectionName: firstString(env.THAILAW_DEKA_COLLECTION) ?? DEFAULT_DEKA_COLLECTION,
+    dekaColbertMaxTokens: firstNumber(
+      undefined,
+      env.THAILAW_DEKA_COLBERT_MAX_TOKENS,
+      DEFAULT_DEKA_COLBERT_MAX_TOKENS,
+      (raw, fallback) => parseBoundedInteger(raw, fallback, 2, 512),
+    ),
     rerankUrl: resolveRerankEndpoint(
       firstString(cli.rerankUrl, env.RERANK_URL) ?? DEFAULT_RERANK_URL,
     ),

@@ -379,15 +379,30 @@ export function parseOcsLawDoc(payload: unknown): {
   };
 }
 
+export function compactThai(value: string): string {
+  return value.replace(/\s+/g, "");
+}
+
+export function queryMatchesLawTitle(query: string, title: string): boolean {
+  const needle = compactThai(rewriteQueryMatraToThai(query));
+  const haystack = compactThai(title);
+  if (!needle || !haystack) {
+    return false;
+  }
+  return haystack.includes(needle) || needle.includes(haystack);
+}
+
 export function selectOcsSections(
   sections: OcsSection[],
   query: string,
   limit = DEFAULT_OCS_SECTIONS_PER_LAW,
+  lawTitle = "",
 ): OcsSection[] {
   const rewritten = rewriteQueryMatraToThai(query);
   const wanted = extractQueryMatra(rewritten);
   const wantedKey = wanted ? normalizeMatraKey(wanted) : "";
-  const needle = rewritten.replace(/\s+/g, "");
+  const needle = compactThai(rewritten);
+  const titleQuery = Boolean(lawTitle) && queryMatchesLawTitle(rewritten, lawTitle) && !wantedKey;
 
   const ranked = sections.map((section, index) => {
     let score = 0;
@@ -401,8 +416,11 @@ export function selectOcsSections(
     if (wantedKey && noKey && noKey === wantedKey) {
       score += 100;
     }
-    const compact = section.text.replace(/\s+/g, "");
+    const compact = compactThai(section.text);
     if (needle && compact.includes(needle)) {
+      score += 40;
+    }
+    if (titleQuery && section.type_id === "4") {
       score += 40;
     }
     return { section, score, index };
@@ -537,7 +555,7 @@ export async function enrichOcsLawsWithSections(
       return {
         ...law,
         timeline_code: doc.timeline_code,
-        sections: selectOcsSections(doc.sections, query),
+        sections: selectOcsSections(doc.sections, query, DEFAULT_OCS_SECTIONS_PER_LAW, law.title),
       };
     } catch {
       return law;

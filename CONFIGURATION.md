@@ -35,7 +35,8 @@ mcp-thailaw \
 | `--colbert-url` | `COLBERT_URL` | `http://ai-tool:3003` | ColBERT token vectors (llama.cpp `/embedding`) |
 | `--vector-mode` | `THAILAW_VECTOR_MODE` | `colbert` | `colbert` (Qdrant MaxSim) or `dense` |
 | `--vector-name` | `THAILAW_VECTOR_NAME` | `colbert` | Named multi-vector used for ColBERT search |
-| `--colbert-max-tokens` | `THAILAW_COLBERT_MAX_TOKENS` | `64` | Max token vectors per query/document |
+| `--colbert-max-tokens` | `THAILAW_COLBERT_MAX_TOKENS` | `64` | Max token vectors per krisdika query/document |
+| | `THAILAW_DEKA_COLBERT_MAX_TOKENS` | `2` | ColBERT token rows for `search_deka` (dense 1024-d + 2×1024) |
 | `--vector-size` | `THAILAW_VECTOR_SIZE` | `1024` | Embedding dimensions |
 | `--rerank-url` | `RERANK_URL` | `http://ai-tool:3003` | llama.cpp `POST /rerank` |
 | `--rerank-model` | `RERANK_MODEL` | `bge-reranker-v2-m3` | llama.cpp alias (no gpustack- prefix) |

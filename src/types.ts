@@ -333,7 +333,9 @@ export function isCollectionInfoArgs(args: unknown): args is CollectionInfoArgs 
 export const SEARCH_KRISDIKA_TOOL: Tool = {
   name: "search_krisdika",
   description:
-    "ค้นหากฎหมายไทยจากฐานข้อมูลสำนักงานคณะกรรมการกฤษฎีกา ด้วย semantic search บน Qdrant. "
+    "ค้นหากฎหมายไทยจากฐานข้อมูลสำนักงานคณะกรรมการกฤษฎีกา ด้วย semantic search บน Qdrant "
+    + "และค้นชื่อกฎหมาย (title) จาก payload ด้วย. "
+    + "ใช้ได้ทั้งชื่อเครื่องมือ search_krisdika และ search_krisdeka. "
     + "ค่าเริ่มต้นคืนเฉพาะฉบับล่าสุดที่มีผลบังคับใช้ (is_latest=true) "
     + "และรวมชิ้นส่วนของมาตราเดียวกันแล้วจัดรูปแบบเหมือนราชกิจจานุเบกษา (group_by_law=true). "
     + "source=qdrant (ค่าเริ่มต้น) / online (เว็บ https://www.ocs.go.th/searchlaw-law) / both / auto "
@@ -344,7 +346,7 @@ export const SEARCH_KRISDIKA_TOOL: Tool = {
     properties: {
       query: {
         type: "string",
-        description: "คำค้นหา เช่น ลักทรัพย์, สัญญาจ้าง, มาตรา ๓๓๕. ถ้าใส่เลขมาตราเป็น 335 ระบบแปลงเป็นตัวไทย ๓๓๕ และคืนเฉพาะมาตรานั้น",
+        description: "คำค้นหา เช่น ลักทรัพย์, สัญญาจ้าง, ประมวลกฎหมายอาญา, มาตรา ๓๓๕. ชื่อกฎหมายค้นจากฟิลด์ title และเนื้อหา. ถ้าใส่เลขมาตราเป็น 335 ระบบแปลงเป็นตัวไทย ๓๓๕ และคืนเฉพาะมาตรานั้น",
       },
       top_k: {
         type: "integer",
@@ -407,13 +409,14 @@ export const SEARCH_KRISDIKA_ONLINE_TOOL: Tool = {
   description:
     "ค้นหากฎหมายไทยจากเว็บสำนักงานคณะกรรมการกฤษฎีกา https://www.ocs.go.th/searchlaw-law "
     + "เมื่อต้องการผลสดจากเว็บ หรือเมื่อ search_krisdika (Qdrant) ไม่พบ. "
-    + "ค่าเริ่มต้นค้นจากชื่อและค้นจากเนื้อหา แล้วเปิดฉบับล่าสุดของแต่ละฉบับเพื่อคืนมาตราที่ตรงคำค้น.",
+    + "ใช้ได้ทั้ง search_krisdika_online และ search_krisdeka_online. "
+    + "ค่าเริ่มต้นค้นจากชื่อกฎหมายและเนื้อหา. ถ้าคำค้นเป็นชื่อฉบับ จะคืนมาตราในฉบับนั้นแม้ข้อความมาตราจะไม่มีชื่อกฎหมาย.",
   inputSchema: {
     type: "object",
     properties: {
       query: {
         type: "string",
-        description: "คำค้นหา เช่น ลักทรัพย์, สัญญาจ้าง, มาตรา ๓๓๕",
+        description: "คำค้นหา เช่น ลักทรัพย์, สัญญาจ้าง, ประมวลกฎหมายอาญา, มาตรา ๓๓๕. ค้นจากชื่อกฎหมายและเนื้อหา",
       },
       top_k: {
         type: "integer",
@@ -490,7 +493,7 @@ export const SEARCH_KRISDIKA_ONLINE_TOOL: Tool = {
 export const SEARCH_DEKA_TOOL: Tool = {
   name: "search_deka",
   description:
-    "ค้นหาคำพิพากษาศาลฎีกาจาก Qdrant collection deka (dense 1024-d + ColBERT 64×1024 จาก llama.cpp http://ai-tool:3003). "
+    "ค้นหาคำพิพากษาศาลฎีกาจาก Qdrant collection deka (dense 1024-d + ColBERT 2×1024 จาก llama.cpp http://ai-tool:3003). "
     + "ค่าเริ่มต้นใช้ MaxSim แล้ว rerank. ไม่ใช่ตัวบทกฎหมาย — ใช้คู่กับ search_krisdika เมื่อต้องการมาตรา. "
     + "ใช้ search_deka_online เมื่อต้องการค้นจากเว็บ deka.supremecourt.or.th โดยตรง.",
   inputSchema: {

@@ -418,6 +418,7 @@ def main() -> None:
         "section.sectionId": PayloadSchemaType.INTEGER,
         "section.sectionNo": PayloadSchemaType.KEYWORD,
         "publish_date": PayloadSchemaType.KEYWORD,
+        "title": PayloadSchemaType.TEXT,
     }.items():
         try:
             client.create_payload_index(

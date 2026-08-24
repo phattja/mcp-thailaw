@@ -3,6 +3,7 @@
 import { strict as assert } from "node:assert";
 import {
   DEFAULT_COLLECTION_NAME,
+  DEFAULT_DEKA_COLBERT_MAX_TOKENS,
   DEFAULT_EMBEDDING_MODEL,
   DEFAULT_QDRANT_URL,
   getThaiLawConfig,
@@ -28,6 +29,8 @@ async function runTests() {
     env.delete("EMBEDDING_MODEL");
     env.delete("THAILAW_TOP_K");
     env.delete("THAILAW_SCORE_THRESHOLD");
+    env.delete("THAILAW_COLBERT_MAX_TOKENS");
+    env.delete("THAILAW_DEKA_COLBERT_MAX_TOKENS");
     const config = getThaiLawConfig();
     assert.equal(config.qdrantUrl, DEFAULT_QDRANT_URL);
     assert.equal(config.collectionName, DEFAULT_COLLECTION_NAME);
@@ -36,6 +39,9 @@ async function runTests() {
     assert.equal(config.embeddingDimensions, 1024);
     assert.equal(config.colbertUrl, "http://ai-tool:3003/embedding");
     assert.equal(config.vectorMode, "colbert");
+    assert.equal(config.colbertMaxTokens, 64);
+    assert.equal(config.dekaColbertMaxTokens, DEFAULT_DEKA_COLBERT_MAX_TOKENS);
+    assert.equal(config.dekaColbertMaxTokens, 2);
     assert.equal(config.rerankModel, "bge-reranker-v2-m3");
     assert.equal(config.rerankUrl, "http://ai-tool:3003/rerank");
     assert.equal(config.rerankEnabled, true);

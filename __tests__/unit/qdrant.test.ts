@@ -107,8 +107,31 @@ async function runTests() {
       key: "text",
       match: { text: "มาตรา/ส่วน 1590017" },
     });
+    fetchMocker.restore();
+  }, results);
+
+  await testFunction("scrollPoints matches payload title", async () => {
+    const capturing = createCapturingMockFetch();
+    fetchMocker.mock(async (url, options) => {
+      await capturing.mockFetch(url, options);
+      return createMockFetch({
+        json: {
+          result: {
+            points: [{ id: "t-1", payload: { title: "ประมวลกฎหมายอาญา" } }],
+          },
+        },
+      })(url, options);
+    });
+    const hits = await scrollPoints({
+      filter: { titleContains: "ประมวลกฎหมายอาญา" },
+    });
+    const body = JSON.parse(String(capturing.getCapturedOptions()?.body));
+    assert.deepEqual(body.filter.must[1], {
+      key: "title",
+      match: { text: "ประมวลกฎหมายอาญา" },
+    });
     assert.equal(hits.length, 1);
-    assert.equal(hits[0].payload.law_code, "A01");
+    assert.equal(hits[0].payload.title, "ประมวลกฎหมายอาญา");
     fetchMocker.restore();
   }, results);
 

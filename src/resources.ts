@@ -25,7 +25,7 @@ Options:
   --colbert-url <url>            ColBERT /embed_all endpoint
   --vector-mode <colbert|dense>  Default retrieval vectors (colbert)
   --vector-name <name>           Qdrant named vector for ColBERT (colbert)
-  --colbert-max-tokens <n>       Max ColBERT token vectors (default 64)
+  --colbert-max-tokens <n>       Max ColBERT token vectors for krisdika (default 64)
   --vector-size <n>              Embedding dimensions (default 1024)
   --rerank-url <url>             TEI /rerank or llama-server /v1/rerank
   --rerank-model <name>          Rerank model name
@@ -69,6 +69,8 @@ export function createConfigResource(mcpServer?: McpServer) {
             embeddingModel: config.embeddingModel,
             colbertUrl: config.colbertUrl,
             vectorMode: config.vectorMode,
+            colbertMaxTokens: config.colbertMaxTokens,
+            dekaColbertMaxTokens: config.dekaColbertMaxTokens,
             rerankUrl: config.rerankUrl,
             rerankModel: config.rerankModel,
           }
@@ -112,7 +114,7 @@ This is a Model Context Protocol (MCP) server that searches Thai law from the �
 ## Available Tools
 
 ### 1. search_krisdika
-Semantic search over Thai statutes, sections, and related legal text.
+Semantic search over Thai statutes, sections, and related legal text. Also matches the law title field. Alias: \`search_krisdeka\`.
 
 **Parameters:**
 - \`query\` (required): Search text, for example "ลักทรัพย์" or "มาตรา ๓๓๕". Arabic article numbers such as 335 are converted to Thai digits ๓๓๕.
@@ -141,7 +143,7 @@ Search the live สำนักงานคณะกรรมการกฤษ�
 - \`year\`, \`acting\`, \`subject\`, \`letter\`, \`exclude\`, \`include\`, \`response_format\`
 
 ### 3. search_deka
-Semantic search over Supreme Court judgments in Qdrant collection \`deka\` (dense 1024-d + ColBERT 64×1024).
+Semantic search over Supreme Court judgments in Qdrant collection \`deka\` (dense 1024-d + ColBERT 2×1024).
 
 **Parameters:**
 - \`query\` (required)

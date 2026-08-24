@@ -227,18 +227,20 @@ async function fetchEmbeddingPayload(
 export async function getDualEmbedding(
   text: string,
   signal?: AbortSignal,
+  maxTokens?: number,
 ): Promise<DualEmbedding> {
   const config = getThaiLawConfig();
+  const tokenCap = maxTokens ?? config.colbertMaxTokens;
   const payload = await fetchEmbeddingPayload(text, signal);
   try {
     const rows = parseLlamaTokenMatrix(payload);
-    return dualFromTokenRows(rows, config.colbertMaxTokens);
+    return dualFromTokenRows(rows, tokenCap);
   } catch {
     if (isMultiVector(payload) && payload.length > 1) {
-      const tokens = parseColbertEmbedding(payload, config.colbertMaxTokens);
+      const tokens = parseColbertEmbedding(payload, tokenCap);
       return {
         dense: meanPoolDense(tokens),
-        colbert: l2NormalizeRows(tokens).slice(0, config.colbertMaxTokens),
+        colbert: l2NormalizeRows(tokens).slice(0, tokenCap),
       };
     }
     return {

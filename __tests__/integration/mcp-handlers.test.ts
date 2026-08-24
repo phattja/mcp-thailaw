@@ -208,6 +208,20 @@ async function runTests() {
     fetchMocker.restore();
   }, results);
 
+  await testFunction("tools/call search_krisdeka aliases search_krisdika", async () => {
+    mockSearchStack();
+    searchCache.clear();
+    const { client } = await connect();
+    const result = await client.callTool({
+      name: "search_krisdeka",
+      arguments: { query: "ประมวลกฎหมายอาญา" },
+    });
+    const text = (result.content as Array<{ type: string; text?: string }>)[0]?.text ?? "";
+    assert.ok(text.includes("ประมวลกฎหมายอาญา"));
+    await client.close();
+    fetchMocker.restore();
+  }, results);
+
   await testFunction("tools/call search_krisdika supports json format", async () => {
     mockSearchStack();
     searchCache.clear();

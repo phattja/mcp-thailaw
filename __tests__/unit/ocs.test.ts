@@ -130,6 +130,11 @@ async function runTests() {
     assert.ok(selected[0]?.text.includes("ลักทรัพย์"));
     const byMatra = selectOcsSections(parsed.sections, "มาตรา 334", 3);
     assert.equal(byMatra[0]?.section_no, "334");
+    const byTitle = selectOcsSections(parsed.sections, "ประมวลกฎหมายอาญา", 3, "ประมวลกฎหมายอาญา");
+    assert.equal(byTitle.length, 2);
+    assert.equal(byTitle[0]?.section_no, "334");
+    const unmatchedTitle = selectOcsSections(parsed.sections, "ประมวลกฎหมายอาญา", 3);
+    assert.equal(unmatchedTitle.length, 0);
   }, results);
 
   await testFunction("formatOcsText includes latest มาตรา when present", () => {

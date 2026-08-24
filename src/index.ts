@@ -79,7 +79,7 @@ export function createMcpServer(): McpServer {
     logMessage(mcpServer, "debug", `Handling call_tool request: ${name}`);
 
     try {
-      if (name === "search_krisdika") {
+      if (name === "search_krisdika" || name === "search_krisdeka") {
         if (!isSearchKrisdikaArgs(args)) {
           throw new Error("Invalid arguments for กฤษฎีกา search");
         }
