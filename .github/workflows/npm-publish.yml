@@ -1,0 +1,103 @@
+name: Publish NPM Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  id-token: write  # Required for OIDC
+  contents: read
+
+jobs:
+  build-and-publish:
+    name: Build and Publish NPM Package
+    runs-on: ubuntu-latest  # Note: Trusted publishing requires GitHub-hosted runners, not self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org/'
+
+      # ──────────────────────────────────────────────────────────────────────
+      # ⚠️  DO NOT REMOVE / DO NOT "SIMPLIFY" THIS STEP. It is load-bearing.
+      #
+      # Tokenless OIDC "trusted publishing" (used below — `npm publish --provenance`
+      # with NO NODE_AUTH_TOKEN) requires npm >= 11.5.1, but the GitHub-hosted
+      # Node 20 runner ships npm ~10. Without this upgrade the publish fails with:
+      #     npm error 404  'mcp-thailaw@<version>' is not in this registry
+      # This exact regression shipped in v1.6.0 — see SEC-015 in TODO-done.md.
+      #
+      # It is pinned to an EXACT version (NOT `@latest`), so the "mutable npm
+      # command" / supply-chain finding that previously prompted its removal does
+      # NOT apply here. Ignore that warning for this step and leave it in place.
+      # To update it, change ONLY the pinned version — and it must stay >= 11.5.1.
+      # ──────────────────────────────────────────────────────────────────────
+      - name: Pin npm for OIDC trusted publishing (REQUIRED — do not remove)
+        run: npm install -g npm@11.17.0
+
+      - name: Verify npm provenance support
+        run: |
+          NPM_VERSION="$(npm --version)"
+          NPM_VERSION="$NPM_VERSION" node -e "
+            const versionText = process.env.NPM_VERSION;
+            const version = versionText.split('.').map(Number);
+            if (version.length < 2 || version.some(Number.isNaN)) {
+              throw new Error('Unable to determine npm version');
+            }
+            const [major, minor] = version;
+            if (major < 11 || (major === 11 && minor < 5)) {
+              // If this throws, the pinned npm upgrade step above was removed or downgraded.
+              throw new Error('npm >= 11.5.1 is required for OIDC trusted publishing. Restore the pinned (npm install -g npm@11.17.0) step above — do not remove it. See SEC-015 in TODO-done.md.');
+            }
+          "
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Test package
+        run: npm run test:coverage
+
+      - name: Build package
+        run: npm run build
+
+      - name: Verify packed consumer dependencies
+        run: npm run verify:packed-consumer -- --output "$RUNNER_TEMP/verified-package.tgz"
+
+      - name: Publish to npm
+        run: npm publish "$RUNNER_TEMP/verified-package.tgz" --access public --provenance
+
+  publish-mcp-registry:
+    name: Publish to MCP Registry
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org/'
+
+      - name: Install and verify mcp-publisher
+        env:
+          MCP_PUBLISHER_VERSION: "v1.7.9"
+          MCP_PUBLISHER_SHA256: "ab128162b0616090b47cf245afe0a23f3ef08936fdce19074f5ba0a4469281ac"
+        run: |
+          curl -sSL "https://github.com/modelcontextprotocol/registry/releases/download/${MCP_PUBLISHER_VERSION}/mcp-publisher_linux_amd64.tar.gz" \
+            -o mcp-publisher.tar.gz
+          echo "${MCP_PUBLISHER_SHA256}  mcp-publisher.tar.gz" | sha256sum --check
+          tar -xz -C /usr/local/bin -f mcp-publisher.tar.gz mcp-publisher
+          chmod +x /usr/local/bin/mcp-publisher
+
+      - name: Login to MCP Registry (GitHub OIDC)
+        run: mcp-publisher login github-oidc
+
+      - name: Publish to MCP Registry
+        run: mcp-publisher publish .mcp/server.json

@@ -1,0 +1,42 @@
+services:
+  thailaw:
+    build:
+      context: /ai/thailaw
+      dockerfile: Dockerfile
+    image: thailaw:latest
+    container_name: thailaw
+    hostname: thailaw
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    restart: always
+    network_mode: "host"
+    user: "1001:1001"
+    cap_add:
+      - SYS_NICE
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - DEBIAN_FRONTEND=noninteractive
+      - THAILAW_HTTP_PORT=8005
+      - THAILAW_HTTP_HOST=0.0.0.0
+      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_COLLECTION=krisdika
+      - EMBEDDING_URL=http://ai-tool:3003
+      - EMBEDDING_MODEL=bge-m3-multi
+    ipc: host
+    entrypoint: ["/ai/thailaw/start.sh"]
+    command:
+      - --http-port=8005
+      - --http-host=0.0.0.0
+      - --qdrant-url=http://qdrant:6333
+      - --qdrant-collection=krisdika
+      - --embedding-url=http://ai-tool:3003
+      - --embedding-model=bge-m3-multi
+    volumes:
+      - /etc/sudoers.d:/etc/sudoers.d:ro
+      - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      - /etc/shadow:/etc/shadow:ro
+      - /ai/thailaw:/ai/thailaw

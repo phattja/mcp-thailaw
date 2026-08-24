@@ -1,0 +1,66 @@
+# Build outputs
+dist
+build
+
+# Test outputs
+coverage
+
+# Dependencies
+node_modules
+**/__pycache__/
+*.pyc
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.e2e
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs
+*.log
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.roo
+.agents
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Claude
+.claude
+
+# Codex
+.codex
+
+# registry credentials
+.mcpregistry*
+
+# Docker files
+docker-compose.yml
+docker-compose.override.yml
+
+# AI process artifacts (plans, brainstorms, drafts) — must never be committed
+docs/superpowers/
+docs/plans/
+
+# TODO lists (private planning files)
+TODO.md
+TODO-features.md
+TODO-bugs.md
+TODO-security.md
+TODO-done.md
+TODO-later.md

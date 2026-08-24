@@ -1,0 +1,337 @@
+import { parseStrictInteger } from "./env-int.js";
+import type { CliOverrides } from "./cli-args.js";
+
+export const SERVER_NAME = "phattja/mcp-thailaw";
+
+export const DEFAULT_QDRANT_URL = "http://qdrant:6333";
+export const DEFAULT_COLLECTION_NAME = "krisdika";
+export const DEFAULT_EMBEDDING_URL = "http://ai-tool:3003";
+export const DEFAULT_EMBEDDING_MODEL = "bge-m3-multi";
+export const DEFAULT_EMBEDDING_DIMENSIONS = 1024;
+export const DEFAULT_COLBERT_URL = "http://ai-tool:3003";
+export const DEFAULT_RERANK_URL = "http://ai-tool:3003";
+export const DEFAULT_RERANK_MODEL = "bge-reranker-v2-m3";
+export const DEFAULT_VECTOR_MODE = "colbert";
+export const DEFAULT_VECTOR_NAME = "colbert";
+export const DEFAULT_DENSE_VECTOR_NAME = "dense";
+export const DEFAULT_COLBERT_MAX_TOKENS = 64;
+export const DEFAULT_DEKA_COLLECTION = "deka";
+
+export type VectorMode = "colbert" | "dense";
+export const DEFAULT_TOP_K = 5;
+export const DEFAULT_SCORE_THRESHOLD = 0.3;
+export const DEFAULT_MAX_RESULTS = 100;
+export const DEFAULT_DEKA_TOP_K = 5;
+export const DEFAULT_DEKA_MAX_RESULTS = 20;
+export const DEFAULT_OCS_TOP_K = 5;
+export const DEFAULT_OCS_MAX_RESULTS = 20;
+export const DEFAULT_OCS_SECTIONS_PER_LAW = 5;
+export const DEFAULT_FETCH_TIMEOUT_MS = 30000;
+
+export interface ThaiLawConfig {
+  qdrantUrl: string;
+  collectionName: string;
+  qdrantApiKey?: string;
+  embeddingUrl: string;
+  embeddingModel: string;
+  embeddingApiKey?: string;
+  embeddingDimensions: number;
+  colbertUrl: string;
+  vectorMode: VectorMode;
+  vectorName: string;
+  denseVectorName: string;
+  colbertMaxTokens: number;
+  dekaCollectionName: string;
+  rerankUrl: string;
+  rerankModel: string;
+  rerankApiKey?: string;
+  rerankEnabled: boolean;
+  defaultTopK: number;
+  defaultScoreThreshold: number;
+  maxResults: number;
+  fetchTimeoutMs: number;
+}
+
+export interface HttpListenConfig {
+  port?: number;
+  host: string;
+  portError?: string;
+}
+
+let cliOverrides: CliOverrides = {};
+
+export function setCliOverrides(overrides: CliOverrides): void {
+  cliOverrides = { ...overrides };
+}
+
+export function resetCliOverrides(): void {
+  cliOverrides = {};
+}
+
+export function getCliOverrides(): CliOverrides {
+  return { ...cliOverrides };
+}
+
+function trimOrUndefined(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
+function resolveEmbeddingEndpoint(url: string): string {
+  const trimmed = url.replace(/\/+$/, "");
+  if (
+    trimmed.endsWith("/embeddings")
+    || trimmed.endsWith("/embedding")
+    || trimmed.endsWith("/embed")
+    || trimmed.endsWith("/embed_all")
+  ) {
+    return trimmed;
+  }
+  if (trimmed.endsWith("/v1")) {
+    return `${trimmed}/embeddings`;
+  }
+  return `${trimmed}/embedding`;
+}
+
+function resolveColbertEndpoint(url: string): string {
+  const trimmed = url.replace(/\/+$/, "");
+  if (
+    trimmed.endsWith("/embed_all")
+    || trimmed.endsWith("/colbert")
+    || trimmed.endsWith("/embed")
+    || trimmed.endsWith("/embedding")
+  ) {
+    return trimmed;
+  }
+  return `${trimmed}/embedding`;
+}
+
+function resolveRerankEndpoint(url: string): string {
+  const trimmed = url.replace(/\/+$/, "");
+  if (trimmed.endsWith("/rerank") || trimmed.endsWith("/reranking")) {
+    return trimmed;
+  }
+  return `${trimmed}/rerank`;
+}
+
+function parseVectorMode(raw: string | undefined, fallback: VectorMode): VectorMode {
+  if (raw === undefined || raw.trim() === "") {
+    return fallback;
+  }
+  const value = raw.trim().toLowerCase();
+  if (["colbert", "multi", "multi-vector", "multivector", "late"].includes(value)) {
+    return "colbert";
+  }
+  if (["dense", "single", "cls"].includes(value)) {
+    return "dense";
+  }
+  return fallback;
+}
+
+function parseBoolean(raw: string | undefined, fallback: boolean): boolean {
+  if (raw === undefined || raw.trim() === "") {
+    return fallback;
+  }
+  const value = raw.trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(value)) {
+    return true;
+  }
+  if (["0", "false", "no", "off"].includes(value)) {
+    return false;
+  }
+  return fallback;
+}
+
+function firstString(...values: Array<string | undefined>): string | undefined {
+  for (const value of values) {
+    const trimmed = trimOrUndefined(value);
+    if (trimmed !== undefined) {
+      return trimmed;
+    }
+  }
+  return undefined;
+}
+
+function parseBoundedInteger(
+  raw: string | undefined,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+): number {
+  if (raw === undefined || raw.trim() === "") {
+    return fallback;
+  }
+  const parsed = parseStrictInteger(raw);
+  if (parsed === undefined || parsed < minimum || parsed > maximum) {
+    return fallback;
+  }
+  return parsed;
+}
+
+function parseScoreThreshold(raw: string | undefined, fallback: number): number {
+  if (raw === undefined || raw.trim() === "") {
+    return fallback;
+  }
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
+    return fallback;
+  }
+  return parsed;
+}
+
+function firstNumber(cliValue: number | undefined, envRaw: string | undefined, fallback: number, parse: (raw: string | undefined, fallback: number) => number): number {
+  return cliValue !== undefined ? cliValue : parse(envRaw, fallback);
+}
+
+export function getThaiLawConfig(env: NodeJS.ProcessEnv = process.env): ThaiLawConfig {
+  const cli = cliOverrides;
+  const maxResults = firstNumber(
+    cli.maxResults,
+    env.THAILAW_MAX_RESULTS,
+    DEFAULT_MAX_RESULTS,
+    (raw, fallback) => parseBoundedInteger(raw, fallback, 1, 100),
+  );
+
+  return {
+    qdrantUrl: (firstString(cli.qdrantUrl, env.QDRANT_URL) ?? DEFAULT_QDRANT_URL).replace(/\/+$/, ""),
+    collectionName: firstString(cli.collectionName, env.QDRANT_COLLECTION) ?? DEFAULT_COLLECTION_NAME,
+    qdrantApiKey: firstString(cli.qdrantApiKey, env.QDRANT_API_KEY),
+    embeddingUrl: resolveEmbeddingEndpoint(
+      firstString(cli.embeddingUrl, env.EMBEDDING_URL) ?? DEFAULT_EMBEDDING_URL,
+    ),
+    embeddingModel: firstString(cli.embeddingModel, env.EMBEDDING_MODEL) ?? DEFAULT_EMBEDDING_MODEL,
+    embeddingApiKey: firstString(cli.embeddingApiKey, env.EMBEDDING_API_KEY),
+    embeddingDimensions: firstNumber(
+      cli.embeddingDimensions,
+      env.THAILAW_VECTOR_SIZE,
+      DEFAULT_EMBEDDING_DIMENSIONS,
+      (raw, fallback) => parseBoundedInteger(raw, fallback, 32, 8192),
+    ),
+    colbertUrl: resolveColbertEndpoint(
+      firstString(cli.colbertUrl, env.COLBERT_URL) ?? DEFAULT_COLBERT_URL,
+    ),
+    vectorMode: cli.vectorMode ?? parseVectorMode(env.THAILAW_VECTOR_MODE, DEFAULT_VECTOR_MODE),
+    vectorName: firstString(cli.vectorName, env.THAILAW_VECTOR_NAME) ?? DEFAULT_VECTOR_NAME,
+    denseVectorName: firstString(env.THAILAW_DENSE_VECTOR_NAME) ?? DEFAULT_DENSE_VECTOR_NAME,
+    colbertMaxTokens: firstNumber(
+      cli.colbertMaxTokens,
+      env.THAILAW_COLBERT_MAX_TOKENS,
+      DEFAULT_COLBERT_MAX_TOKENS,
+      (raw, fallback) => parseBoundedInteger(raw, fallback, 4, 512),
+    ),
+    dekaCollectionName: firstString(env.THAILAW_DEKA_COLLECTION) ?? DEFAULT_DEKA_COLLECTION,
+    rerankUrl: resolveRerankEndpoint(
+      firstString(cli.rerankUrl, env.RERANK_URL) ?? DEFAULT_RERANK_URL,
+    ),
+    rerankModel: firstString(cli.rerankModel, env.RERANK_MODEL) ?? DEFAULT_RERANK_MODEL,
+    rerankApiKey: firstString(cli.rerankApiKey, env.RERANK_API_KEY),
+    rerankEnabled: cli.rerankEnabled ?? parseBoolean(env.THAILAW_RERANK, true),
+    defaultTopK: firstNumber(
+      cli.defaultTopK,
+      env.THAILAW_TOP_K,
+      DEFAULT_TOP_K,
+      (raw, fallback) => parseBoundedInteger(raw, fallback, 1, maxResults),
+    ),
+    defaultScoreThreshold: firstNumber(
+      cli.defaultScoreThreshold,
+      env.THAILAW_SCORE_THRESHOLD,
+      DEFAULT_SCORE_THRESHOLD,
+      parseScoreThreshold,
+    ),
+    maxResults,
+    fetchTimeoutMs: firstNumber(
+      cli.fetchTimeoutMs,
+      env.FETCH_TIMEOUT_MS,
+      DEFAULT_FETCH_TIMEOUT_MS,
+      (raw, fallback) => parseBoundedInteger(raw, fallback, 1000, 300000),
+    ),
+  };
+}
+
+export function resolveHttpListen(env: NodeJS.ProcessEnv = process.env): HttpListenConfig {
+  const cli = cliOverrides;
+  const rawPort = cli.httpPort !== undefined ? String(cli.httpPort) : env.THAILAW_HTTP_PORT;
+  const host = firstString(cli.httpHost, env.THAILAW_HTTP_HOST) ?? "127.0.0.1";
+  if (rawPort === undefined || rawPort.trim() === "") {
+    return { host };
+  }
+
+  const parsed = parseStrictInteger(rawPort);
+  if (parsed === undefined || parsed < 1 || parsed > 65535) {
+    return {
+      host,
+      portError: `Invalid HTTP port: ${rawPort}. Must be between 1-65535.`,
+    };
+  }
+
+  return { port: parsed, host };
+}
+
+export function envWithCliOverrides(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const cli = cliOverrides;
+  const merged: NodeJS.ProcessEnv = { ...env };
+  if (cli.qdrantUrl) merged.QDRANT_URL = cli.qdrantUrl;
+  if (cli.collectionName) merged.QDRANT_COLLECTION = cli.collectionName;
+  if (cli.qdrantApiKey) merged.QDRANT_API_KEY = cli.qdrantApiKey;
+  if (cli.embeddingUrl) merged.EMBEDDING_URL = cli.embeddingUrl;
+  if (cli.embeddingModel) merged.EMBEDDING_MODEL = cli.embeddingModel;
+  if (cli.embeddingApiKey) merged.EMBEDDING_API_KEY = cli.embeddingApiKey;
+  if (cli.colbertUrl) merged.COLBERT_URL = cli.colbertUrl;
+  if (cli.vectorMode) merged.THAILAW_VECTOR_MODE = cli.vectorMode;
+  if (cli.vectorName) merged.THAILAW_VECTOR_NAME = cli.vectorName;
+  if (cli.rerankUrl) merged.RERANK_URL = cli.rerankUrl;
+  if (cli.rerankModel) merged.RERANK_MODEL = cli.rerankModel;
+  if (cli.rerankApiKey) merged.RERANK_API_KEY = cli.rerankApiKey;
+  if (cli.httpPort !== undefined) merged.THAILAW_HTTP_PORT = String(cli.httpPort);
+  if (cli.httpHost) merged.THAILAW_HTTP_HOST = cli.httpHost;
+  return merged;
+}
+
+export function validateHttpUrl(value: string, name: string): string | undefined {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      return `${name} must use http or https (got ${url.protocol})`;
+    }
+    return undefined;
+  } catch {
+    return `${name} is not a valid URL: ${value}`;
+  }
+}
+
+export function validateThaiLawConfig(config: ThaiLawConfig = getThaiLawConfig()): string | null {
+  const issues: string[] = [];
+
+  const qdrantIssue = validateHttpUrl(config.qdrantUrl, "QDRANT_URL");
+  if (qdrantIssue) issues.push(qdrantIssue);
+
+  const embeddingIssue = validateHttpUrl(config.embeddingUrl, "EMBEDDING_URL");
+  if (embeddingIssue) issues.push(embeddingIssue);
+
+  if (!config.collectionName) {
+    issues.push("QDRANT_COLLECTION must not be empty");
+  }
+
+  if (!config.embeddingModel) {
+    issues.push("EMBEDDING_MODEL must not be empty");
+  }
+
+  if (config.vectorMode === "colbert") {
+    const colbertIssue = validateHttpUrl(config.colbertUrl, "COLBERT_URL");
+    if (colbertIssue) issues.push(colbertIssue);
+  }
+
+  if (config.rerankEnabled) {
+    const rerankIssue = validateHttpUrl(config.rerankUrl, "RERANK_URL");
+    if (rerankIssue) issues.push(rerankIssue);
+    if (!config.rerankModel) {
+      issues.push("RERANK_MODEL must not be empty");
+    }
+  }
+
+  if (issues.length === 0) {
+    return null;
+  }
+
+  return `Configuration issues: ${issues.join("; ")}`;
+}

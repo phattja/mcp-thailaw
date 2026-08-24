@@ -1,0 +1,5 @@
+services:
+  mcp-thailaw:
+    cpus: ${THAILAW_CPUS:-0.50}
+    mem_limit: ${THAILAW_MEMORY_LIMIT:-256m}
+    mem_reservation: ${THAILAW_MEMORY_RESERVATION:-192m}

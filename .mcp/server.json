@@ -1,0 +1,79 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.phattja/mcp-thailaw",
+  "title": "Thai Law Search",
+  "description": "MCP server for Thai law search over OCS Krisdika in Qdrant",
+  "repository": {
+    "url": "https://github.com/phattja/mcp-thailaw",
+    "source": "github"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "mcp-thailaw",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "QDRANT_URL",
+          "description": "Qdrant base URL",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "QDRANT_COLLECTION",
+          "description": "Qdrant collection name",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "QDRANT_API_KEY",
+          "description": "Qdrant API key",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "EMBEDDING_URL",
+          "description": "llama.cpp embeddings base URL (default http://ai-tool:3003)",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "EMBEDDING_MODEL",
+          "description": "Embedding model name (default bge-m3-multi)",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "COLBERT_URL",
+          "description": "ColBERT multi-vector endpoint (default http://ai-tool:3003)",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "THAILAW_VECTOR_MODE",
+          "description": "colbert (default) or dense",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "EMBEDDING_API_KEY",
+          "description": "Bearer token for the embedding server",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}
