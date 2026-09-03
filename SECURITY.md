@@ -4,7 +4,7 @@
 
 | Version | Supported |
 |---------|-----------|
-| 0.1.0 (latest) | ✅ |
+| 0.1.1 (latest) | ✅ |
 
 Security fixes are released as patch versions on the `main` branch. Only the latest published version receives security updates.
 

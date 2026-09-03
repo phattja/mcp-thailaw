@@ -24,6 +24,7 @@ import {
   isNoResultsText,
   krisdikaToOcsArgs,
   performOcsSearch,
+  queryLooksLikeLawTitle,
   resolveKrisdikaSource,
 } from "./ocs.js";
 import { filterCancelledTitles, filterExcluded, includeCancelledTitles, parseExcludeWords } from "./exclude.js";
@@ -584,20 +585,21 @@ async function performQdrantKrisdikaSearch(
       category: args.category?.trim() || undefined,
       isLatest,
     };
-    const [vectorHits, titleHits] = await Promise.all([
-      queryPoints(query.vector, {
-        limit: fetchLimit,
-        scoreThreshold,
-        using: query.using,
-        filter,
-        signal: timeout.signal,
-      }),
-      scrollPoints({
+    const vectorHits = await queryPoints(query.vector, {
+      limit: fetchLimit,
+      scoreThreshold,
+      using: query.using,
+      filter,
+      signal: timeout.signal,
+    });
+    let titleHits: QdrantHit[] = [];
+    if (queryLooksLikeLawTitle(searchQuery)) {
+      titleHits = await scrollPoints({
         filter: { ...filter, titleContains: searchQuery },
         maxPoints: fetchLimit,
         signal: timeout.signal,
-      }).catch(() => [] as QdrantHit[]),
-    ]);
+      }).catch(() => [] as QdrantHit[]);
+    }
     const hits = mergeTitleAndVectorHits(titleHits, vectorHits);
 
     const chunks = hits.map(hitToResult);

@@ -9,6 +9,7 @@ import {
   applyOcsExclude,
   parseOcsLawDoc,
   parseOcsSearchPayload,
+  queryLooksLikeLawTitle,
   resolveKrisdikaSource,
   resolveOcsCategory,
   resolveOcsDetail,
@@ -91,6 +92,10 @@ async function runTests() {
     assert.equal(resolveKrisdikaSource("both"), "both");
     assert.equal(resolveKrisdikaSource("auto"), "auto");
     assert.equal(ocsTopK(99), 20);
+    assert.equal(queryLooksLikeLawTitle("ประมวลกฎหมายอาญา"), true);
+    assert.equal(queryLooksLikeLawTitle("พระราชบัญญัติคอมพิวเตอร์ พ.ศ. 2560"), true);
+    assert.equal(queryLooksLikeLawTitle("ลักทรัพย์"), false);
+    assert.equal(queryLooksLikeLawTitle("มาตรา 334"), false);
   }, results);
 
   await testFunction("formatOcsText returns empty message", () => {

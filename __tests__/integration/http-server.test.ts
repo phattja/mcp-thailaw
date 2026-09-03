@@ -389,6 +389,7 @@ async function runTests() {
 
   await testFunction('stateless malformed and oversized JSON stop before server construction', async () => {
     envManager.set('THAILAW_HTTP_STATELESS', 'true');
+    envManager.set('THAILAW_HTTP_JSON_LIMIT', '100kb');
     let constructions = 0;
 
     try {

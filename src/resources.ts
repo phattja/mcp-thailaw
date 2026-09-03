@@ -33,7 +33,7 @@ Options:
   --rerank <true|false>          Enable rerank after retrieve
   --no-rerank                    Disable rerank
   --top-k <n>                    Default search hit count
-  --score-threshold <n>          Default minimum score (0-1)
+  --score-threshold <n>          Default minimum score (0-64; ColBERT MaxSim may exceed 1)
   --max-results <n>              Operator ceiling for top_k
   --fetch-timeout-ms <n>         Upstream timeout in milliseconds
   --http-port, --port <n>        Enable Streamable HTTP on this port
@@ -119,7 +119,7 @@ Semantic search over Thai statutes, sections, and related legal text. Also match
 **Parameters:**
 - \`query\` (required): Search text, for example "ลักทรัพย์" or "มาตรา ๓๓๕". Arabic article numbers such as 335 are converted to Thai digits ๓๓๕.
 - \`top_k\` (optional): Maximum number of vector hits before มาตรา merge (default 5)
-- \`score_threshold\` (optional): Minimum relevance score from 0.0 to 1.0 (default 0.30)
+- \`score_threshold\` (optional): Minimum vector score (default 0.30). Dense cosine is typically 0-1; ColBERT MaxSim can be above 1.
 - \`law_code\` (optional): Filter by law group code
 - \`category\` (optional): Filter by law category such as "1B"
 - \`is_latest\` (optional): Keep only the latest in-force version. Defaults to \`true\`. Set \`false\` to search historical versions.

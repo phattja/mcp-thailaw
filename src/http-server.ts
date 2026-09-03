@@ -204,7 +204,9 @@ export async function createHttpServer(
     app.set('trust proxy', security.trustProxy);
   }
 
-  app.use(express.json());
+  app.use(express.json({
+    limit: process.env.THAILAW_HTTP_JSON_LIMIT?.trim() || "10mb",
+  }));
   
   // Add CORS support for web clients
   app.use(cors({
@@ -642,6 +644,24 @@ export async function createHttpServer(
     warnDiagnostic("HTTP request failed:", safeError);
     if (res.headersSent) {
       next(safeError);
+      return;
+    }
+    const tooLarge = Boolean(
+      error
+      && typeof error === "object"
+      && ((error as { type?: string }).type === "entity.too.large"
+        || (error as { status?: number }).status === 413
+        || (error as { name?: string }).name === "PayloadTooLargeError"),
+    );
+    if (tooLarge) {
+      res.status(413).json({
+        jsonrpc: "2.0",
+        error: {
+          code: -32600,
+          message: "Request too large",
+        },
+        id: null,
+      });
       return;
     }
     res.status(500).json({

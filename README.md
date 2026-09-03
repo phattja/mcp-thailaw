@@ -78,7 +78,7 @@ MCP resources: `thailaw://server-config`, `thailaw://usage-guide`.
 * **search_krisdika** — semantic search over Thai statutes (กฤษฎีกา)
   * `query` (string, required)
   * `top_k` (integer, optional, 1–100, default 5)
-  * `score_threshold` (number, optional, 0.0–1.0, default 0.30)
+  * `score_threshold` (number, optional, 0–64, default 0.30). Dense cosine is typically 0–1; ColBERT MaxSim can exceed 1
   * `law_code` (string, optional)
   * `category` (string, optional)
   * `is_latest` (boolean, optional, default `true`)

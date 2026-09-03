@@ -7,6 +7,7 @@ import {
   DEFAULT_OCS_TOP_K,
   DEFAULT_SCORE_THRESHOLD,
   DEFAULT_TOP_K,
+  MAX_SCORE_THRESHOLD,
 } from "./config.js";
 
 export type ResponseFormat = "text" | "json";
@@ -115,7 +116,7 @@ export function isSearchKrisdikaArgs(args: unknown): args is SearchKrisdikaArgs 
       typeof searchArgs.score_threshold !== "number"
       || Number.isNaN(searchArgs.score_threshold)
       || searchArgs.score_threshold < 0
-      || searchArgs.score_threshold > 1
+      || searchArgs.score_threshold > MAX_SCORE_THRESHOLD
     )
   ) {
     return false;
@@ -313,6 +314,18 @@ export function isSearchDekaArgs(args: unknown): args is SearchDekaArgs {
     return false;
   }
 
+  if (
+    searchArgs.score_threshold !== undefined
+    && (
+      typeof searchArgs.score_threshold !== "number"
+      || Number.isNaN(searchArgs.score_threshold)
+      || searchArgs.score_threshold < 0
+      || searchArgs.score_threshold > MAX_SCORE_THRESHOLD
+    )
+  ) {
+    return false;
+  }
+
   return true;
 }
 
@@ -357,8 +370,10 @@ export const SEARCH_KRISDIKA_TOOL: Tool = {
       score_threshold: {
         type: "number",
         minimum: 0,
-        maximum: 1,
-        description: `คะแนนความเกี่ยวข้องขั้นต่ำ 0.0-1.0 (ค่าเริ่มต้น ${DEFAULT_SCORE_THRESHOLD})`,
+        maximum: MAX_SCORE_THRESHOLD,
+        description:
+          `คะแนนเวกเตอร์ขั้นต่ำ (ค่าเริ่มต้น ${DEFAULT_SCORE_THRESHOLD}). `
+          + "Dense cosine มักอยู่ 0-1; ColBERT MaxSim สูงกว่า 1 ได้ (ผลรวมความคล้ายรายโทเคน)",
       },
       law_code: {
         type: "string",
@@ -512,8 +527,10 @@ export const SEARCH_DEKA_TOOL: Tool = {
       score_threshold: {
         type: "number",
         minimum: 0,
-        maximum: 1,
-        description: `คะแนนเวกเตอร์ขั้นต่ำ (ค่าเริ่มต้น ${DEFAULT_SCORE_THRESHOLD})`,
+        maximum: MAX_SCORE_THRESHOLD,
+        description:
+          `คะแนนเวกเตอร์ขั้นต่ำ (ค่าเริ่มต้น ${DEFAULT_SCORE_THRESHOLD}). `
+          + "Dense cosine มักอยู่ 0-1; ColBERT MaxSim สูงกว่า 1 ได้",
       },
       year: {
         type: "string",

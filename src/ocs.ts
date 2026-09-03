@@ -392,6 +392,20 @@ export function queryMatchesLawTitle(query: string, title: string): boolean {
   return haystack.includes(needle) || needle.includes(haystack);
 }
 
+const LAW_TITLE_HINT =
+  /พระราชบัญญัติ|ประมวลกฎหมาย|พระราชกำหนด|พระราชกฤษฎีกา|กฎกระทรวง|ระเบียบ|ข้อบัญญัติ|พ\.ศ\.\s*\d{4}/;
+
+export function queryLooksLikeLawTitle(query: string): boolean {
+  const trimmed = query.trim();
+  if (!trimmed) {
+    return false;
+  }
+  if (extractQueryMatra(rewriteQueryMatraToThai(trimmed))) {
+    return false;
+  }
+  return LAW_TITLE_HINT.test(trimmed);
+}
+
 export function selectOcsSections(
   sections: OcsSection[],
   query: string,

@@ -44,7 +44,9 @@ async function runTests() {
     assert.equal(isSearchKrisdikaArgs({ query: "test", top_k: 101 }), false);
     assert.equal(isSearchKrisdikaArgs({ query: "test", top_k: 40 }), true);
     assert.equal(isSearchKrisdikaArgs({ query: "test", score_threshold: -0.1 }), false);
-    assert.equal(isSearchKrisdikaArgs({ query: "test", score_threshold: 1.1 }), false);
+    assert.equal(isSearchKrisdikaArgs({ query: "test", score_threshold: 1.1 }), true);
+    assert.equal(isSearchKrisdikaArgs({ query: "test", score_threshold: 8 }), true);
+    assert.equal(isSearchKrisdikaArgs({ query: "test", score_threshold: 65 }), false);
     assert.equal(isSearchKrisdikaArgs({ query: "test", is_latest: "yes" }), false);
     assert.equal(isSearchKrisdikaArgs({ query: "test", response_format: "xml" }), false);
   }, results);
@@ -68,6 +70,7 @@ async function runTests() {
     assert.equal(isSearchDekaArgs({ query: "test", response_format: "json" }), true);
     assert.equal(isSearchDekaArgs({ query: "ลักทรัพย์", detail: "full" }), true);
     assert.equal(isSearchDekaArgs({ query: "ลักทรัพย์", exclude: "วิ่งราว,ชิงทรัพย์" }), true);
+    assert.equal(isSearchDekaArgs({ query: "test", score_threshold: 2 }), true);
   }, results);
 
   await testFunction("isSearchDekaArgs rejects invalid cases", () => {

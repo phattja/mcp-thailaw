@@ -78,7 +78,7 @@ const NUMBER_FLAGS: Record<string, { key: NumberFlag; min: number; max: number; 
   "--vector-size": { key: "embeddingDimensions", min: 32, max: 8192, integer: true },
   "--colbert-max-tokens": { key: "colbertMaxTokens", min: 4, max: 512, integer: true },
   "--top-k": { key: "defaultTopK", min: 1, max: 100, integer: true },
-  "--score-threshold": { key: "defaultScoreThreshold", min: 0, max: 1, integer: false },
+  "--score-threshold": { key: "defaultScoreThreshold", min: 0, max: 64, integer: false },
   "--max-results": { key: "maxResults", min: 1, max: 100, integer: true },
   "--fetch-timeout-ms": { key: "fetchTimeoutMs", min: 1000, max: 300000, integer: true },
   "--http-port": { key: "httpPort", min: 1, max: 65535, integer: true },

@@ -43,7 +43,7 @@ mcp-thailaw \
 | `--rerank-api-key` | `RERANK_API_KEY` | _(unset)_ | Optional bearer token |
 | `--rerank` / `--no-rerank` | `THAILAW_RERANK` | `true` | Rerank retrieved มาตรา after vector search |
 | `--top-k` | `THAILAW_TOP_K` | `5` | Default number of vector hits when the tool omits `top_k`. Combined มาตรา output needs fewer raw chunks. |
-| `--score-threshold` | `THAILAW_SCORE_THRESHOLD` | `0.30` | Default minimum cosine score |
+| `--score-threshold` | `THAILAW_SCORE_THRESHOLD` | `0.30` | Minimum vector score (0–64). Dense cosine is typically 0–1; ColBERT MaxSim can exceed 1 |
 | `--max-results` | `THAILAW_MAX_RESULTS` | `100` | Operator ceiling for `top_k` |
 | `--fetch-timeout-ms` | `FETCH_TIMEOUT_MS` | `30000` | Timeout for embedding + Qdrant calls |
 
